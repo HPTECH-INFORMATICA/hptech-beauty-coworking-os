@@ -10,30 +10,65 @@ HPTECH Beauty Coworking OS
 
 `C:\HudsonPedro\hptech-beauty-coworking-os`
 
-## Estado atual
+## Product Baseline
+
+- PRD MASTER v1.0 — HOMOLOGADO
+
+## Architecture Baseline
+
+- Architecture Freeze v1.2 — HOMOLOGADO
+
+## Database Baseline
+
+- PostgreSQL DDL v1.2.1 — HOMOLOGADO
+- Database Integrity Test Suite v1.1 — HOMOLOGADA
+- Execução real da suíte contra PostgreSQL: PENDENTE
+
+## Technology Baseline
+
+BCOS-M0.2-A — Technology Decision Gate — HOMOLOGADO
+
+Stack homologada:
+
+- Frontend: Next.js + React + TypeScript
+- Workspace: pnpm + Turborepo
+- Backend: Python 3.12 + FastAPI
+- Validation: Pydantic
+- Persistence: SQLAlchemy 2.x
+- Migrations: Alembic + PostgreSQL SQL explícito para invariantes críticas
+- Database: PostgreSQL / Neon
+- Worker: processo Python separado
+- Frontend Deploy: Vercel
+- API / Worker Deploy: Render
+- E-mail: Resend
+- Source Control: Git + GitHub
+
+## Estado das Etapas
 
 ### Homologado
 
-- PRD MASTER v1.0
-- Architecture Freeze v1.2
-- Database DDL v1.2.1
-- Database Integrity Test Suite v1.1
 - BCOS-M0.1-A — Environment & Repository Preflight
 - BCOS-M0.1-B — Create Independent Repository
+- BCOS-M0.1-C — Repository Baseline Files
+- BCOS-M0.1-D — Repository Baseline Audit & Initial Commit
+- BCOS-M0.1 — Repository Foundation
+- BCOS-M0.2-A — Technology Decision Gate
 
 ### Em andamento
 
-- BCOS-M0.1-C — Repository Baseline Files
+- BCOS-M0.2-B — Repository Toolchain Policy
 
 ### Não homologado
 
+- BCOS-M0.2-B — Repository Toolchain Policy
 - OpenAPI Final
-- Repository Baseline Files
 
 ### Não iniciado
 
-- Frontend
-- Backend
+- Toolchain installation
+- Application skeleton
+- Frontend funcional
+- Backend funcional
 - Database deployment
 - Authentication
 - Tenant/RBAC implementation
@@ -43,31 +78,54 @@ HPTECH Beauty Coworking OS
 - Pricing
 - Billing
 - Payments
-- Dashboards
+- Reception OS
 - Professional Portal
+- Owner Dashboard
+- Production
+
+## Git
+
+- Branch: `main`
+- Último commit homologado: `91028a5e1f808e4598ccbaff1f8b7dc67768a730`
+- Short SHA: `91028a5`
+- origin/main: não configurado
+- GitHub repository: pendente
 
 ## Serviços externos
 
-- GitHub repository: pendente
 - Neon: não criado/conectado
 - Render: não criado/conectado
 - Vercel: não criado/conectado
 - Resend: não criado/conectado
 
-## Builders / agentes
+## Builders / Agentes
 
 - TurboSaaS: planejamento concluído
-- Lovable: não é dependência de continuidade
+- Lovable: parado; não é dependência de continuidade
 - CODEX: temporariamente indisponível por limite de uso
-- ChatGPT: arquitetura, engenharia, validação e condução
+- ChatGPT: arquitetura, engenharia, desenvolvimento orientado, auditoria e validação
+
+## Pendências registradas
+
+- Executar Database Integrity Test Suite v1.1 em PostgreSQL real.
+- Homologar OpenAPI Final.
+- Criar/configurar repositório remoto GitHub.
+- Concluir BCOS-M0.2-B.
+- Instalar toolchains somente após Gate correspondente.
 
 ## Próxima etapa prevista
 
-BCOS-M0.1-D — Repository Baseline Audit & Initial Commit
+Após homologação de BCOS-M0.2-B:
 
-## Regra
+`BCOS-M0.2-C — Toolchain Installation & Verification`
+
+## Regra de Governança
 
 Nenhuma etapa implementada torna-se baseline sem Gate de homologação.
+
+Etapa homologada não é reaberta silenciosamente.
+
+Qualquer alteração estrutural exige novo ID, análise de impacto e atualização das baselines afetadas.
 
 ---
 

@@ -37,3 +37,7 @@ pnpm-debug.log*
 
 # Local infrastructure
 .vercel/
+
+# Python local environments
+.venv/
+.python-version.local
