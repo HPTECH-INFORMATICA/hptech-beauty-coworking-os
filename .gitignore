@@ -41,3 +41,6 @@ pnpm-debug.log*
 # Python local environments
 .venv/
 .python-version.local
+
+# Python packaging metadata
+*.egg-info/

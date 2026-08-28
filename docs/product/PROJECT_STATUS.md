@@ -1,4 +1,4 @@
-﻿# HPTECH Beauty Coworking OS — Project Status
+# HPTECH Beauty Coworking OS — Project Status
 
 > "Quem pede um, pede bis."
 
@@ -54,26 +54,26 @@ Stack homologada:
 - BCOS-M0.1 — Repository Foundation
 - BCOS-M0.2-A — Technology Decision Gate
 - BCOS-M0.2-B — Repository Toolchain Policy
+- BCOS-M0.2-C1 — Node / pnpm / Turbo Workspace
+- BCOS-M0.2-C2 — Python Virtual Environment
 
 ### Em andamento
 
 - BCOS-M0.2-C — Toolchain Installation & Verification
-- BCOS-M0.2-C1 — Node / pnpm / Turbo Workspace
+- BCOS-M0.2-C3 — Backend Toolchain
 
 ### Implementado aguardando homologação
 
-- BCOS-M0.2-C1 — Node / pnpm / Turbo Workspace
+- BCOS-M0.2-C3 — Backend Toolchain
 
 ### Não homologado
 
 - BCOS-M0.2-C
-- BCOS-M0.2-C1
+- BCOS-M0.2-C3
 - OpenAPI Final
 
 ### Não iniciado
 
-- BCOS-M0.2-C2 — Python Virtual Environment
-- BCOS-M0.2-C3 — Backend Toolchain
 - BCOS-M0.2-C4 — Quality Toolchain
 - BCOS-M0.2-C5 — Full Toolchain Verification
 - Application skeleton
@@ -102,19 +102,33 @@ Stack homologada:
 - Turborepo: `2.10.7`
 - `pnpm-lock.yaml`: criado
 - `pnpm install --frozen-lockfile`: validado
-- BCOS-M0.2-C1: implementação concluída; homologação pendente
+- BCOS-M0.2-C1: HOMOLOGADO / LOCKED
 
 ### Python
 
-- Python esperado: `3.12`
-- Ambiente virtual: ainda não criado
-- Backend dependencies: ainda não instaladas
+- Python: `3.12.2`
+- Ambiente virtual local: `.venv`
+- BCOS-M0.2-C2: HOMOLOGADO / LOCKED
+- Manifesto da API: `services/api/pyproject.toml`
+- FastAPI: `0.141.1`
+- Pydantic: `2.13.5`
+- SQLAlchemy: `2.0.52`
+- Alembic: `1.19.1`
+- Uvicorn: `0.52.4`
+- Psycopg: `3.3.4`
+- SQLAlchemy async: validado
+- `pip check`: validado
+- Instalação em ambiente limpo a partir do `pyproject.toml`: validada
+- Dependências diretas: versões exatas fixadas
+- Lock determinístico de dependências transitivas: pendente de decisão
+- Metadata de packaging `*.egg-info/`: ignorada pelo Git
+- BCOS-M0.2-C3: implementado; homologação pendente
 
 ## Git
 
 - Branch: `main`
-- Último commit homologado: `6ae4f52894602b5dbe775120d91638be6b3ce480`
-- Short SHA: `6ae4f52`
+- Último commit homologado: `f31709f8a9137b7a910c4959bdb18dd30bcce930`
+- Short SHA: `f31709f`
 - origin/main: não configurado
 - GitHub repository: pendente
 
@@ -134,17 +148,18 @@ Stack homologada:
 
 ## Pendências registradas
 
-- Homologar BCOS-M0.2-C1.
-- Executar BCOS-M0.2-C2 — Python Virtual Environment.
+- Homologar BCOS-M0.2-C3.
+- Executar BCOS-M0.2-C4 — Quality Toolchain.
+- Executar BCOS-M0.2-C5 — Full Toolchain Verification.
 - Executar Database Integrity Test Suite v1.1 em PostgreSQL real.
 - Homologar OpenAPI Final.
 - Criar/configurar repositório remoto GitHub.
 
 ## Próxima etapa prevista
 
-Após homologação de BCOS-M0.2-C1:
+Após homologação de BCOS-M0.2-C3:
 
-`BCOS-M0.2-C2 — Python Virtual Environment`
+`BCOS-M0.2-C4 — Quality Toolchain`
 
 ## Regra de Governança
 

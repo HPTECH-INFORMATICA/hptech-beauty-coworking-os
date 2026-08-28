@@ -1,0 +1,13 @@
+[project]
+name = "hptech-beauty-coworking-api"
+version = "0.0.0"
+description = "Backend API for HPTECH Beauty Coworking OS"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi==0.141.1",
+    "pydantic==2.13.5",
+    "SQLAlchemy==2.0.52",
+    "alembic==1.19.1",
+    "uvicorn==0.52.4",
+    "psycopg[binary]==3.3.4",
+]
