@@ -53,19 +53,29 @@ Stack homologada:
 - BCOS-M0.1-D — Repository Baseline Audit & Initial Commit
 - BCOS-M0.1 — Repository Foundation
 - BCOS-M0.2-A — Technology Decision Gate
+- BCOS-M0.2-B — Repository Toolchain Policy
 
 ### Em andamento
 
-- BCOS-M0.2-B — Repository Toolchain Policy
+- BCOS-M0.2-C — Toolchain Installation & Verification
+- BCOS-M0.2-C1 — Node / pnpm / Turbo Workspace
+
+### Implementado aguardando homologação
+
+- BCOS-M0.2-C1 — Node / pnpm / Turbo Workspace
 
 ### Não homologado
 
-- BCOS-M0.2-B — Repository Toolchain Policy
+- BCOS-M0.2-C
+- BCOS-M0.2-C1
 - OpenAPI Final
 
 ### Não iniciado
 
-- Toolchain installation
+- BCOS-M0.2-C2 — Python Virtual Environment
+- BCOS-M0.2-C3 — Backend Toolchain
+- BCOS-M0.2-C4 — Quality Toolchain
+- BCOS-M0.2-C5 — Full Toolchain Verification
 - Application skeleton
 - Frontend funcional
 - Backend funcional
@@ -83,11 +93,28 @@ Stack homologada:
 - Owner Dashboard
 - Production
 
+## Toolchain
+
+### Node / Workspace
+
+- Node: `22.21.0`
+- pnpm: `11.17.0`
+- Turborepo: `2.10.7`
+- `pnpm-lock.yaml`: criado
+- `pnpm install --frozen-lockfile`: validado
+- BCOS-M0.2-C1: implementação concluída; homologação pendente
+
+### Python
+
+- Python esperado: `3.12`
+- Ambiente virtual: ainda não criado
+- Backend dependencies: ainda não instaladas
+
 ## Git
 
 - Branch: `main`
-- Último commit homologado: `91028a5e1f808e4598ccbaff1f8b7dc67768a730`
-- Short SHA: `91028a5`
+- Último commit homologado: `6ae4f52894602b5dbe775120d91638be6b3ce480`
+- Short SHA: `6ae4f52`
 - origin/main: não configurado
 - GitHub repository: pendente
 
@@ -107,17 +134,17 @@ Stack homologada:
 
 ## Pendências registradas
 
+- Homologar BCOS-M0.2-C1.
+- Executar BCOS-M0.2-C2 — Python Virtual Environment.
 - Executar Database Integrity Test Suite v1.1 em PostgreSQL real.
 - Homologar OpenAPI Final.
 - Criar/configurar repositório remoto GitHub.
-- Concluir BCOS-M0.2-B.
-- Instalar toolchains somente após Gate correspondente.
 
 ## Próxima etapa prevista
 
-Após homologação de BCOS-M0.2-B:
+Após homologação de BCOS-M0.2-C1:
 
-`BCOS-M0.2-C — Toolchain Installation & Verification`
+`BCOS-M0.2-C2 — Python Virtual Environment`
 
 ## Regra de Governança
 
