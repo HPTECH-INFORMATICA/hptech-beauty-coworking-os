@@ -56,25 +56,29 @@ Stack homologada:
 - BCOS-M0.2-B — Repository Toolchain Policy
 - BCOS-M0.2-C1 — Node / pnpm / Turbo Workspace
 - BCOS-M0.2-C2 — Python Virtual Environment
+- BCOS-M0.2-C3 — Backend Toolchain
+- BCOS-M0.2-C4-A — Quality Toolchain Decision Gate
 
 ### Em andamento
 
 - BCOS-M0.2-C — Toolchain Installation & Verification
-- BCOS-M0.2-C3 — Backend Toolchain
+- BCOS-M0.2-C4 — Quality Toolchain
+- BCOS-M0.2-C4-B — Backend Quality Toolchain
 
 ### Implementado aguardando homologação
 
-- BCOS-M0.2-C3 — Backend Toolchain
+- BCOS-M0.2-C4-B — Backend Quality Toolchain
 
 ### Não homologado
 
 - BCOS-M0.2-C
-- BCOS-M0.2-C3
+- BCOS-M0.2-C4
+- BCOS-M0.2-C4-B
 - OpenAPI Final
 
 ### Não iniciado
 
-- BCOS-M0.2-C4 — Quality Toolchain
+- BCOS-M0.2-C4-C — Frontend Quality Toolchain
 - BCOS-M0.2-C5 — Full Toolchain Verification
 - Application skeleton
 - Frontend funcional
@@ -122,13 +126,25 @@ Stack homologada:
 - Dependências diretas: versões exatas fixadas
 - Lock determinístico de dependências transitivas: pendente de decisão
 - Metadata de packaging `*.egg-info/`: ignorada pelo Git
-- BCOS-M0.2-C3: implementado; homologação pendente
+- BCOS-M0.2-C3: HOMOLOGADO / LOCKED
+- BCOS-M0.2-C4-A: HOMOLOGADO / LOCKED
+- Ruff: `0.16.4`
+- mypy: `2.3.1`
+- pytest: `9.1.1`
+- pytest-asyncio: `1.4.0`
+- HTTPX: `0.28.1`
+- Dependências diretas de qualidade: versões exatas fixadas
+- Ruff lint / format check: validado
+- mypy smoke check: validado
+- pytest / pytest-asyncio bootstrap: validado
+- BCOS-M0.2-C4-B0 até B6: PASS
+- BCOS-M0.2-C4-B: implementado; homologação pendente
 
 ## Git
 
 - Branch: `main`
-- Último commit homologado: `f31709f8a9137b7a910c4959bdb18dd30bcce930`
-- Short SHA: `f31709f`
+- Último commit homologado: `9c73a17b697a75e5afe488107093e3b82b09e00e`
+- Short SHA: `9c73a17`
 - origin/main: não configurado
 - GitHub repository: pendente
 
@@ -148,8 +164,8 @@ Stack homologada:
 
 ## Pendências registradas
 
-- Homologar BCOS-M0.2-C3.
-- Executar BCOS-M0.2-C4 — Quality Toolchain.
+- Homologar BCOS-M0.2-C4-B — Backend Quality Toolchain.
+- Continuar BCOS-M0.2-C4 — Quality Toolchain pela etapa C4-C.
 - Executar BCOS-M0.2-C5 — Full Toolchain Verification.
 - Executar Database Integrity Test Suite v1.1 em PostgreSQL real.
 - Homologar OpenAPI Final.
@@ -157,9 +173,13 @@ Stack homologada:
 
 ## Próxima etapa prevista
 
-Após homologação de BCOS-M0.2-C3:
+Concluir o Gate do backend de qualidade:
 
-`BCOS-M0.2-C4 — Quality Toolchain`
+`BCOS-M0.2-C4-B8 — Commit`
+
+seguido de:
+
+`BCOS-M0.2-C4-B9 — Human Homologation`
 
 ## Regra de Governança
 
