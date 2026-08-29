@@ -9,6 +9,10 @@
     "pnpm": ">=11.17.0"
   },
   "devDependencies": {
-    "turbo": "2.10.7"
+    "eslint": "10.9.1",
+    "prettier": "3.9.6",
+    "turbo": "2.10.7",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
   }
 }

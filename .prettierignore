@@ -1,0 +1,8 @@
+node_modules
+.next
+dist
+coverage
+.turbo
+.venv
+*.egg-info
+pnpm-lock.yaml

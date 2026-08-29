@@ -26,7 +26,7 @@ HPTECH Beauty Coworking OS
 
 ## Technology Baseline
 
-BCOS-M0.2-A — Technology Decision Gate — HOMOLOGADO
+BCOS-M0.2-A — Technology Decision Gate — HOMOLOGADO / LOCKED
 
 Stack homologada:
 
@@ -45,7 +45,7 @@ Stack homologada:
 
 ## Estado das Etapas
 
-### Homologado
+### Homologado / Locked
 
 - BCOS-M0.1-A — Environment & Repository Preflight
 - BCOS-M0.1-B — Create Independent Repository
@@ -58,27 +58,37 @@ Stack homologada:
 - BCOS-M0.2-C2 — Python Virtual Environment
 - BCOS-M0.2-C3 — Backend Toolchain
 - BCOS-M0.2-C4-A — Quality Toolchain Decision Gate
+- BCOS-M0.2-C4-B — Backend Quality Toolchain
+- BCOS-M0.2-C4-C1 — Frontend Quality Architecture & Version Gate
+- BCOS-M0.2-C4-C4-A — Frontend Quality Configuration Design Gate
+- BCOS-M0.2-C4-C4-D — Configuration Remediation Gate
+- BCOS-M0.2-C4-C5-K — Baseline Encoding Remediation Gate
 
 ### Em andamento
 
 - BCOS-M0.2-C — Toolchain Installation & Verification
 - BCOS-M0.2-C4 — Quality Toolchain
-- BCOS-M0.2-C4-B — Backend Quality Toolchain
+- BCOS-M0.2-C4-C — Frontend Quality Toolchain
+- BCOS-M0.2-C4-C7 — Project Ledger Sync
 
-### Implementado aguardando homologação
+### Implementado / PASS técnico aguardando homologação final
 
-- BCOS-M0.2-C4-B — Backend Quality Toolchain
+- BCOS-M0.2-C4-C0 — PASS
+- BCOS-M0.2-C4-C2 — PASS
+- BCOS-M0.2-C4-C3 — PASS
+- BCOS-M0.2-C4-C4 — PASS
+- BCOS-M0.2-C4-C5 — PASS
+- BCOS-M0.2-C4-C6 — PASS
 
 ### Não homologado
 
 - BCOS-M0.2-C
 - BCOS-M0.2-C4
-- BCOS-M0.2-C4-B
+- BCOS-M0.2-C4-C
 - OpenAPI Final
 
 ### Não iniciado
 
-- BCOS-M0.2-C4-C — Frontend Quality Toolchain
 - BCOS-M0.2-C5 — Full Toolchain Verification
 - Application skeleton
 - Frontend funcional
@@ -108,6 +118,33 @@ Stack homologada:
 - `pnpm install --frozen-lockfile`: validado
 - BCOS-M0.2-C1: HOMOLOGADO / LOCKED
 
+### Frontend Quality
+
+- TypeScript: `6.0.3`
+- ESLint: `10.9.1`
+- Prettier: `3.9.6`
+- Vitest: `4.1.11`
+- Testing Library: adotado arquiteturalmente; instalação diferida até existir consumidor React
+- Playwright: adotado arquiteturalmente; instalação de pacote/browsers diferida
+- `eslint-config-next`: diferido até `apps/web` existir
+- Configuração React/Next específica: não criada prematuramente
+- `eslint.config.mjs`: criado e validado
+- `.prettierrc.json`: criado e validado
+- `.prettierignore`: criado e validado
+- `tsconfig.base.json`: criado e validado
+- `vitest.config.mts`: criado e validado com ESM explícito
+- ESLint smoke: PASS
+- Prettier smoke: PASS
+- TypeScript smoke: PASS
+- Vitest smoke: PASS
+- Turbo dry-run: PASS
+- `apps/web`: ainda sem `package.json`; somente `.gitkeep`
+- `packages/*`: ainda sem manifests funcionais
+- `turbo.json`: BOM removido e EOL normalizado para LF; conteúdo semântico inalterado
+- BCOS-M0.2-C4-C1: HOMOLOGADO / LOCKED
+- BCOS-M0.2-C4-C2 até C6: PASS técnico
+- BCOS-M0.2-C4-C: homologação final pendente
+
 ### Python
 
 - Python: `3.12.2`
@@ -127,6 +164,9 @@ Stack homologada:
 - Lock determinístico de dependências transitivas: pendente de decisão
 - Metadata de packaging `*.egg-info/`: ignorada pelo Git
 - BCOS-M0.2-C3: HOMOLOGADO / LOCKED
+
+### Backend Quality
+
 - BCOS-M0.2-C4-A: HOMOLOGADO / LOCKED
 - Ruff: `0.16.4`
 - mypy: `2.3.1`
@@ -137,14 +177,14 @@ Stack homologada:
 - Ruff lint / format check: validado
 - mypy smoke check: validado
 - pytest / pytest-asyncio bootstrap: validado
-- BCOS-M0.2-C4-B0 até B6: PASS
-- BCOS-M0.2-C4-B: implementado; homologação pendente
+- BCOS-M0.2-C4-B: HOMOLOGADO / LOCKED
 
 ## Git
 
 - Branch: `main`
-- Último commit homologado: `9c73a17b697a75e5afe488107093e3b82b09e00e`
-- Short SHA: `9c73a17`
+- Último commit homologado: `07fe0ea7a422764239627eebd395725d358d7624`
+- Short SHA: `07fe0ea`
+- Commit: `BCOS-M0.2-C4-B: establish backend quality toolchain`
 - origin/main: não configurado
 - GitHub repository: pendente
 
@@ -164,22 +204,29 @@ Stack homologada:
 
 ## Pendências registradas
 
-- Homologar BCOS-M0.2-C4-B — Backend Quality Toolchain.
-- Continuar BCOS-M0.2-C4 — Quality Toolchain pela etapa C4-C.
+- Concluir BCOS-M0.2-C4-C — Frontend Quality Toolchain.
+- Executar BCOS-M0.2-C4-C8 — Commit.
+- Executar BCOS-M0.2-C4-C9 — Human Homologation.
+- Continuar BCOS-M0.2-C4 — Quality Toolchain após homologação de C4-C.
 - Executar BCOS-M0.2-C5 — Full Toolchain Verification.
+- Definir BCOS-M0.2-C4-L — Python Dependency Lock Strategy.
 - Executar Database Integrity Test Suite v1.1 em PostgreSQL real.
 - Homologar OpenAPI Final.
 - Criar/configurar repositório remoto GitHub.
 
 ## Próxima etapa prevista
 
-Concluir o Gate do backend de qualidade:
+Concluir:
 
-`BCOS-M0.2-C4-B8 — Commit`
+`BCOS-M0.2-C4-C7 — Project Ledger Sync`
 
 seguido de:
 
-`BCOS-M0.2-C4-B9 — Human Homologation`
+`BCOS-M0.2-C4-C8 — Commit`
+
+e depois:
+
+`BCOS-M0.2-C4-C9 — Human Homologation`
 
 ## Regra de Governança
 
