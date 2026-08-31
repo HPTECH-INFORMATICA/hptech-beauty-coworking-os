@@ -63,15 +63,17 @@ Stack homologada:
 - BCOS-M0.2-C4-C4-A — Frontend Quality Configuration Design Gate
 - BCOS-M0.2-C4-C4-D — Configuration Remediation Gate
 - BCOS-M0.2-C4-C5-K — Baseline Encoding Remediation Gate
+- BCOS-M0.2-C4-C — Frontend Quality Toolchain
+- BCOS-M0.2-C4-C9 — Human Homologation
+- BCOS-M0.2-C4-R3 — Remaining Quality Toolchain Reconciliation Gate
 
 ### Em andamento
 
 - BCOS-M0.2-C — Toolchain Installation & Verification
 - BCOS-M0.2-C4 — Quality Toolchain
-- BCOS-M0.2-C4-C — Frontend Quality Toolchain
-- BCOS-M0.2-C4-C7 — Project Ledger Sync
+- BCOS-M0.2-C4-R6 — Post-R5 Ledger Reconciliation
 
-### Implementado / PASS técnico aguardando homologação final
+### Marcos técnicos concluídos
 
 - BCOS-M0.2-C4-C0 — PASS
 - BCOS-M0.2-C4-C2 — PASS
@@ -79,12 +81,20 @@ Stack homologada:
 - BCOS-M0.2-C4-C4 — PASS
 - BCOS-M0.2-C4-C5 — PASS
 - BCOS-M0.2-C4-C6 — PASS
+- BCOS-M0.2-C4-C7 — PASS
+- BCOS-M0.2-C4-C8 — PASS
+- BCOS-M0.2-C4-R4 — PASS TÉCNICO
+- BCOS-M0.2-C4-R5-C — PASS
+- BCOS-M0.2-C4-R5-FR — PASS TÉCNICO / LOCKED
+- BCOS-M0.2-C4-R5-D — PASS COM N/A ESTRUTURAL
+- BCOS-M0.2-C4-R5-E — PASS
+- BCOS-M0.2-C4-R5-F — PASS
+- BCOS-M0.2-C4-R5 — PASS TÉCNICO
 
 ### Não homologado
 
 - BCOS-M0.2-C
 - BCOS-M0.2-C4
-- BCOS-M0.2-C4-C
 - OpenAPI Final
 
 ### Não iniciado
@@ -142,8 +152,10 @@ Stack homologada:
 - `packages/*`: ainda sem manifests funcionais
 - `turbo.json`: BOM removido e EOL normalizado para LF; conteúdo semântico inalterado
 - BCOS-M0.2-C4-C1: HOMOLOGADO / LOCKED
-- BCOS-M0.2-C4-C2 até C6: PASS técnico
-- BCOS-M0.2-C4-C: homologação final pendente
+- BCOS-M0.2-C4-C2 até C8: PASS
+- BCOS-M0.2-C4-C9: HOMOLOGADO
+- BCOS-M0.2-C4-C: HOMOLOGADO / LOCKED
+- Baseline commit: `05bb19341980e3a0b720cba310b48a338e6188ee`
 
 ### Python
 
@@ -161,7 +173,7 @@ Stack homologada:
 - `pip check`: validado
 - Instalação em ambiente limpo a partir do `pyproject.toml`: validada
 - Dependências diretas: versões exatas fixadas
-- Lock determinístico de dependências transitivas: pendente de decisão
+- Lock determinístico de dependências transitivas: pendente; decisão transferida para BCOS-M0.2-C5-L
 - Metadata de packaging `*.egg-info/`: ignorada pelo Git
 - BCOS-M0.2-C3: HOMOLOGADO / LOCKED
 
@@ -178,13 +190,34 @@ Stack homologada:
 - mypy smoke check: validado
 - pytest / pytest-asyncio bootstrap: validado
 - BCOS-M0.2-C4-B: HOMOLOGADO / LOCKED
+- C4-R5 backend audit: Ruff PASS
+- C4-R5 mypy: N/A estrutural nesta fase; `services/api` ainda não contém fontes `.py` / `.pyi`
+- C4-R5 pytest: N/A estrutural nesta fase; ainda não existem testes Python
+- As validações bootstrap de mypy e pytest de C4-B permanecem válidas; o N/A de R5 reflete apenas a ausência atual de aplicação/testes backend
+
+### Quality Toolchain Reconciliation
+
+- BCOS-M0.2-C4-R3: HOMOLOGADO / LOCKED
+- C4-D: integração de scripts diferida até existirem workspaces funcionais
+- C4-E: satisfeito / absorvido pelas validações de C4-B e C4-C
+- antigo C4-L: reclassificado como BCOS-M0.2-C5-L — Python Dependency Reproducibility / Lock Strategy Gate
+- BCOS-M0.2-C4-R4: PASS TÉCNICO — ledger pós-C4-C reconciliado
+- BCOS-M0.2-C4-R5: PASS TÉCNICO — auditoria final do quality toolchain concluída
+- C4-R5-FR: remediação aprovada / LOCKED
+- `README.md`: UTF-8 BOM residual da baseline removido; conteúdo semântico preservado; EOL LF
+- `pnpm-workspace.yaml`: UTF-8 BOM residual da baseline removido; conteúdo semântico preservado; EOL LF
+- `docs/product/PROJECT_STATUS.md`: UTF-8 sem BOM, EOL LF e final LF validado
+- Frontend audit: ESLint PASS; Prettier PASS; TypeScript PASS; Vitest PASS
+- Workspace audit: `pnpm install --frozen-lockfile` PASS; Turbo `2.10.7`; dry-run PASS
+- Repository integrity audit: PASS; `git diff --check` exit `0`
+- BCOS-M0.2-C4 permanece em andamento até reconciliação final e homologação humana
 
 ## Git
 
 - Branch: `main`
-- Último commit homologado: `07fe0ea7a422764239627eebd395725d358d7624`
-- Short SHA: `07fe0ea`
-- Commit: `BCOS-M0.2-C4-B: establish backend quality toolchain`
+- Último commit homologado: `05bb19341980e3a0b720cba310b48a338e6188ee`
+- Short SHA: `05bb193`
+- Commit: `BCOS-M0.2-C4-C: establish frontend quality toolchain`
 - origin/main: não configurado
 - GitHub repository: pendente
 
@@ -204,12 +237,10 @@ Stack homologada:
 
 ## Pendências registradas
 
-- Concluir BCOS-M0.2-C4-C — Frontend Quality Toolchain.
-- Executar BCOS-M0.2-C4-C8 — Commit.
-- Executar BCOS-M0.2-C4-C9 — Human Homologation.
-- Continuar BCOS-M0.2-C4 — Quality Toolchain após homologação de C4-C.
+- Concluir BCOS-M0.2-C4-R6 — Post-R5 Ledger Reconciliation.
+- Executar BCOS-M0.2-C4-H — Human Homologation of Quality Toolchain.
 - Executar BCOS-M0.2-C5 — Full Toolchain Verification.
-- Definir BCOS-M0.2-C4-L — Python Dependency Lock Strategy.
+- Definir BCOS-M0.2-C5-L — Python Dependency Reproducibility / Lock Strategy Gate.
 - Executar Database Integrity Test Suite v1.1 em PostgreSQL real.
 - Homologar OpenAPI Final.
 - Criar/configurar repositório remoto GitHub.
@@ -218,15 +249,11 @@ Stack homologada:
 
 Concluir:
 
-`BCOS-M0.2-C4-C7 — Project Ledger Sync`
-
-seguido de:
-
-`BCOS-M0.2-C4-C8 — Commit`
+`BCOS-M0.2-C4-R6 — Post-R5 Ledger Reconciliation`
 
 e depois:
 
-`BCOS-M0.2-C4-C9 — Human Homologation`
+`BCOS-M0.2-C4-H — Human Homologation of Quality Toolchain`
 
 ## Regra de Governança
 

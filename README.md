@@ -1,4 +1,4 @@
-﻿# HPTECH Beauty Coworking OS
+# HPTECH Beauty Coworking OS
 
 SaaS B2B multi-tenant para gestão operacional e financeira de coworkings de beleza, estética, saúde e bem-estar.
 
