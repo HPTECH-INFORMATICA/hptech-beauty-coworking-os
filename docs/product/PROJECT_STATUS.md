@@ -66,12 +66,13 @@ Stack homologada:
 - BCOS-M0.2-C4-C — Frontend Quality Toolchain
 - BCOS-M0.2-C4-C9 — Human Homologation
 - BCOS-M0.2-C4-R3 — Remaining Quality Toolchain Reconciliation Gate
+- BCOS-M0.2-C4-H — Human Homologation of Quality Toolchain
+- BCOS-M0.2-C4 — Quality Toolchain
 
 ### Em andamento
 
 - BCOS-M0.2-C — Toolchain Installation & Verification
-- BCOS-M0.2-C4 — Quality Toolchain
-- BCOS-M0.2-C4-R6 — Post-R5 Ledger Reconciliation
+- BCOS-M0.2-C4-R8 — Post-Homologation Ledger Sync
 
 ### Marcos técnicos concluídos
 
@@ -90,11 +91,12 @@ Stack homologada:
 - BCOS-M0.2-C4-R5-E — PASS
 - BCOS-M0.2-C4-R5-F — PASS
 - BCOS-M0.2-C4-R5 — PASS TÉCNICO
+- BCOS-M0.2-C4-R6 — PASS TÉCNICO
+- BCOS-M0.2-C4-R7 — PASS / COMMITTED
 
 ### Não homologado
 
 - BCOS-M0.2-C
-- BCOS-M0.2-C4
 - OpenAPI Final
 
 ### Não iniciado
@@ -210,14 +212,18 @@ Stack homologada:
 - Frontend audit: ESLint PASS; Prettier PASS; TypeScript PASS; Vitest PASS
 - Workspace audit: `pnpm install --frozen-lockfile` PASS; Turbo `2.10.7`; dry-run PASS
 - Repository integrity audit: PASS; `git diff --check` exit `0`
-- BCOS-M0.2-C4 permanece em andamento até reconciliação final e homologação humana
+- BCOS-M0.2-C4-R6: PASS TÉCNICO — reconciliação pós-R5 concluída
+- BCOS-M0.2-C4-R7: PASS / COMMITTED — entrega reconciliada em commit controlado
+- BCOS-M0.2-C4-H: HOMOLOGADO / LOCKED
+- BCOS-M0.2-C4: HOMOLOGADO / LOCKED
+- Baseline homologada do C4: `16b8200df162b930e7661c09e77cb20b4fc82ae1`
 
 ## Git
 
 - Branch: `main`
-- Último commit homologado: `05bb19341980e3a0b720cba310b48a338e6188ee`
-- Short SHA: `05bb193`
-- Commit: `BCOS-M0.2-C4-C: establish frontend quality toolchain`
+- Último commit homologado: `16b8200df162b930e7661c09e77cb20b4fc82ae1`
+- Short SHA: `16b8200`
+- Commit: `BCOS-M0.2-C4-R7: reconcile quality toolchain delivery`
 - origin/main: não configurado
 - GitHub repository: pendente
 
@@ -237,8 +243,6 @@ Stack homologada:
 
 ## Pendências registradas
 
-- Concluir BCOS-M0.2-C4-R6 — Post-R5 Ledger Reconciliation.
-- Executar BCOS-M0.2-C4-H — Human Homologation of Quality Toolchain.
 - Executar BCOS-M0.2-C5 — Full Toolchain Verification.
 - Definir BCOS-M0.2-C5-L — Python Dependency Reproducibility / Lock Strategy Gate.
 - Executar Database Integrity Test Suite v1.1 em PostgreSQL real.
@@ -247,13 +251,7 @@ Stack homologada:
 
 ## Próxima etapa prevista
 
-Concluir:
-
-`BCOS-M0.2-C4-R6 — Post-R5 Ledger Reconciliation`
-
-e depois:
-
-`BCOS-M0.2-C4-H — Human Homologation of Quality Toolchain`
+`BCOS-M0.2-C5 — Full Toolchain Verification`
 
 ## Regra de Governança
 
