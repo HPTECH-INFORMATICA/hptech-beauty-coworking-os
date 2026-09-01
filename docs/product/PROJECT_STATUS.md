@@ -101,7 +101,6 @@ Stack homologada:
 
 ### Não iniciado
 
-- BCOS-M0.2-C5 — Full Toolchain Verification
 - Application skeleton
 - Frontend funcional
 - Backend funcional
@@ -175,7 +174,13 @@ Stack homologada:
 - `pip check`: validado
 - Instalação em ambiente limpo a partir do `pyproject.toml`: validada
 - Dependências diretas: versões exatas fixadas
-- Lock determinístico de dependências transitivas: pendente; decisão transferida para BCOS-M0.2-C5-L
+- Gerenciamento determinístico transitivo: `uv 0.12.1`
+- Fonte declarativa oficial: `services/api/pyproject.toml`
+- Lock oficial Python: `services/api/uv.lock`
+- `uv lock --check`: PASS
+- Reconstrução limpa com `uv sync --frozen --extra dev`: PASS
+- Dependências runtime e dev reproduzidas a partir do lock: PASS
+- BCOS-M0.2-C5-L — Python Dependency Reproducibility / Lock Strategy Gate: HUMAN APPROVED / LOCKED
 - Metadata de packaging `*.egg-info/`: ignorada pelo Git
 - BCOS-M0.2-C3: HOMOLOGADO / LOCKED
 
@@ -218,6 +223,36 @@ Stack homologada:
 - BCOS-M0.2-C4: HOMOLOGADO / LOCKED
 - Baseline homologada do C4: `16b8200df162b930e7661c09e77cb20b4fc82ae1`
 
+### Full Toolchain Verification
+
+- BCOS-M0.2-C5-A: PASS / LOCKED
+- BCOS-M0.2-C5-B: PASS / LOCKED
+- BCOS-M0.2-C5-C: PASS WITH STRUCTURAL N/A
+- BCOS-M0.2-C5-D: PASS WITH STRUCTURAL N/A
+- BCOS-M0.2-C5-E: PASS / LOCKED
+- BCOS-M0.2-C5-E1: PASS / NO-OP
+- BCOS-M0.2-C5-F: PASS / LOCKED
+- BCOS-M0.2-C5-G: PASS / LOCKED
+- BCOS-M0.2-C5-L: HUMAN APPROVED / LOCKED
+- BCOS-M0.2-C5-L1: PASS / LOCKED
+- BCOS-M0.2-C5-L2: APPROVED / LOCKED
+- BCOS-M0.2-C5-L2-A: PASS / LOCKED
+- BCOS-M0.2-C5-L3: PASS / LOCKED
+- BCOS-M0.2-C5-L4: PASS / LOCKED
+- BCOS-M0.2-C5-L5: PASS / LOCKED
+- BCOS-M0.2-C5-L6: PASS / LOCKED
+- BCOS-M0.2-C5-L6-A: PASS / READ-ONLY DIAGNOSTIC
+- BCOS-M0.2-C5-L7: PASS / COMMITTED / LOCKED
+- Python lock delivery commit: `0cb2d94d2a542c148caa32983ef53adb1507f35d`
+- Python lock delivery: `BCOS-M0.2-C5-L7: establish Python dependency lock`
+- BCOS-M0.2-C5-M: PASS / LOCKED
+- C5-M mypy: N/A estrutural; `services/api` ainda não contém fontes `.py` / `.pyi`
+- C5-M pytest: N/A estrutural; ainda não existem testes Python
+- BCOS-M0.2-C5-M1: PASS / LOCKED
+- BCOS-M0.2-C5-M2: PASS / LOCAL CLEANUP / LOCKED
+- `services/api/.venv`: resíduo local criado pelo `uv run`, diagnosticado e removido; `.venv` raiz preservada
+- BCOS-M0.2-C5: tecnicamente concluído; aguardando homologação humana
+
 ## Git
 
 - Branch: `main`
@@ -243,15 +278,13 @@ Stack homologada:
 
 ## Pendências registradas
 
-- Executar BCOS-M0.2-C5 — Full Toolchain Verification.
-- Definir BCOS-M0.2-C5-L — Python Dependency Reproducibility / Lock Strategy Gate.
 - Executar Database Integrity Test Suite v1.1 em PostgreSQL real.
 - Homologar OpenAPI Final.
 - Criar/configurar repositório remoto GitHub.
 
 ## Próxima etapa prevista
 
-`BCOS-M0.2-C5 — Full Toolchain Verification`
+`BCOS-M0.2-C5-H — Human Homologation of Full Toolchain Verification`
 
 ## Regra de Governança
 
