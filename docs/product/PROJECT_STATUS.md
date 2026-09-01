@@ -64,15 +64,14 @@ Stack homologada:
 - BCOS-M0.2-C4-C4-D — Configuration Remediation Gate
 - BCOS-M0.2-C4-C5-K — Baseline Encoding Remediation Gate
 - BCOS-M0.2-C4-C — Frontend Quality Toolchain
+- BCOS-M0.2-C5 — Full Toolchain Verification
+- BCOS-M0.2-C — Toolchain Installation & Verification
 - BCOS-M0.2-C4-C9 — Human Homologation
 - BCOS-M0.2-C4-R3 — Remaining Quality Toolchain Reconciliation Gate
 - BCOS-M0.2-C4-H — Human Homologation of Quality Toolchain
 - BCOS-M0.2-C4 — Quality Toolchain
 
 ### Em andamento
-
-- BCOS-M0.2-C — Toolchain Installation & Verification
-- BCOS-M0.2-C4-R8 — Post-Homologation Ledger Sync
 
 ### Marcos técnicos concluídos
 
@@ -96,7 +95,6 @@ Stack homologada:
 
 ### Não homologado
 
-- BCOS-M0.2-C
 - OpenAPI Final
 
 ### Não iniciado
@@ -251,14 +249,18 @@ Stack homologada:
 - BCOS-M0.2-C5-M1: PASS / LOCKED
 - BCOS-M0.2-C5-M2: PASS / LOCAL CLEANUP / LOCKED
 - `services/api/.venv`: resíduo local criado pelo `uv run`, diagnosticado e removido; `.venv` raiz preservada
-- BCOS-M0.2-C5: tecnicamente concluído; aguardando homologação humana
+- BCOS-M0.2-C5-H: HOMOLOGATED / LOCKED
+- BCOS-M0.2-C5: HOMOLOGATED / LOCKED
+- BCOS-M0.2-C6: PASS / LOCKED
+- BCOS-M0.2-C-H: HOMOLOGATED / LOCKED
+- BCOS-M0.2-C: HOMOLOGATED / LOCKED
 
 ## Git
 
 - Branch: `main`
-- Último commit homologado: `16b8200df162b930e7661c09e77cb20b4fc82ae1`
-- Short SHA: `16b8200`
-- Commit: `BCOS-M0.2-C4-R7: reconcile quality toolchain delivery`
+- Último commit homologado: `245e27e589b07d0b004543bbd8b15dce54c4a62a`
+- Short SHA: `245e27e`
+- Commit: `BCOS-M0.2-C5-N5: reconcile full toolchain project ledger`
 - origin/main: não configurado
 - GitHub repository: pendente
 
@@ -284,7 +286,7 @@ Stack homologada:
 
 ## Próxima etapa prevista
 
-`BCOS-M0.2-C5-H — Human Homologation of Full Toolchain Verification`
+A definir em novo Gate após fechamento documental de BCOS-M0.2-C.
 
 ## Regra de Governança
 
