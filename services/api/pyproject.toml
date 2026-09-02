@@ -43,3 +43,10 @@ no_implicit_optional = true
 minversion = "9.1"
 addopts = "-ra"
 asyncio_mode = "strict"
+
+[build-system]
+requires = ["uv_build>=0.12.1,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "bcos_api"

@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 .pnpm-store/
 
@@ -44,3 +44,4 @@ pnpm-debug.log*
 
 # Python packaging metadata
 *.egg-info/
+*.tsbuildinfo
