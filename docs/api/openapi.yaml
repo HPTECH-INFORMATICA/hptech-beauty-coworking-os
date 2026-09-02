@@ -1,0 +1,2516 @@
+openapi: 3.1.0
+
+info:
+  title: HPTECH Beauty Coworking OS API
+  version: 1.0.0
+  description: |
+    Contrato oficial da API V1 do HPTECH Beauty Coworking OS.
+
+    SaaS B2B multi-tenant para gestão operacional e financeira de
+    coworkings de beleza, estética, saúde e bem-estar.
+
+    Princípios arquiteturais:
+      - isolamento rigoroso entre tenants;
+      - tenant context validado server-side;
+      - ResourceOccupancy como fonte canônica de indisponibilidade física;
+      - Booking e Usage como domínios distintos;
+      - Pricing, Billing e Payment como domínios distintos;
+      - pricing snapshot imutável no Booking;
+      - operações financeiras idempotentes;
+      - Transactional Outbox para eventos financeiros críticos;
+      - RBAC e autorização exclusivamente server-side;
+      - Professional operando sob escopo own;
+      - valores monetários representados como decimal, nunca float;
+      - timestamps persistidos em UTC e interpretados pela timezone IANA da Unit.
+
+    ResourceOccupancy e Outbox são mecanismos internos de infraestrutura
+    e não são expostos como CRUD público.
+
+servers:
+  - url: /
+    description: HPTECH Beauty Coworking OS API
+
+tags:
+  - name: System
+  - name: Tenants
+  - name: Units
+  - name: Memberships
+  - name: Professionals
+  - name: Resource Categories
+  - name: Resources
+  - name: Availability
+  - name: Bookings
+  - name: Usage
+  - name: Pricing
+  - name: Invoices
+  - name: Payments
+  - name: Reception
+  - name: Professional Portal
+  - name: Owner
+  - name: Audit
+
+paths:
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: Serviço operacional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/v1/tenants:
+    get:
+      tags:
+        - Tenants
+      summary: Listar tenants acessíveis ao usuário autenticado
+      operationId: listTenants
+      responses:
+        "200":
+          description: Tenants acessíveis
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tenant"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/tenants/{tenant_id}:
+    get:
+      tags:
+        - Tenants
+      summary: Obter tenant
+      operationId: getTenant
+      parameters:
+        - $ref: "#/components/parameters/TenantPathId"
+      responses:
+        "200":
+          description: Tenant encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/units:
+    get:
+      tags:
+        - Units
+      summary: Listar unidades do tenant
+      operationId: listUnits
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      responses:
+        "200":
+          description: Lista de unidades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Unit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    post:
+      tags:
+        - Units
+      summary: Criar unidade
+      operationId: createUnit
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnitCreate"
+      responses:
+        "201":
+          description: Unidade criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unit"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/units/{unit_id}:
+    get:
+      tags:
+        - Units
+      summary: Obter unidade
+      operationId: getUnit
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/UnitPathId"
+      responses:
+        "200":
+          description: Unidade encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unit"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags:
+        - Units
+      summary: Atualizar unidade
+      operationId: updateUnit
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/UnitPathId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnitUpdate"
+      responses:
+        "200":
+          description: Unidade atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unit"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/units/{unit_id}/reception-hours:
+    get:
+      tags:
+        - Units
+      summary: Consultar horários da recepção
+      operationId: getReceptionHours
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/UnitPathId"
+      responses:
+        "200":
+          description: Horários da recepção
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceptionHours"
+
+    put:
+      tags:
+        - Units
+      summary: Definir horários da recepção
+      operationId: replaceReceptionHours
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/UnitPathId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              minItems: 1
+              maxItems: 7
+              items:
+                $ref: "#/components/schemas/ReceptionHoursInput"
+      responses:
+        "200":
+          description: Horários atualizados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceptionHours"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/memberships:
+    get:
+      tags:
+        - Memberships
+      summary: Listar membros do tenant
+      operationId: listMemberships
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      responses:
+        "200":
+          description: Lista de memberships
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Membership"
+
+    post:
+      tags:
+        - Memberships
+      summary: Criar ou convidar membro
+      operationId: createMembership
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MembershipCreate"
+      responses:
+        "201":
+          description: Membership criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Membership"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/professionals:
+    get:
+      tags:
+        - Professionals
+      summary: Listar profissionais
+      operationId: listProfessionals
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      responses:
+        "200":
+          description: Lista de profissionais
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Professional"
+
+    post:
+      tags:
+        - Professionals
+      summary: Criar profissional
+      operationId: createProfessional
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalCreate"
+      responses:
+        "201":
+          description: Profissional criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Professional"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/professionals/{professional_id}:
+    get:
+      tags:
+        - Professionals
+      summary: Obter profissional
+      operationId: getProfessional
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/ProfessionalPathId"
+      responses:
+        "200":
+          description: Profissional encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Professional"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags:
+        - Professionals
+      summary: Atualizar profissional
+      operationId: updateProfessional
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/ProfessionalPathId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalUpdate"
+      responses:
+        "200":
+          description: Profissional atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Professional"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/resource-categories:
+    get:
+      tags:
+        - Resource Categories
+      summary: Listar categorias de recursos
+      operationId: listResourceCategories
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      responses:
+        "200":
+          description: Categorias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ResourceCategory"
+
+    post:
+      tags:
+        - Resource Categories
+      summary: Criar categoria de recurso
+      operationId: createResourceCategory
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceCategoryCreate"
+      responses:
+        "201":
+          description: Categoria criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceCategory"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/resources:
+    get:
+      tags:
+        - Resources
+      summary: Listar recursos
+      operationId: listResources
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - name: unit_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: category_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Recursos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Resource"
+
+    post:
+      tags:
+        - Resources
+      summary: Criar recurso
+      operationId: createResource
+      description: |
+        A unidade e a categoria informadas devem pertencer ao mesmo tenant
+        selecionado em X-Tenant-Id.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceCreate"
+      responses:
+        "201":
+          description: Recurso criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/resources/{resource_id}:
+    get:
+      tags:
+        - Resources
+      summary: Obter recurso
+      operationId: getResource
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/ResourcePathId"
+      responses:
+        "200":
+          description: Recurso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags:
+        - Resources
+      summary: Atualizar recurso
+      operationId: updateResource
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/ResourcePathId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceUpdate"
+      responses:
+        "200":
+          description: Recurso atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/availability:
+    get:
+      tags:
+        - Availability
+      summary: Consultar disponibilidade
+      operationId: getAvailability
+      description: |
+        Consulta preventiva para UX.
+
+        A resposta desta operação não reserva o recurso e não substitui a
+        validação transacional no momento da confirmação de uma reserva.
+        A criação final de ResourceOccupancy no PostgreSQL é a autoridade
+        definitiva contra concorrência e overlap.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - name: unit_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: starts_at
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: ends_at
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: resource_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: category_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Disponibilidade calculada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilityResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/bookings:
+    get:
+      tags:
+        - Bookings
+      summary: Listar reservas
+      operationId: listBookings
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - name: starts_from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: starts_until
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: professional_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: resource_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/BookingStatus"
+      responses:
+        "200":
+          description: Reservas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+
+    post:
+      tags:
+        - Bookings
+      summary: Criar reserva
+      operationId: createBooking
+      description: |
+        Cria uma reserva inicialmente em PENDING.
+
+        PENDING não representa bloqueio físico definitivo do recurso.
+        A confirmação é uma operação separada e transacional.
+
+        unit_id e resource_id devem apontar para uma combinação válida
+        dentro do mesmo tenant. Essa consistência deve ser validada pela
+        camada de aplicação.
+
+        pricing_snapshot é capturado no momento da criação e torna-se
+        histórico imutável da reserva.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingCreate"
+      responses:
+        "201":
+          description: Reserva criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/bookings/{booking_id}:
+    get:
+      tags:
+        - Bookings
+      summary: Obter reserva
+      operationId: getBooking
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/BookingPathId"
+      responses:
+        "200":
+          description: Reserva encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/bookings/{booking_id}/confirm:
+    post:
+      tags:
+        - Bookings
+      summary: Confirmar reserva
+      operationId: confirmBooking
+      description: |
+        Confirma a reserva e tenta adquirir a ocupação física do recurso.
+
+        A operação deve ocorrer atomicamente. O INSERT final da
+        ResourceOccupancy ACTIVE e sua constraint EXCLUDE no PostgreSQL
+        são a autoridade contra double booking.
+
+        Em conflito de concorrência ou overlap, a confirmação falha
+        integralmente com HTTP 409.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/BookingPathId"
+      responses:
+        "200":
+          description: Reserva confirmada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/bookings/{booking_id}/cancel:
+    post:
+      tags:
+        - Bookings
+      summary: Cancelar reserva
+      operationId: cancelBooking
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/BookingPathId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingCancelRequest"
+      responses:
+        "200":
+          description: Reserva cancelada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/bookings/{booking_id}/extend:
+    post:
+      tags:
+        - Bookings
+      summary: Estender reserva
+      operationId: extendBooking
+      description: |
+        A extensão deve revalidar a disponibilidade e atualizar a ocupação
+        física de forma transacional.
+
+        Se o novo intervalo entrar em conflito com outra ocupação ACTIVE,
+        nenhuma alteração parcial deve persistir.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/BookingPathId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingExtendRequest"
+      responses:
+        "200":
+          description: Reserva estendida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/booking-series:
+    post:
+      tags:
+        - Bookings
+      summary: Criar série recorrente
+      operationId: createBookingSeries
+      description: |
+        A recorrência utiliza RRULE.
+
+        No V1, todas as ocorrências devem passar por dry-run antes da
+        persistência. Se qualquer ocorrência apresentar conflito,
+        toda a série é rejeitada e nenhuma ocorrência é criada.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingSeriesCreate"
+      responses:
+        "201":
+          description: Série criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingSeriesResult"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/booking-series/{series_id}/cancel:
+    post:
+      tags:
+        - Bookings
+      summary: Cancelar ocorrências futuras de uma série
+      operationId: cancelBookingSeries
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/SeriesPathId"
+      responses:
+        "200":
+          description: Série cancelada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingSeries"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/usages/check-in:
+    post:
+      tags:
+        - Usage
+      summary: Realizar check-in
+      operationId: checkIn
+      description: |
+        Cria ou inicia o Usage correspondente à reserva confirmada.
+        Booking e Usage permanecem entidades distintas.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckInRequest"
+      responses:
+        "201":
+          description: Check-in realizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Usage"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/usages/{usage_id}/check-out:
+    post:
+      tags:
+        - Usage
+      summary: Realizar check-out
+      operationId: checkOut
+      description: |
+        Finaliza o Usage.
+
+        A mesma transação de banco deve registrar o evento
+        USAGE_COMPLETED na Transactional Outbox.
+
+        O worker processará posteriormente Pricing/Billing de forma
+        idempotente.
+
+        Excedente ocorrido após o encerramento da recepção não deve gerar
+        cobrança de overtime conforme a regra V1 do produto.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/UsagePathId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckOutRequest"
+      responses:
+        "200":
+          description: Check-out concluído
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Usage"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/pricing-rules:
+    get:
+      tags:
+        - Pricing
+      summary: Listar regras de preço
+      operationId: listPricingRules
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      responses:
+        "200":
+          description: Regras de preço
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PricingRule"
+
+    post:
+      tags:
+        - Pricing
+      summary: Criar regra de preço
+      operationId: createPricingRule
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PricingRuleCreate"
+      responses:
+        "201":
+          description: Regra criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PricingRule"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/invoices:
+    get:
+      tags:
+        - Invoices
+      summary: Listar faturas
+      operationId: listInvoices
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - name: professional_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/InvoiceStatus"
+      responses:
+        "200":
+          description: Faturas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+
+  /api/v1/invoices/{invoice_id}:
+    get:
+      tags:
+        - Invoices
+      summary: Obter fatura
+      operationId: getInvoice
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/InvoicePathId"
+      responses:
+        "200":
+          description: Fatura
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/payments:
+    post:
+      tags:
+        - Payments
+      summary: Registrar pagamento
+      operationId: createPayment
+      description: |
+        Registro manual de pagamento no V1, com foco principal em PIX.
+
+        Idempotency-Key é obrigatório. Repetir a mesma chave no mesmo
+        tenant não pode produzir pagamento duplicado.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentCreate"
+      responses:
+        "201":
+          description: Pagamento registrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/payments/{payment_id}/confirm:
+    post:
+      tags:
+        - Payments
+      summary: Confirmar pagamento
+      operationId: confirmPayment
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/PaymentPathId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentConfirmRequest"
+      responses:
+        "200":
+          description: Pagamento confirmado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/reception/now:
+    get:
+      tags:
+        - Reception
+      summary: Obter painel operacional Agora
+      operationId: getReceptionNow
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - name: unit_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Estado operacional atual da unidade
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceptionNow"
+
+  /api/v1/reception/agenda:
+    get:
+      tags:
+        - Reception
+      summary: Obter agenda operacional
+      operationId: getReceptionAgenda
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - name: unit_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: starts_at
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: ends_at
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Agenda da unidade
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgendaEntry"
+
+  /api/v1/professional/me/bookings:
+    get:
+      tags:
+        - Professional Portal
+      summary: Listar minhas reservas
+      operationId: listMyBookings
+      description: |
+        O professional_id é derivado da identidade autenticada.
+        O cliente não pode selecionar outro profissional.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      responses:
+        "200":
+          description: Reservas do profissional autenticado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/professional/me/invoices:
+    get:
+      tags:
+        - Professional Portal
+      summary: Listar minhas faturas
+      operationId: listMyInvoices
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      responses:
+        "200":
+          description: Faturas do profissional autenticado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/owner/dashboard:
+    get:
+      tags:
+        - Owner
+      summary: Obter dashboard gerencial
+      operationId: getOwnerDashboard
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - name: starts_at
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: ends_at
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Indicadores gerenciais
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerDashboard"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/audit-logs:
+    get:
+      tags:
+        - Audit
+      summary: Consultar auditoria
+      operationId: listAuditLogs
+      description: |
+        Endpoint somente leitura. Clientes não podem criar, editar ou excluir
+        registros de auditoria diretamente.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - name: action
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: entity_type
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: entity_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: starts_at
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: ends_at
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Eventos de auditoria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token de identidade autenticada. Autorização, tenant membership,
+        role e escopo são validados server-side.
+
+  parameters:
+    TenantHeader:
+      name: X-Tenant-Id
+      in: header
+      required: true
+      description: |
+        Tenant operacional selecionado. O servidor deve validar se a
+        identidade autenticada possui membership ativa neste tenant.
+        O valor nunca deve ser confiado apenas por ter sido enviado pelo cliente.
+      schema:
+        type: string
+        format: uuid
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+
+    TenantPathId:
+      name: tenant_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    UnitPathId:
+      name: unit_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    ProfessionalPathId:
+      name: professional_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    ResourcePathId:
+      name: resource_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    BookingPathId:
+      name: booking_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    SeriesPathId:
+      name: series_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    UsagePathId:
+      name: usage_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    InvoicePathId:
+      name: invoice_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    PaymentPathId:
+      name: payment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Requisição inválida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    Unauthorized:
+      description: Autenticação ausente ou inválida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    Forbidden:
+      description: Identidade sem permissão para a operação
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    NotFound:
+      description: Recurso não encontrado no tenant acessível
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    Conflict:
+      description: Conflito de estado, concorrência, overlap ou idempotência
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    ValidationError:
+      description: Dados semanticamente inválidos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - service
+      properties:
+        status:
+          type: string
+          const: ok
+        service:
+          type: string
+          const: bcos-api
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        request_id:
+          type:
+            - string
+            - "null"
+        details:
+          type:
+            - object
+            - "null"
+          additionalProperties: true
+
+    Money:
+      type: string
+      pattern: '^-?\d{1,10}\.\d{2}$'
+      examples:
+        - "150.00"
+
+    TenantStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - INACTIVE
+
+    MembershipRole:
+      type: string
+      enum:
+        - OWNER
+        - ADMIN
+        - RECEPTION
+        - PROFESSIONAL
+
+    MembershipStatus:
+      type: string
+      enum:
+        - INVITED
+        - ACTIVE
+        - INACTIVE
+
+    ProfessionalStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - INACTIVE
+
+    ResourceOperationalStatus:
+      type: string
+      description: |
+        Estado operacional cadastral do recurso. A disponibilidade temporal
+        efetiva é determinada pelo mecanismo interno ResourceOccupancy.
+      enum:
+        - AVAILABLE
+        - OCCUPIED
+        - CLEANING
+        - MAINTENANCE
+        - BLOCKED
+
+    BookingStatus:
+      type: string
+      enum:
+        - PENDING
+        - CONFIRMED
+        - COMPLETED
+        - CANCELLED
+        - NO_SHOW
+
+    UsageStatus:
+      type: string
+      enum:
+        - PENDING
+        - CHECKED_IN
+        - COMPLETED
+        - CANCELLED
+
+    PricingRuleStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - INACTIVE
+
+    InvoiceStatus:
+      type: string
+      enum:
+        - OPEN
+        - PARTIALLY_PAID
+        - PAID
+        - CANCELLED
+
+    InvoiceItemType:
+      type: string
+      enum:
+        - BASE_LEASE
+        - OVERTIME
+        - ADJUSTMENT
+        - DISCOUNT
+
+    PaymentStatus:
+      type: string
+      enum:
+        - PENDING
+        - CONFIRMED
+        - CANCELLED
+        - FAILED
+
+    PaymentMethod:
+      type: string
+      enum:
+        - PIX
+        - CASH
+        - CARD
+        - OTHER
+
+    Tenant:
+      type: object
+      required:
+        - id
+        - name
+        - slug
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          $ref: "#/components/schemas/TenantStatus"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Unit:
+      type: object
+      required:
+        - id
+        - name
+        - timezone
+        - active
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        timezone:
+          type: string
+          description: Timezone IANA, por exemplo America/Sao_Paulo.
+        active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UnitCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - timezone
+      properties:
+        name:
+          type: string
+          minLength: 1
+        timezone:
+          type: string
+          minLength: 1
+        active:
+          type: boolean
+          default: true
+
+    UnitUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+        timezone:
+          type: string
+          minLength: 1
+        active:
+          type: boolean
+
+    ReceptionHours:
+      type: object
+      required:
+        - day_of_week
+        - is_closed
+      properties:
+        day_of_week:
+          type: integer
+          minimum: 0
+          maximum: 6
+        opens_at:
+          type:
+            - string
+            - "null"
+          format: time
+        closes_at:
+          type:
+            - string
+            - "null"
+          format: time
+        is_closed:
+          type: boolean
+
+    ReceptionHoursInput:
+      allOf:
+        - $ref: "#/components/schemas/ReceptionHours"
+
+    Membership:
+      type: object
+      required:
+        - id
+        - external_user_id
+        - role
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        external_user_id:
+          type: string
+        role:
+          $ref: "#/components/schemas/MembershipRole"
+        status:
+          $ref: "#/components/schemas/MembershipStatus"
+
+    MembershipCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - external_user_id
+        - role
+      properties:
+        external_user_id:
+          type: string
+          minLength: 1
+        role:
+          $ref: "#/components/schemas/MembershipRole"
+
+    Professional:
+      type: object
+      required:
+        - id
+        - name
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        external_user_id:
+          type:
+            - string
+            - "null"
+        name:
+          type: string
+        email:
+          type:
+            - string
+            - "null"
+          format: email
+        phone:
+          type:
+            - string
+            - "null"
+        status:
+          $ref: "#/components/schemas/ProfessionalStatus"
+
+    ProfessionalCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+      properties:
+        external_user_id:
+          type:
+            - string
+            - "null"
+        name:
+          type: string
+          minLength: 1
+        email:
+          type:
+            - string
+            - "null"
+          format: email
+        phone:
+          type:
+            - string
+            - "null"
+
+    ProfessionalUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        external_user_id:
+          type:
+            - string
+            - "null"
+        name:
+          type: string
+          minLength: 1
+        email:
+          type:
+            - string
+            - "null"
+          format: email
+        phone:
+          type:
+            - string
+            - "null"
+        status:
+          $ref: "#/components/schemas/ProfessionalStatus"
+
+    ResourceCategory:
+      type: object
+      required:
+        - id
+        - name
+        - active
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        active:
+          type: boolean
+
+    ResourceCategoryCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+        active:
+          type: boolean
+          default: true
+
+    Resource:
+      type: object
+      required:
+        - id
+        - unit_id
+        - category_id
+        - name
+        - operational_status
+        - buffer_before_minutes
+        - buffer_after_minutes
+        - active
+      properties:
+        id:
+          type: string
+          format: uuid
+        unit_id:
+          type: string
+          format: uuid
+        category_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        operational_status:
+          $ref: "#/components/schemas/ResourceOperationalStatus"
+        buffer_before_minutes:
+          type: integer
+          minimum: 0
+        buffer_after_minutes:
+          type: integer
+          minimum: 0
+        active:
+          type: boolean
+
+    ResourceCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - unit_id
+        - category_id
+        - name
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        category_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+        buffer_before_minutes:
+          type: integer
+          minimum: 0
+          default: 0
+        buffer_after_minutes:
+          type: integer
+          minimum: 0
+          default: 0
+        active:
+          type: boolean
+          default: true
+
+    ResourceUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+        operational_status:
+          $ref: "#/components/schemas/ResourceOperationalStatus"
+        buffer_before_minutes:
+          type: integer
+          minimum: 0
+        buffer_after_minutes:
+          type: integer
+          minimum: 0
+        active:
+          type: boolean
+
+    AvailabilityItem:
+      type: object
+      required:
+        - resource_id
+        - available
+      properties:
+        resource_id:
+          type: string
+          format: uuid
+        available:
+          type: boolean
+        reason:
+          type:
+            - string
+            - "null"
+
+    AvailabilityResponse:
+      type: object
+      required:
+        - starts_at
+        - ends_at
+        - resources
+      properties:
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/AvailabilityItem"
+
+    Booking:
+      type: object
+      required:
+        - id
+        - unit_id
+        - resource_id
+        - professional_id
+        - status
+        - starts_at
+        - ends_at
+        - buffer_before_minutes
+        - buffer_after_minutes
+        - pricing_snapshot
+      properties:
+        id:
+          type: string
+          format: uuid
+        unit_id:
+          type: string
+          format: uuid
+        resource_id:
+          type: string
+          format: uuid
+        professional_id:
+          type: string
+          format: uuid
+        series_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        status:
+          $ref: "#/components/schemas/BookingStatus"
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        buffer_before_minutes:
+          type: integer
+          minimum: 0
+        buffer_after_minutes:
+          type: integer
+          minimum: 0
+        pricing_snapshot:
+          type: object
+          additionalProperties: true
+        notes:
+          type:
+            - string
+            - "null"
+        confirmed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        cancelled_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    BookingCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - unit_id
+        - resource_id
+        - professional_id
+        - starts_at
+        - ends_at
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        resource_id:
+          type: string
+          format: uuid
+        professional_id:
+          type: string
+          format: uuid
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        notes:
+          type:
+            - string
+            - "null"
+
+    BookingCancelRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        reason:
+          type:
+            - string
+            - "null"
+
+    BookingExtendRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - ends_at
+      properties:
+        ends_at:
+          type: string
+          format: date-time
+
+    BookingSeries:
+      type: object
+      required:
+        - id
+        - professional_id
+        - rrule
+        - timezone
+        - starts_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        professional_id:
+          type: string
+          format: uuid
+        rrule:
+          type: string
+        timezone:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        cancelled_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    BookingSeriesCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - unit_id
+        - resource_id
+        - professional_id
+        - starts_at
+        - duration_minutes
+        - rrule
+        - timezone
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        resource_id:
+          type: string
+          format: uuid
+        professional_id:
+          type: string
+          format: uuid
+        starts_at:
+          type: string
+          format: date-time
+        duration_minutes:
+          type: integer
+          minimum: 1
+        rrule:
+          type: string
+          minLength: 1
+        timezone:
+          type: string
+          minLength: 1
+        notes:
+          type:
+            - string
+            - "null"
+
+    BookingSeriesResult:
+      type: object
+      required:
+        - series
+        - bookings
+      properties:
+        series:
+          $ref: "#/components/schemas/BookingSeries"
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Booking"
+
+    Usage:
+      type: object
+      required:
+        - id
+        - booking_id
+        - resource_id
+        - professional_id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        booking_id:
+          type: string
+          format: uuid
+        resource_id:
+          type: string
+          format: uuid
+        professional_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/UsageStatus"
+        checked_in_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        checked_out_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    CheckInRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - booking_id
+      properties:
+        booking_id:
+          type: string
+          format: uuid
+        checked_in_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    CheckOutRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        checked_out_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    PricingRule:
+      type: object
+      required:
+        - id
+        - name
+        - status
+        - priority
+        - currency
+        - rule_definition
+      properties:
+        id:
+          type: string
+          format: uuid
+        unit_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        resource_category_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/PricingRuleStatus"
+        priority:
+          type: integer
+          minimum: 0
+        currency:
+          type: string
+          const: BRL
+        rule_definition:
+          type: object
+          additionalProperties: true
+        valid_from:
+          type:
+            - string
+            - "null"
+          format: date-time
+        valid_until:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    PricingRuleCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - rule_definition
+      properties:
+        unit_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        resource_category_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+        priority:
+          type: integer
+          minimum: 0
+          default: 100
+        currency:
+          type: string
+          const: BRL
+          default: BRL
+        rule_definition:
+          type: object
+          additionalProperties: true
+        valid_from:
+          type:
+            - string
+            - "null"
+          format: date-time
+        valid_until:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    InvoiceItem:
+      type: object
+      required:
+        - id
+        - item_type
+        - description
+        - quantity
+        - unit_amount
+        - total_amount
+      properties:
+        id:
+          type: string
+          format: uuid
+        usage_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        item_type:
+          $ref: "#/components/schemas/InvoiceItemType"
+        description:
+          type: string
+        quantity:
+          type: string
+        unit_amount:
+          $ref: "#/components/schemas/Money"
+        total_amount:
+          $ref: "#/components/schemas/Money"
+        metadata:
+          type: object
+          additionalProperties: true
+
+    Invoice:
+      type: object
+      required:
+        - id
+        - professional_id
+        - status
+        - currency
+        - subtotal_amount
+        - discount_amount
+        - total_amount
+        - issued_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        professional_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/InvoiceStatus"
+        currency:
+          type: string
+          const: BRL
+        subtotal_amount:
+          $ref: "#/components/schemas/Money"
+        discount_amount:
+          $ref: "#/components/schemas/Money"
+        total_amount:
+          $ref: "#/components/schemas/Money"
+        issued_at:
+          type: string
+          format: date-time
+        due_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        paid_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        cancelled_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    InvoiceDetail:
+      allOf:
+        - $ref: "#/components/schemas/Invoice"
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/InvoiceItem"
+
+    Payment:
+      type: object
+      required:
+        - id
+        - invoice_id
+        - method
+        - status
+        - currency
+        - amount
+      properties:
+        id:
+          type: string
+          format: uuid
+        invoice_id:
+          type: string
+          format: uuid
+        method:
+          $ref: "#/components/schemas/PaymentMethod"
+        status:
+          $ref: "#/components/schemas/PaymentStatus"
+        currency:
+          type: string
+          const: BRL
+        amount:
+          $ref: "#/components/schemas/Money"
+        reference:
+          type:
+            - string
+            - "null"
+        paid_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    PaymentCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - invoice_id
+        - method
+        - amount
+      properties:
+        invoice_id:
+          type: string
+          format: uuid
+        method:
+          $ref: "#/components/schemas/PaymentMethod"
+        amount:
+          $ref: "#/components/schemas/Money"
+        reference:
+          type:
+            - string
+            - "null"
+        metadata:
+          type: object
+          additionalProperties: true
+
+    PaymentConfirmRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        paid_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        reference:
+          type:
+            - string
+            - "null"
+
+    ReceptionNow:
+      type: object
+      required:
+        - unit_id
+        - generated_at
+        - resources
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        generated_at:
+          type: string
+          format: date-time
+        resources:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    AgendaEntry:
+      type: object
+      required:
+        - booking
+      properties:
+        booking:
+          $ref: "#/components/schemas/Booking"
+        usage:
+          oneOf:
+            - $ref: "#/components/schemas/Usage"
+            - type: "null"
+
+    OwnerDashboard:
+      type: object
+      required:
+        - period
+        - bookings_total
+        - usages_completed
+        - invoiced_amount
+        - received_amount
+        - outstanding_amount
+      properties:
+        period:
+          type: object
+          required:
+            - starts_at
+            - ends_at
+          properties:
+            starts_at:
+              type: string
+              format: date-time
+            ends_at:
+              type: string
+              format: date-time
+        bookings_total:
+          type: integer
+          minimum: 0
+        usages_completed:
+          type: integer
+          minimum: 0
+        invoiced_amount:
+          $ref: "#/components/schemas/Money"
+        received_amount:
+          $ref: "#/components/schemas/Money"
+        outstanding_amount:
+          $ref: "#/components/schemas/Money"
+
+    AuditLog:
+      type: object
+      required:
+        - id
+        - action
+        - entity_type
+        - metadata
+        - occurred_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        actor_external_user_id:
+          type:
+            - string
+            - "null"
+        action:
+          type: string
+        entity_type:
+          type: string
+        entity_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        metadata:
+          type: object
+          additionalProperties: true
+        occurred_at:
+          type: string
+          format: date-time
+
+security:
+  - bearerAuth: []
