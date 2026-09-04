@@ -10,11 +10,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bcos_api.db.session import get_async_session
+from bcos_api.openapi_responses import error_responses
 from bcos_api.resources.domain import InvalidResource, Resource
 from bcos_api.resources.schemas import (
-    ResourceCreateRequest,
-    ResourceResponse,
-    ResourceUpdateRequest,
+    Resource as ResourceResponse,
+)
+from bcos_api.resources.schemas import (
+    ResourceCreate as ResourceCreateRequest,
+)
+from bcos_api.resources.schemas import (
+    ResourceOperationalStatus,
+)
+from bcos_api.resources.schemas import (
+    ResourceUpdate as ResourceUpdateRequest,
 )
 from bcos_api.resources.service import (
     ResourceCategoryNotFound,
@@ -49,7 +57,7 @@ def _to_response(resource: Resource) -> ResourceResponse:
         unit_id=resource.unit_id,
         category_id=resource.category_id,
         name=resource.name,
-        operational_status=resource.operational_status,
+        operational_status=ResourceOperationalStatus(resource.operational_status.value),
         buffer_before_minutes=resource.buffer_before_minutes,
         buffer_after_minutes=resource.buffer_after_minutes,
         active=resource.active,
@@ -77,6 +85,11 @@ async def list_resources(
     "",
     response_model=ResourceResponse,
     status_code=status.HTTP_201_CREATED,
+    responses=error_responses(
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_409_CONFLICT,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    ),
 )
 async def create_resource(
     payload: ResourceCreateRequest,
@@ -120,6 +133,9 @@ async def create_resource(
 @router.get(
     "/{resource_id}",
     response_model=ResourceResponse,
+    responses=error_responses(
+        status.HTTP_404_NOT_FOUND,
+    ),
 )
 async def get_resource(
     resource_id: UUID,
@@ -144,6 +160,10 @@ async def get_resource(
 @router.patch(
     "/{resource_id}",
     response_model=ResourceResponse,
+    responses=error_responses(
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_404_NOT_FOUND,
+    ),
 )
 async def update_resource(
     resource_id: UUID,

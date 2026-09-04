@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -9,20 +10,30 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from bcos_api.resources.domain import ResourceStatus
 
 
-class ResourceResponse(BaseModel):
+class ResourceOperationalStatus(StrEnum):
+    """Public operational status defined by the frozen OpenAPI contract."""
+
+    AVAILABLE = "AVAILABLE"
+    OCCUPIED = "OCCUPIED"
+    CLEANING = "CLEANING"
+    MAINTENANCE = "MAINTENANCE"
+    BLOCKED = "BLOCKED"
+
+
+class Resource(BaseModel):
     model_config = ConfigDict(title="Resource")
 
     id: UUID
     unit_id: UUID
     category_id: UUID
     name: str
-    operational_status: ResourceStatus
+    operational_status: ResourceOperationalStatus
     buffer_before_minutes: int
     buffer_after_minutes: int
     active: bool
 
 
-class ResourceCreateRequest(BaseModel):
+class ResourceCreate(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         title="ResourceCreate",
@@ -36,7 +47,7 @@ class ResourceCreateRequest(BaseModel):
     active: bool = True
 
 
-class ResourceUpdateRequest(BaseModel):
+class ResourceUpdate(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         title="ResourceUpdate",
@@ -48,7 +59,7 @@ class ResourceUpdateRequest(BaseModel):
                     "minLength": 1,
                 },
                 "operational_status": {
-                    "$ref": "#/components/schemas/ResourceStatus"
+                    "$ref": "#/components/schemas/ResourceOperationalStatus"
                 },
                 "buffer_before_minutes": {
                     "type": "integer",
@@ -66,13 +77,13 @@ class ResourceUpdateRequest(BaseModel):
     )
 
     name: str | None = Field(default=None, min_length=1)
-    operational_status: ResourceStatus | None = None
+    operational_status: ResourceOperationalStatus | None = None
     buffer_before_minutes: int | None = Field(default=None, ge=0)
     buffer_after_minutes: int | None = Field(default=None, ge=0)
     active: bool | None = None
 
     @model_validator(mode="after")
-    def validate_patch(self) -> ResourceUpdateRequest:
+    def validate_patch(self) -> ResourceUpdate:
         if not self.model_fields_set:
             raise ValueError("At least one field must be provided.")
 
@@ -106,7 +117,7 @@ class ResourceUpdateRequest(BaseModel):
             return current
         if self.operational_status is None:
             raise ValueError("operational_status must not be null.")
-        return self.operational_status
+        return ResourceStatus(self.operational_status.value)
 
     def resolve_buffer_before_minutes(self, current: int) -> int:
         if "buffer_before_minutes" not in self.model_fields_set:

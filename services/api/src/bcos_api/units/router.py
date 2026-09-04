@@ -6,14 +6,16 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bcos_api.db.session import get_async_session
+from bcos_api.openapi_responses import error_responses
 from bcos_api.reception_hours.domain import InvalidReceptionHours
+from bcos_api.reception_hours.schemas import ReceptionHours as ReceptionHoursResponse
 from bcos_api.reception_hours.schemas import (
     ReceptionHoursInput as ReceptionHoursInputRequest,
 )
-from bcos_api.reception_hours.schemas import ReceptionHoursResponse
 from bcos_api.reception_hours.service import (
     InvalidReceptionHoursSet,
     ReceptionHoursInput,
@@ -25,9 +27,13 @@ from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.dependencies import get_tenant_context
 from bcos_api.units.domain import InvalidUnit, Unit
 from bcos_api.units.schemas import (
-    UnitCreateRequest,
-    UnitResponse,
-    UnitUpdateRequest,
+    Unit as UnitResponse,
+)
+from bcos_api.units.schemas import (
+    UnitCreate as UnitCreateRequest,
+)
+from bcos_api.units.schemas import (
+    UnitUpdate as UnitUpdateRequest,
 )
 from bcos_api.units.service import (
     UnitNotFound,
@@ -69,6 +75,10 @@ def _unit_response(unit: Unit) -> UnitResponse:
     "",
     response_model=list[UnitResponse],
     status_code=status.HTTP_200_OK,
+    responses=error_responses(
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+    ),
 )
 async def list_units_endpoint(
     session: SessionDependency,
@@ -88,6 +98,12 @@ async def list_units_endpoint(
     "",
     response_model=UnitResponse,
     status_code=status.HTTP_201_CREATED,
+    responses=error_responses(
+        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    ),
 )
 async def create_unit_endpoint(
     payload: UnitCreateRequest,
@@ -119,6 +135,9 @@ async def create_unit_endpoint(
     "/{unit_id}",
     response_model=UnitResponse,
     status_code=status.HTTP_200_OK,
+    responses=error_responses(
+        status.HTTP_404_NOT_FOUND,
+    ),
 )
 async def get_unit_endpoint(
     unit_id: UUID,
@@ -146,6 +165,11 @@ async def get_unit_endpoint(
     "/{unit_id}",
     response_model=UnitResponse,
     status_code=status.HTTP_200_OK,
+    responses=error_responses(
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_404_NOT_FOUND,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    ),
 )
 async def update_unit_endpoint(
     unit_id: UUID,
@@ -226,10 +250,17 @@ async def get_reception_hours_endpoint(
     "/{unit_id}/reception-hours",
     response_model=list[ReceptionHoursResponse],
     status_code=status.HTTP_200_OK,
+    responses=error_responses(
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    ),
 )
 async def replace_reception_hours_endpoint(
     unit_id: UUID,
-    payload: list[ReceptionHoursInputRequest],
+    payload: Annotated[
+        list[ReceptionHoursInputRequest],
+        Field(min_length=1, max_length=7),
+    ],
     session: SessionDependency,
     context: TenantContextDependency,
 ) -> list[ReceptionHoursResponse]:

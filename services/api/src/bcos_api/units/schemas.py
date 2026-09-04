@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
-class UnitResponse(BaseModel):
+class Unit(BaseModel):
     """Public representation of a BCOS unit."""
 
     model_config = ConfigDict(title="Unit")
@@ -22,7 +22,7 @@ class UnitResponse(BaseModel):
     updated_at: datetime
 
 
-class UnitCreateRequest(BaseModel):
+class UnitCreate(BaseModel):
     """Payload for creating a BCOS unit."""
 
     model_config = ConfigDict(
@@ -35,7 +35,7 @@ class UnitCreateRequest(BaseModel):
     active: bool = True
 
 
-class UnitUpdateRequest(BaseModel):
+class UnitUpdate(BaseModel):
     """Partial payload for updating a BCOS unit."""
 
     model_config = ConfigDict(

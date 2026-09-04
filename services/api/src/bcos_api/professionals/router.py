@@ -10,11 +10,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bcos_api.db.session import get_async_session
+from bcos_api.openapi_responses import error_responses
 from bcos_api.professionals.domain import InvalidProfessional
 from bcos_api.professionals.schemas import (
-    ProfessionalCreateRequest,
-    ProfessionalResponse,
-    ProfessionalUpdateRequest,
+    Professional as ProfessionalResponse,
+)
+from bcos_api.professionals.schemas import (
+    ProfessionalCreate as ProfessionalCreateRequest,
+)
+from bcos_api.professionals.schemas import (
+    ProfessionalUpdate as ProfessionalUpdateRequest,
 )
 from bcos_api.professionals.service import (
     ProfessionalNotFound,
@@ -84,6 +89,11 @@ async def list_professionals(
     "",
     response_model=ProfessionalResponse,
     status_code=status.HTTP_201_CREATED,
+    responses=error_responses(
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_409_CONFLICT,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    ),
 )
 async def create_professional(
     payload: ProfessionalCreateRequest,
@@ -121,6 +131,9 @@ async def create_professional(
 @router.get(
     "/{professional_id}",
     response_model=ProfessionalResponse,
+    responses=error_responses(
+        status.HTTP_404_NOT_FOUND,
+    ),
 )
 async def get_professional(
     professional_id: UUID,
@@ -147,6 +160,10 @@ async def get_professional(
 @router.patch(
     "/{professional_id}",
     response_model=ProfessionalResponse,
+    responses=error_responses(
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_404_NOT_FOUND,
+    ),
 )
 async def update_professional(
     professional_id: UUID,
@@ -221,6 +238,12 @@ async def update_professional(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
+        ) from exc
+    except IntegrityError as exc:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Professional conflicts with an existing record.",
         ) from exc
 
     return _to_response(professional)

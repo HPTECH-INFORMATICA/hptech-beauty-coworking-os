@@ -9,13 +9,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bcos_api.db.session import get_async_session
+from bcos_api.openapi_responses import error_responses
 from bcos_api.resource_categories.domain import (
     InvalidResourceCategory,
     ResourceCategory,
 )
 from bcos_api.resource_categories.schemas import (
-    ResourceCategoryCreateRequest,
-    ResourceCategoryResponse,
+    ResourceCategory as ResourceCategoryResponse,
+)
+from bcos_api.resource_categories.schemas import (
+    ResourceCategoryCreate as ResourceCategoryCreateRequest,
 )
 from bcos_api.resource_categories.service import (
     create_tenant_resource_category,
@@ -45,7 +48,7 @@ def _to_response(
     """Map a resource category to its public representation."""
 
     return ResourceCategoryResponse(
-        id=str(category.id),
+        id=category.id,
         name=category.name,
         active=category.active,
     )
@@ -76,6 +79,10 @@ async def list_resource_categories(
     "",
     response_model=ResourceCategoryResponse,
     status_code=status.HTTP_201_CREATED,
+    responses=error_responses(
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_409_CONFLICT,
+    ),
 )
 async def create_resource_category(
     payload: ResourceCategoryCreateRequest,

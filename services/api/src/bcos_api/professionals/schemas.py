@@ -15,7 +15,7 @@ from pydantic import (
 from bcos_api.professionals.domain import ProfessionalStatus
 
 
-class ProfessionalResponse(BaseModel):
+class Professional(BaseModel):
     """Public representation of a BCOS professional."""
 
     model_config = ConfigDict(title="Professional")
@@ -28,7 +28,7 @@ class ProfessionalResponse(BaseModel):
     status: ProfessionalStatus
 
 
-class ProfessionalCreateRequest(BaseModel):
+class ProfessionalCreate(BaseModel):
     """Payload for creating a BCOS professional."""
 
     model_config = ConfigDict(
@@ -42,7 +42,7 @@ class ProfessionalCreateRequest(BaseModel):
     phone: str | None = None
 
 
-class ProfessionalUpdateRequest(BaseModel):
+class ProfessionalUpdate(BaseModel):
     """Partial payload for updating a BCOS professional."""
 
     model_config = ConfigDict(
@@ -90,7 +90,7 @@ class ProfessionalUpdateRequest(BaseModel):
     status: ProfessionalStatus | None = None
 
     @model_validator(mode="after")
-    def validate_patch(self) -> ProfessionalUpdateRequest:
+    def validate_patch(self) -> ProfessionalUpdate:
         """Require one field and reject null for non-nullable fields."""
 
         if not self.model_fields_set:
