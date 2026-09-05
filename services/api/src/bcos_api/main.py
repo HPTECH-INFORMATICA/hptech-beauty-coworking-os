@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 
+from bcos_api.availability.router import router as availability_router
 from bcos_api.errors import (
     http_exception_handler,
     permission_denied_handler,
@@ -44,8 +45,11 @@ def create_app() -> FastAPI:
     app.include_router(professionals_router)
     app.include_router(resource_categories_router)
     app.include_router(resources_router)
+    app.include_router(availability_router)
 
     return app
 
 
 app = create_app()
+
+
