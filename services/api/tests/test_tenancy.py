@@ -1,10 +1,12 @@
-﻿"""Tests for BCOS tenant context authorization."""
+"""Tests for BCOS tenant context authorization."""
 
 from __future__ import annotations
 
-from uuid import uuid4
+from typing import cast
+from uuid import UUID, uuid4
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bcos_api.tenancy.context import (
     TenantAccessDenied,
@@ -28,7 +30,7 @@ async def test_active_membership_resolves_tenant_context(
     async def fake_get_membership(
         session: object,
         *,
-        tenant_id: object,
+        tenant_id: UUID,
         external_user_id: str,
     ) -> TenantMembership:
         del session
@@ -47,7 +49,7 @@ async def test_active_membership_resolves_tenant_context(
     )
 
     context = await resolve_tenant_context(
-        object(),
+        cast(AsyncSession, object()),
         tenant_id=tenant_id,
         external_user_id=external_user_id,
     )
@@ -75,7 +77,7 @@ async def test_non_active_membership_is_denied(
     async def fake_get_membership(
         session: object,
         *,
-        tenant_id: object,
+        tenant_id: UUID,
         external_user_id: str,
     ) -> TenantMembership:
         del session
@@ -95,7 +97,7 @@ async def test_non_active_membership_is_denied(
 
     with pytest.raises(TenantAccessDenied):
         await resolve_tenant_context(
-            object(),
+            cast(AsyncSession, object()),
             tenant_id=tenant_id,
             external_user_id="identity-not-active",
         )
@@ -110,7 +112,7 @@ async def test_missing_membership_is_denied(
     async def fake_get_membership(
         session: object,
         *,
-        tenant_id: object,
+        tenant_id: UUID,
         external_user_id: str,
     ) -> None:
         del session
@@ -126,7 +128,7 @@ async def test_missing_membership_is_denied(
 
     with pytest.raises(TenantAccessDenied):
         await resolve_tenant_context(
-            object(),
+            cast(AsyncSession, object()),
             tenant_id=tenant_id,
             external_user_id="identity-missing",
         )
@@ -143,7 +145,7 @@ async def test_cross_tenant_membership_is_denied(
     async def fake_get_membership(
         session: object,
         *,
-        tenant_id: object,
+        tenant_id: UUID,
         external_user_id: str,
     ) -> TenantMembership | None:
         del session
@@ -169,7 +171,7 @@ async def test_cross_tenant_membership_is_denied(
 
     with pytest.raises(TenantAccessDenied):
         await resolve_tenant_context(
-            object(),
+            cast(AsyncSession, object()),
             tenant_id=requested_tenant_id,
             external_user_id=external_user_id,
         )
