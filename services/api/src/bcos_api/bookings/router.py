@@ -1,4 +1,4 @@
-﻿"""HTTP routes for BCOS bookings."""
+"""HTTP routes for BCOS bookings."""
 
 from __future__ import annotations
 
@@ -20,7 +20,6 @@ from bcos_api.bookings.domain import InvalidBooking
 from bcos_api.bookings.pricing import (
     PricingSnapshotProducer,
     PricingSnapshotUnavailable,
-    UnconfiguredPricingSnapshotProducer,
 )
 from bcos_api.bookings.schemas import (
     Booking as BookingResponse,
@@ -74,6 +73,7 @@ from bcos_api.bookings.service import (
 )
 from bcos_api.db.session import get_async_session
 from bcos_api.openapi_responses import error_responses
+from bcos_api.pricing.snapshot import DatabasePricingSnapshotProducer
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.dependencies import get_tenant_context
 
@@ -86,10 +86,12 @@ TenantContextDependency = Annotated[
 ]
 
 
-def get_pricing_snapshot_producer() -> PricingSnapshotProducer:
+def get_pricing_snapshot_producer(
+    session: SessionDependency,
+) -> PricingSnapshotProducer:
     """Return the trusted pricing snapshot producer configured for BCOS."""
 
-    return UnconfiguredPricingSnapshotProducer()
+    return DatabasePricingSnapshotProducer(session)
 
 
 PricingSnapshotProducerDependency = Annotated[
