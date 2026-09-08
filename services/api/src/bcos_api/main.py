@@ -20,6 +20,7 @@ from bcos_api.resource_categories.router import router as resource_categories_ro
 from bcos_api.resources.router import router as resources_router
 from bcos_api.tenancy.rbac import PermissionDenied
 from bcos_api.units.router import router as units_router
+from bcos_api.usages.router import router as usages_router
 
 
 class BCOSFastAPI(FastAPI):
@@ -48,10 +49,9 @@ def create_app() -> FastAPI:
     app.include_router(resources_router)
     app.include_router(availability_router)
     app.include_router(bookings_router)
+    app.include_router(usages_router)
 
     return app
 
 
 app = create_app()
-
-
