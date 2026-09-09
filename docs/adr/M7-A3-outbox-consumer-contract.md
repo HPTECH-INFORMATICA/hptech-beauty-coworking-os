@@ -503,6 +503,24 @@ The BCOS Pricing/Billing flow must support these contractual modalities:
 The Pricing Engine must not hard-code monetary values directly in worker code.
 Commercial values and applicable policies must remain administrable by the coworking.
 
+Each commercial modality may have its own coworking-configured base price:
+
+- hourly;
+- period;
+- weekly;
+- monthly.
+
+Prices may vary between configured commercial rules. Period rules may also have
+different configured prices for distinct coworking-defined periods, such as morning
+and afternoon.
+
+The applicable commercial rule and contracted pricing context must remain frozen in
+the Booking pricing_snapshot so later rule or price changes do not rewrite the
+financial context originally contracted.
+
+This decision does not yet define how a period, weekly, or monthly base price is
+converted into an equivalent hourly price for proportional overtime calculations.
+
 ### 2. Hourly bookings
 
 For an hourly booking:
