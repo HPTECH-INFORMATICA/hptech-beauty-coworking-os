@@ -167,3 +167,38 @@ BCOS-M7-A2 remains HUMAN HOMOLOGATED / LOCKED.
 This ADR does not reopen or modify the frozen M7-A2 Billing boundary.
 
 Quem pede um, pede bis.
+
+## Processing Recovery Field — HUMAN APPROVED
+
+The Outbox requires an explicit temporal reference for abandoned
+`PROCESSING` recovery.
+
+Approved physical field:
+
+```sql
+processing_started_at TIMESTAMPTZ NULL
+```
+
+Approved semantics:
+
+PENDING -> PROCESSING sets processing_started_at = now().
+PROCESSING -> PROCESSED clears processing_started_at.
+recoverable failure PROCESSING -> PENDING clears processing_started_at.
+created_at must not be used as processing-start evidence.
+available_at must not be overloaded as processing-start evidence.
+recovery timeout remains undefined.
+retry backoff remains undefined.
+retry limit remains undefined.
+FAILED transition policy remains undefined.
+worker_id, heartbeat and locked_until remain out of scope.
+
+This decision does not yet authorize a migration. Schema evolution follows
+only after this contract is persisted.
+
+Human approval:
+
+APROVADO M7-A3 PROCESSING RECOVERY FIELD
+
+Quem pede um, pede bis.
+
+
