@@ -254,3 +254,51 @@ This decision does not define:
 
 Those concerns remain outside M7-A3-T2 and require separate explicit
 architectural decisions before implementation.
+
+## M7-A3-T3 — Error Sanitization Contract
+
+**Status:** HUMAN APPROVED
+
+Recoverable Outbox processing failures may persist a sanitized diagnostic
+representation in `last_error`.
+
+The persisted representation MUST use the following form when an exception
+message is present:
+
+`<ExceptionClass>: <sanitized message>`
+
+When the exception message is empty, the persisted representation MUST contain
+only:
+
+`<ExceptionClass>`
+
+The sanitization rules are:
+
+- maximum persisted length: 500 characters;
+- carriage returns, line feeds, and tab characters MUST be replaced with spaces;
+- repeated whitespace MUST be normalized;
+- traceback MUST NOT be persisted;
+- `repr(exc)` MUST NOT be persisted;
+- stack traces MUST NOT be persisted;
+- environment variables MUST NOT be persisted;
+- `DATABASE_URL`, tokens, secrets, credentials, or equivalent sensitive values
+  MUST NOT be persisted;
+- truncation MUST occur only after sanitization.
+
+`last_error` is operational diagnostic data only. It MUST NOT define terminal
+failure behavior, retry limits, or transition to `FAILED`.
+
+### Explicit non-goals
+
+This decision does not define:
+
+- maximum retry count;
+- transition to `FAILED`;
+- terminal failure criteria;
+- abandoned `PROCESSING` recovery timeout;
+- worker heartbeat, lease, or ownership;
+- Pricing or Billing semantics;
+- Payment creation or settlement.
+
+Those concerns remain outside M7-A3-T3 and require separate explicit
+architectural decisions before implementation.
