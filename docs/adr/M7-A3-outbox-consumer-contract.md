@@ -302,3 +302,63 @@ This decision does not define:
 
 Those concerns remain outside M7-A3-T3 and require separate explicit
 architectural decisions before implementation.
+
+
+## M7-A3-T4 — Abandoned PROCESSING Recovery Contract
+
+**Status:** HUMAN APPROVED
+
+An Outbox event is eligible for abandoned-processing recovery only when all
+of the following are true:
+
+- `status = PROCESSING`;
+- `processing_started_at IS NOT NULL`;
+- `processing_started_at <= now() - 15 minutes`.
+
+The V1 abandoned-processing timeout is 15 minutes.
+
+Eligible abandoned events transition from `PROCESSING` back to `PENDING`.
+
+The recovery transition MUST set:
+
+- `status = PENDING`;
+- `processing_started_at = NULL`;
+- `available_at = now()`;
+- `last_error = ProcessingRecoveryError: abandoned PROCESSING recovered after timeout`.
+
+The recovery transition MUST NOT increment or decrement `attempts`.
+
+The existing attempt has already been counted when the event entered
+`PROCESSING`. A subsequent attempt is counted only when the event is claimed
+again through the existing `PENDING -> PROCESSING` claim contract.
+
+The M7-A3-T2 recoverable-failure backoff MUST NOT be applied by abandoned
+processing recovery. An abandoned event becomes immediately eligible for a
+new claim after recovery.
+
+Recovery MUST be atomic and concurrency-safe. An update MUST only affect an
+event that still has status `PROCESSING` and still satisfies the approved
+15-minute cutoff at the time of the recovery statement.
+
+A `PROCESSING` event whose `processing_started_at` is `NULL` MUST NOT be
+automatically recovered. Without a valid processing-start timestamp, the
+worker has no approved temporal evidence that the event is abandoned.
+
+### Explicit non-goals
+
+This decision does not define:
+
+- maximum retry count;
+- transition to `FAILED`;
+- terminal failure criteria;
+- worker heartbeat;
+- worker ownership or worker identifier;
+- lease or `locked_until`;
+- Pricing or Billing semantics;
+- Payment creation or settlement.
+
+Human approval:
+
+APROVADO M7-A3-T4 ABANDONED PROCESSING RECOVERY CONTRACT
+
+Quem pede um, pede bis.
