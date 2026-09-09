@@ -201,4 +201,56 @@ APROVADO M7-A3 PROCESSING RECOVERY FIELD
 
 Quem pede um, pede bis.
 
+## M7-A3-T2 — Recoverable Retry Scheduling Contract
 
+**Status:** HUMAN APPROVED
+
+For a recoverable processing failure, an Outbox event transitions from
+`PROCESSING` back to `PENDING`.
+
+The retry schedule is determined from the attempt that has just failed:
+
+`delay_seconds = min(30 * 2^(attempts - 1), 900)`
+
+The event MUST be updated with:
+
+- `status = PENDING`;
+- `processing_started_at = NULL`;
+- `last_error` containing only a sanitized error representation;
+- `available_at = now() + delay_seconds`.
+
+`available_at` MUST be strictly in the future when the recoverable-failure
+transition is persisted.
+
+The transition MUST only affect an event that still has status `PROCESSING`.
+
+The `attempts` value MUST NOT be incremented by the recoverable-failure
+transition. Attempts continue to be incremented only when a new processing
+attempt actually begins, as defined by the existing M7-A3 consumer contract.
+
+For V1, the resulting schedule is:
+
+- attempt 1: 30 seconds;
+- attempt 2: 60 seconds;
+- attempt 3: 120 seconds;
+- attempt 4: 240 seconds;
+- attempt 5: 480 seconds;
+- attempt 6 and subsequent attempts: 900 seconds.
+
+This contract defines scheduling only. It MUST NOT be interpreted as defining
+a maximum retry count or a terminal failure policy.
+
+### Explicit non-goals
+
+This decision does not define:
+
+- maximum number of attempts;
+- transition to `FAILED`;
+- terminal failure criteria;
+- abandoned `PROCESSING` recovery timeout;
+- worker heartbeat, lease, or ownership;
+- Pricing or Billing semantics;
+- Payment creation or settlement.
+
+Those concerns remain outside M7-A3-T2 and require separate explicit
+architectural decisions before implementation.
