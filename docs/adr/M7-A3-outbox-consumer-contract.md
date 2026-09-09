@@ -483,3 +483,158 @@ Explicit non-goals:
 - Pricing/Billing semantics;
 - Payment creation or settlement;
 - external supervisor or deployment restart policy.
+
+## M7-A3-T7 — Pricing & Overtime Business Rules Contract
+
+**Status:** HUMAN APPROVED
+
+This contract defines the V1 business behavior for contracted time, overtime,
+conflict-aware penalties, forgiveness, and configurable coworking pricing rules.
+
+### 1. Supported commercial modalities
+
+The BCOS Pricing/Billing flow must support these contractual modalities:
+
+- hourly;
+- period;
+- weekly;
+- monthly.
+
+The Pricing Engine must not hard-code monetary values directly in worker code.
+Commercial values and applicable policies must remain administrable by the coworking.
+
+### 2. Hourly bookings
+
+For an hourly booking:
+
+- when the booked end time is reached and another professional is scheduled to use
+  the same resource immediately afterward, the professional who exceeds the booked
+  time may be subject to a penalty because another professional is waiting;
+- when there is no immediately following booking for the same resource, overtime may
+  be charged proportionally by exceeded minutes or may be forgiven by an authorized
+  coworking user;
+- when the exceeded time is greater than 30 minutes, the next full hour is charged.
+
+This contract does not yet define:
+
+- the monetary value or formula of the penalty;
+- the exact proportional-per-minute monetary formula;
+- whether exactly 30 minutes is still proportional or already a full next hour.
+
+Those remain pending explicit commercial definition.
+
+### 3. Period bookings
+
+The coworking may define fixed periods, including examples such as:
+
+- morning: 08:00 to 12:00;
+- afternoon: 12:00 to 18:00.
+
+For a period booking:
+
+- if another professional is scheduled immediately after the contracted period for
+  the same resource, exceeding the end time may result in a penalty;
+- when there is no conflicting following booking, overtime follows the applicable
+  overtime policy;
+- for afternoon or any other period that reaches reception closing, overtime charging
+  must still obey the approved M7-A2-T1 reception closing temporal contract.
+
+Time after the applicable reception closing cutoff must not generate OVERTIME.
+
+### 4. Weekly plans
+
+Weekly plans use fixed contracted hours.
+
+- When another professional is scheduled immediately after the fixed contracted time
+  for the same resource, exceeding that time may result in a penalty.
+- When there is no conflicting following booking, overtime follows the same applicable
+  rules as hourly or period bookings, according to the contracted schedule.
+
+### 5. Monthly plans
+
+Monthly plans are based on fixed full periods, one or two times per week.
+
+They inherit the same applicable overtime and conflict behavior defined for hourly
+or period bookings, according to the contracted schedule.
+
+### 6. Configurable coworking policies
+
+Business rules must be administrable by authorized coworking users.
+
+The system must support the business capability to configure and manage applicable
+rules instead of embedding commercial values directly in code.
+
+This includes the business need to support operations such as:
+
+- create;
+- edit;
+- deactivate/block;
+- delete when allowed by lifecycle/integrity rules;
+- forgive an applicable charge;
+- manage future pricing and overtime policies.
+
+The exact authorization matrix, lifecycle constraints, API operations, persistence
+shape, and audit event model remain subject to their respective implementation
+contracts and existing Architecture Freeze rules.
+
+### 7. Automatic rule versus administrative decision
+
+Automatic pricing behavior and administrative overrides are distinct concepts.
+
+A configured automatic rule may determine that an overtime charge or penalty applies.
+
+An authorized forgiveness or override must not silently erase the fact that a
+financial decision occurred. It must remain representable as a traceable business
+action when Billing/Audit integration is implemented.
+
+The exact financial representation of forgiveness is not defined by this contract.
+
+### 8. Authoritative runtime context
+
+The future USAGE_COMPLETED Pricing/Billing handler must hydrate authoritative state
+tenant-safely from the database.
+
+The financial decision may use, as applicable:
+
+- Usage actual timestamps;
+- Booking contracted starts_at and ends_at;
+- Booking immutable pricing_snapshot;
+- Booking unit/resource/professional context;
+- applicable Unit reception hours;
+- immediately following booking/resource occupancy context required to determine
+  scheduling conflict.
+
+The USAGE_COMPLETED Outbox payload must not be expanded merely to duplicate this state.
+
+### 9. Billing boundary
+
+Pricing determines the financial result.
+
+Billing materializes that result into Invoice and InvoiceItem records under the
+existing idempotency and tenant-isolation constraints.
+
+Existing financial item types include:
+
+- BASE_LEASE;
+- OVERTIME;
+- ADJUSTMENT;
+- DISCOUNT.
+
+This contract does not redefine Payment creation or settlement.
+
+### 10. Explicit non-goals and pending commercial decisions
+
+The following remain undefined until separately approved:
+
+- exact penalty monetary value or formula;
+- exact proportional overtime monetary formula;
+- treatment of exactly 30 minutes of overtime;
+- exact internal schema and semantics of PricingRule.rule_definition;
+- exact representation of forgiveness in Billing;
+- authorization matrix for rule administration and forgiveness;
+- API CRUD details for pricing-policy administration;
+- audit event names and metadata for overrides/forgiveness;
+- terminal Outbox FAILED/retry policy;
+- Payment creation and settlement semantics.
+
+These pending points must not be invented during implementation.
