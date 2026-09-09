@@ -1,6 +1,6 @@
 ﻿"""Add processing_started_at to transactional Outbox.
 
-Revision ID: 0002_outbox_processing_started_at
+Revision ID: 0002_outbox_processing_started
 Revises: 0001_initial_bcos_schema
 Create Date: 2026-09-09
 """
@@ -9,7 +9,7 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0002_outbox_processing_started_at"
+revision: str = "0002_outbox_processing_started"
 down_revision: str | None = "0001_initial_bcos_schema"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -31,3 +31,4 @@ def downgrade() -> None:
         DROP COLUMN processing_started_at;
         """
     )
+
