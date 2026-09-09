@@ -510,20 +510,21 @@ For an hourly booking:
 - when the booked end time is reached and another professional is scheduled to use
   the same resource immediately afterward, the professional who exceeds the booked
   time may be subject to a penalty because another professional is waiting;
-- when there is no immediately following booking for the same resource, overtime may
-  be charged proportionally by exceeded minutes or may be forgiven by an authorized
+- when there is no immediately following booking for the same resource and the
+  exceeded time is from 1 through 29 minutes, overtime is calculated proportionally
+  by exact exceeded minutes using the applicable hourly price;
+- the proportional overtime formula is:
+  `(applicable hourly price / 60) * exceeded whole minutes`;
+- the resulting proportional overtime charge may be forgiven by an authorized
   coworking user;
 - when the exceeded time is 30 minutes or more, the next full hour is charged;
-- therefore, overtime below 30 minutes remains eligible for proportional charging
-  or authorized forgiveness, while exactly 30 minutes already reaches the full-hour
-  charging threshold.
+- therefore, exactly 30 minutes already reaches the full-hour charging threshold.
 
 This contract does not yet define:
 
-- the monetary value or formula of the penalty;
-- the exact proportional-per-minute monetary formula.
+- the monetary value or formula of the penalty.
 
-Those remain pending explicit commercial definition.
+That remains pending explicit commercial definition.
 
 ### 3. Period bookings
 
@@ -629,7 +630,6 @@ This contract does not redefine Payment creation or settlement.
 The following remain undefined until separately approved:
 
 - exact penalty monetary value or formula;
-- exact proportional overtime monetary formula;
 - exact internal schema and semantics of PricingRule.rule_definition;
 - exact representation of forgiveness in Billing;
 - authorization matrix for rule administration and forgiveness;
