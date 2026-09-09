@@ -598,7 +598,17 @@ An authorized forgiveness or override must not silently erase the fact that a
 financial decision occurred. It must remain representable as a traceable business
 action when Billing/Audit integration is implemented.
 
-The exact financial representation of forgiveness is not defined by this contract.
+Forgiveness must preserve the original OVERTIME financial fact.
+
+When an authorized coworking user forgives an overtime charge:
+
+- the original OVERTIME item remains recorded with its calculated amount;
+- a separate DISCOUNT item represents the forgiven amount;
+- the discount may represent a full or partial forgiveness;
+- the financial history must therefore preserve both the amount originally due and
+  the administrative decision that reduced it.
+
+Forgiveness must not silently delete the OVERTIME item or rewrite it to zero.
 
 ### 8. Authoritative runtime context
 
@@ -638,7 +648,6 @@ This contract does not redefine Payment creation or settlement.
 The following remain undefined until separately approved:
 
 - exact internal schema and semantics of PricingRule.rule_definition;
-- exact representation of forgiveness in Billing;
 - authorization matrix for rule administration and forgiveness;
 - API CRUD details for pricing-policy administration;
 - audit event names and metadata for overrides/forgiveness;
