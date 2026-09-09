@@ -673,3 +673,90 @@ The following remain undefined until separately approved:
 - Payment creation and settlement semantics.
 
 These pending points must not be invented during implementation.
+
+## M7-A3-T8 - Pricing Rule Definition V1 Contract
+
+**Status:** HUMAN APPROVED
+
+Purpose: define the machine-readable V1 structure of
+`PricingRule.rule_definition` required by the already approved
+Pricing/Overtime business rules, without changing the outer
+`Booking.pricing_snapshot` structure.
+
+### Approved minimum fields
+
+- `schema_version`
+- `modality`
+- `base_price_amount`
+- `overtime`
+- optional `conflict_penalty`
+
+### Proposed modalities
+
+- `HOURLY`
+- `PERIOD`
+- `WEEKLY`
+- `MONTHLY`
+
+### Proposed overtime object
+
+The `overtime` object must carry the values needed to execute the
+already approved rules, including:
+
+- explicit overtime hourly monetary basis;
+- proportional charging through 29 exceeded minutes;
+- full-hour threshold starting exactly at 30 minutes;
+- indication that forgiveness is permitted.
+
+For non-hourly plans, the overtime hourly monetary basis must be
+stored explicitly in the frozen rule. The worker must not invent a
+conversion from period, weekly, or monthly base price.
+
+### Reception closing
+
+M7-A2-T1 remains authoritative.
+
+Checkout must be evaluated in the Unit IANA timezone and time after
+reception closing must not generate OVERTIME.
+
+Missing Reception Hours configuration remains a processing error.
+
+### Conflict penalty
+
+When configured by the coworking, the rule must support the already
+approved modes:
+
+- fixed BRL amount;
+- percentage over the applicable overtime hourly monetary basis.
+
+The worker must never hard-code a penalty.
+
+### Frozen source
+
+The financial worker must consume the rule definition frozen inside:
+
+`Booking.pricing_snapshot["pricing_rule"]["rule_definition"]`
+
+It must not resolve a newer live PricingRule to recalculate the
+commercial agreement.
+
+### Financial safety
+
+Financial arithmetic must use decimal arithmetic rather than binary
+floating point.
+
+Malformed or unsupported frozen pricing data must fail closed and use
+the existing Outbox retry/error lifecycle.
+
+### Not defined by this contract
+
+This proposal does not yet freeze:
+
+- exact JSON key names beyond the conceptual fields above;
+- exact decimal-string validation format;
+- rounding mode;
+- administrative PricingRule CRUD/UI;
+- RBAC matrix for forgiveness;
+- Audit event names;
+- Outbox terminal FAILED policy;
+- Payment creation or settlement.
