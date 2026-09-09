@@ -13,6 +13,7 @@ from bcos_worker.outbox_repository import (
     claim_next_event,
     mark_event_for_retry,
     mark_event_processed,
+    recover_abandoned_events,
     retry_delay_seconds,
     sanitize_outbox_error,
 )
@@ -27,6 +28,17 @@ class FakeMappingsResult:
 
     def one_or_none(self) -> dict[str, Any] | None:
         return self._row
+
+
+class FakeScalarsResult:
+    def __init__(self, values: list[object]) -> None:
+        self._values = values
+
+    def scalars(self) -> "FakeScalarsResult":
+        return self
+
+    def all(self) -> list[object]:
+        return self._values
 
 
 class FakeScalarResult:
@@ -280,6 +292,42 @@ def test_sanitize_outbox_error_redacts_basic_authorization() -> None:
 
     assert "basic-secret-123" not in sanitized
     assert sanitized == "RuntimeError: Authorization=[REDACTED]"
+
+
+@pytest.mark.asyncio
+async def test_recover_abandoned_events_applies_approved_contract() -> None:
+    first_id = uuid4()
+    second_id = uuid4()
+    session = FakeSession([FakeScalarsResult([first_id, second_id])])
+
+    recovered = await recover_abandoned_events(
+        session,  # type: ignore[arg-type]
+    )
+
+    assert recovered == 2
+
+    statement = str(session.calls[0][0])
+
+    assert "status = 'PENDING'" in statement
+    assert "processing_started_at = NULL" in statement
+    assert "available_at = now()" in statement
+    assert "'ProcessingRecoveryError: '" in statement
+    assert "'abandoned PROCESSING recovered after timeout'" in statement
+    assert "status = 'PROCESSING'" in statement
+    assert "processing_started_at IS NOT NULL" in statement
+    assert "processing_started_at <= now() - INTERVAL '15 minutes'" in statement
+    assert "attempts =" not in statement
+
+
+@pytest.mark.asyncio
+async def test_recover_abandoned_events_returns_zero_when_none_recovered() -> None:
+    session = FakeSession([FakeScalarsResult([])])
+
+    recovered = await recover_abandoned_events(
+        session,  # type: ignore[arg-type]
+    )
+
+    assert recovered == 0
 
 
 @pytest.mark.asyncio

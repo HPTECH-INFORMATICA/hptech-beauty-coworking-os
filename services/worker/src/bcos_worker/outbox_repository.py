@@ -159,6 +159,34 @@ async def mark_event_processed(
     return result.scalar_one_or_none() is not None
 
 
+async def recover_abandoned_events(
+    session: AsyncSession,
+) -> int:
+    """Return abandoned PROCESSING events to PENDING under the approved contract."""
+
+    result = await session.execute(
+        text(
+            """
+            UPDATE outbox_events
+            SET
+                status = 'PENDING',
+                processing_started_at = NULL,
+                available_at = now(),
+                last_error = (
+                    'ProcessingRecoveryError: '
+                    'abandoned PROCESSING recovered after timeout'
+                )
+            WHERE status = 'PROCESSING'
+              AND processing_started_at IS NOT NULL
+              AND processing_started_at <= now() - INTERVAL '15 minutes'
+            RETURNING id
+            """
+        )
+    )
+
+    return len(result.scalars().all())
+
+
 async def mark_event_for_retry(
     session: AsyncSession,
     event: OutboxEvent,
