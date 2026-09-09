@@ -513,13 +513,15 @@ For an hourly booking:
 - when there is no immediately following booking for the same resource, overtime may
   be charged proportionally by exceeded minutes or may be forgiven by an authorized
   coworking user;
-- when the exceeded time is greater than 30 minutes, the next full hour is charged.
+- when the exceeded time is 30 minutes or more, the next full hour is charged;
+- therefore, overtime below 30 minutes remains eligible for proportional charging
+  or authorized forgiveness, while exactly 30 minutes already reaches the full-hour
+  charging threshold.
 
 This contract does not yet define:
 
 - the monetary value or formula of the penalty;
-- the exact proportional-per-minute monetary formula;
-- whether exactly 30 minutes is still proportional or already a full next hour.
+- the exact proportional-per-minute monetary formula.
 
 Those remain pending explicit commercial definition.
 
@@ -628,7 +630,6 @@ The following remain undefined until separately approved:
 
 - exact penalty monetary value or formula;
 - exact proportional overtime monetary formula;
-- treatment of exactly 30 minutes of overtime;
 - exact internal schema and semantics of PricingRule.rule_definition;
 - exact representation of forgiveness in Billing;
 - authorization matrix for rule administration and forgiveness;
