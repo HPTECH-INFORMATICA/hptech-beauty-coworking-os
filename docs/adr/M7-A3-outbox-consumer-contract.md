@@ -520,11 +520,19 @@ For an hourly booking:
 - when the exceeded time is 30 minutes or more, the next full hour is charged;
 - therefore, exactly 30 minutes already reaches the full-hour charging threshold.
 
-This contract does not yet define:
+The conflict penalty must be configurable by the coworking using one of these
+commercial modes:
 
-- the monetary value or formula of the penalty.
+- a fixed monetary amount in BRL; or
+- a percentage applied over the applicable hourly price.
 
-That remains pending explicit commercial definition.
+The worker must not hard-code the penalty amount.
+
+The occurrence of a conflict penalty must remain distinguishable and traceable from
+the normal overtime charge.
+
+This contract does not yet define the exact persistence schema or administrative API
+used to configure these penalty modes.
 
 ### 3. Period bookings
 
@@ -629,7 +637,6 @@ This contract does not redefine Payment creation or settlement.
 
 The following remain undefined until separately approved:
 
-- exact penalty monetary value or formula;
 - exact internal schema and semantics of PricingRule.rule_definition;
 - exact representation of forgiveness in Billing;
 - authorization matrix for rule administration and forgiveness;
