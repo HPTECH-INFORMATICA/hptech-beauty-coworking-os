@@ -31,6 +31,7 @@ async def claim_next_event(
             SET
                 status = 'PROCESSING',
                 attempts = oe.attempts + 1,
+                processing_started_at = now(),
                 last_error = NULL
             FROM next_event AS ne
             WHERE oe.id = ne.id
@@ -45,6 +46,7 @@ async def claim_next_event(
                 oe.status,
                 oe.attempts,
                 oe.available_at,
+                oe.processing_started_at,
                 oe.processed_at,
                 oe.last_error,
                 oe.created_at
@@ -70,6 +72,7 @@ async def claim_next_event(
         status=OutboxStatus(row["status"]),
         attempts=row["attempts"],
         available_at=row["available_at"],
+        processing_started_at=row["processing_started_at"],
         processed_at=row["processed_at"],
         last_error=row["last_error"],
         created_at=row["created_at"],
@@ -89,6 +92,7 @@ async def mark_event_processed(
             SET
                 status = 'PROCESSED',
                 processed_at = now(),
+                processing_started_at = NULL,
                 last_error = NULL
             WHERE id = :event_id
               AND tenant_id = :tenant_id
@@ -103,3 +107,4 @@ async def mark_event_processed(
     )
 
     return result.scalar_one_or_none() is not None
+

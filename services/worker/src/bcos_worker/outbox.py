@@ -32,6 +32,8 @@ class OutboxEvent:
     status: OutboxStatus
     attempts: int
     available_at: datetime
+    processing_started_at: datetime | None
     processed_at: datetime | None
     last_error: str | None
     created_at: datetime
+

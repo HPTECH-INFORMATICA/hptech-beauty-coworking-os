@@ -40,6 +40,7 @@ def make_event(
         status=OutboxStatus.PROCESSING,
         attempts=1,
         available_at=now,
+        processing_started_at=now,
         processed_at=None,
         last_error=None,
         created_at=now,
@@ -115,3 +116,4 @@ async def test_dispatch_event_calls_usage_completed_handler() -> None:
     assert len(received) == 1
     assert received[0][0] is event
     assert received[0][1].usage_id == event.aggregate_id
+

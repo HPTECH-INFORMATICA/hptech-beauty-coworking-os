@@ -65,6 +65,7 @@ def make_claim_row() -> dict[str, Any]:
         "status": "PROCESSING",
         "attempts": 1,
         "available_at": now,
+        "processing_started_at": now,
         "processed_at": None,
         "last_error": None,
         "created_at": now,
@@ -126,6 +127,7 @@ async def test_mark_event_processed_requires_processing_state_and_tenant() -> No
         status=OutboxStatus.PROCESSING,
         attempts=row["attempts"],
         available_at=row["available_at"],
+        processing_started_at=row["processing_started_at"],
         processed_at=row["processed_at"],
         last_error=row["last_error"],
         created_at=row["created_at"],
@@ -167,6 +169,7 @@ async def test_mark_event_processed_returns_false_when_not_updated() -> None:
         status=OutboxStatus.PROCESSING,
         attempts=row["attempts"],
         available_at=row["available_at"],
+        processing_started_at=row["processing_started_at"],
         processed_at=row["processed_at"],
         last_error=row["last_error"],
         created_at=row["created_at"],
@@ -179,3 +182,4 @@ async def test_mark_event_processed_returns_false_when_not_updated() -> None:
     )
 
     assert updated is False
+
