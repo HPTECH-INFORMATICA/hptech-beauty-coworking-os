@@ -455,3 +455,31 @@ This contract does not define:
 - number of worker instances;
 - Pricing/Billing calculation semantics;
 - Payment creation or settlement.
+
+## M7-A3-T6 — Worker Runtime Loop & Recovery Cadence Contract
+
+Status: HUMAN APPROVED
+
+The V1 worker runtime follows these rules:
+
+1. On worker startup, run `recover_abandoned_events()` once in its own short transaction before the first consumer iteration.
+2. One worker instance executes `process_one()` sequentially, with no internal event-processing concurrency.
+3. After `PROCESSED` or `RETRY_SCHEDULED`, the next consumer iteration may begin immediately.
+4. After `IDLE`, wait 5 seconds before attempting the next consumer iteration.
+5. In addition to startup recovery, run `recover_abandoned_events()` every 60 seconds in its own short transaction.
+6. The 60-second cadence does not change the M7-A3-T4 abandoned-processing cutoff of 15 minutes.
+7. Recovery and `process_one()` never share the same transaction.
+8. A recoverable event failure handled by T5 does not terminate the runtime loop.
+9. Infrastructure failures outside the T5 event failure path are not converted into event retry outcomes. They propagate and terminate the worker process with failure so an external supervisor may restart it.
+10. Normal cancellation or interruption must not fabricate an event retry outside the T5 failure path.
+
+Explicit non-goals:
+
+- internal worker concurrency;
+- worker identity or ownership;
+- heartbeat or lease;
+- maximum attempts or terminal `FAILED` policy;
+- dynamic runtime interval configuration;
+- Pricing/Billing semantics;
+- Payment creation or settlement;
+- external supervisor or deployment restart policy.
