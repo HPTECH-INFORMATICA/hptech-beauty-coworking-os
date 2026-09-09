@@ -362,3 +362,96 @@ Human approval:
 APROVADO M7-A3-T4 ABANDONED PROCESSING RECOVERY CONTRACT
 
 Quem pede um, pede bis.
+
+
+## M7-A3-T5 — Consumer Execution Lifecycle Contract
+
+**Status:** HUMAN APPROVED
+
+This contract freezes the V1 execution lifecycle for processing one Outbox
+event while preserving the previously approved separation between claim,
+processing, retry, and abandoned PROCESSING recovery.
+
+### One-event iteration
+
+A single consumer iteration processes at most one Outbox event.
+
+The claim phase runs in its own short transaction:
+
+1. call `claim_next_event()`;
+2. if an eligible event is claimed, commit the claim transaction;
+3. if no eligible event exists, finish the iteration as IDLE without error.
+
+No polling interval or long-running loop semantics are defined by this
+contract.
+
+### Processing transaction
+
+After a successful claim, processing starts in a new transaction.
+
+For the currently supported `USAGE_COMPLETED` event:
+
+1. dispatch the event through `dispatch_event(...)`;
+2. execute the event handler;
+3. after the handler succeeds, execute `mark_event_processed(...)`;
+4. commit only after both processing and the Outbox success transition have
+   succeeded.
+
+The future Pricing/Billing effects produced by the handler and the transition
+from `PROCESSING` to `PROCESSED` MUST therefore be committed atomically in the
+same processing transaction.
+
+No partial financial effects from a failed attempt may remain persisted.
+
+### Failure path
+
+If any exception occurs during dispatch, handler execution, or
+`mark_event_processed(...)`:
+
+1. roll back the processing transaction;
+2. open a new short transaction;
+3. execute `mark_event_for_retry(...)`;
+4. commit the retry transition.
+
+The retry transition MUST continue to obey the approved M7-A3-T2 retry
+scheduling contract.
+
+The persisted error MUST continue to obey the approved M7-A3-T3 error
+sanitization contract.
+
+An unknown event type MUST NOT be silently marked `PROCESSED`.
+
+### Terminal failure policy
+
+This contract does not define:
+
+- maximum attempts;
+- automatic transition to `FAILED`;
+- terminal failure criteria.
+
+`FAILED` remains reserved for a future explicit policy decision.
+
+### Abandoned PROCESSING recovery
+
+The approved M7-A3-T4 abandoned PROCESSING recovery remains a separate
+maintenance concern.
+
+This contract does not implicitly run `recover_abandoned_events()` before or
+after every claim.
+
+Its operational cadence requires a separate explicit decision.
+
+### Explicit non-goals
+
+This contract does not define:
+
+- polling interval;
+- infinite worker loop;
+- shutdown or signal handling;
+- heartbeat;
+- worker ownership or worker ID;
+- lease or `locked_until`;
+- internal worker concurrency;
+- number of worker instances;
+- Pricing/Billing calculation semantics;
+- Payment creation or settlement.
