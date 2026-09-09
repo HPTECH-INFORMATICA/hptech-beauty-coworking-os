@@ -760,3 +760,80 @@ This proposal does not yet freeze:
 - Audit event names;
 - Outbox terminal FAILED policy;
 - Payment creation or settlement.
+
+## M7-A3-T9 - Pricing Rule Definition JSON Schema V1
+
+**Status:** HUMAN APPROVED
+
+Purpose: freeze the V1 machine-readable JSON structure used inside
+`PricingRule.rule_definition` for the already approved M7-A3-T8 contract.
+
+### Approved JSON structure
+
+```json
+{
+  "schema_version": 1,
+  "modality": "HOURLY | PERIOD | WEEKLY | MONTHLY",
+  "base_price_amount": "decimal",
+  "overtime": {
+    "hourly_price_amount": "decimal",
+    "proportional_until_minutes": 29,
+    "full_hour_from_minutes": 30,
+    "forgiveness_allowed": true
+  },
+  "conflict_penalty": {
+    "mode": "FIXED_AMOUNT | PERCENTAGE",
+    "value": "decimal"
+  }
+}
+Approved field semantics
+schema_version must be 1.
+modality must be one of:
+HOURLY
+PERIOD
+WEEKLY
+MONTHLY
+base_price_amount is the configured base monetary amount for the
+contracted modality.
+overtime.hourly_price_amount is the explicit hourly monetary basis
+used for overtime calculations.
+overtime.proportional_until_minutes is 29.
+overtime.full_hour_from_minutes is 30.
+overtime.forgiveness_allowed indicates that authorized forgiveness
+may be applied according to the already approved business rules.
+conflict_penalty is optional.
+when present, conflict_penalty.mode must be:
+FIXED_AMOUNT; or
+PERCENTAGE.
+conflict_penalty.value carries the configured monetary amount or
+percentage value according to the selected mode.
+Frozen source
+
+The worker must consume this structure only from:
+
+Booking.pricing_snapshot["pricing_rule"]["rule_definition"]
+
+It must not replace the frozen pricing rule with a newer live rule.
+
+Validation behavior
+
+Unsupported, malformed, missing, or incompatible required pricing data
+must fail closed.
+
+The event must remain subject to the already approved Outbox
+retry/error lifecycle and must not be silently marked as processed.
+
+Financial values must be parsed using decimal arithmetic rather than
+binary floating point.
+
+Explicitly still undefined
+
+This contract does not define:
+
+monetary rounding mode;
+currency quantization policy;
+administrative PricingRule CRUD/UI;
+RBAC matrix for rule administration or forgiveness;
+Audit event names and metadata;
+Outbox terminal FAILED policy;
+Payment creation or settlement semantics.
