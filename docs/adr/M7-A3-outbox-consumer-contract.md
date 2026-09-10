@@ -1199,3 +1199,92 @@ This contract does not yet define:
 - Payment creation or settlement;
 - worker `main.py` wiring.
 
+## M7-A3-T15 - Professional Billing Contract History
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the historical contract model used to determine which Invoice
+materialization mode applies to a professional over time.
+
+This contract preserves historical Billing behavior when the Coworking changes
+the professional's commercial arrangement in the future.
+
+### Contract
+
+1. The Coworking MAY change a professional's Invoice materialization mode over
+   time.
+
+2. Supported Invoice materialization modes remain:
+
+   - `PER_USAGE`
+   - `ACCUMULATED_OPEN_INVOICE`
+
+3. A professional's Billing configuration MUST be historically versioned rather
+   than represented only as a mutable current value.
+
+4. Each professional Billing contract configuration MUST define its own
+   validity period.
+
+5. The historical contract model MUST support at least:
+
+   - `valid_from`
+   - `valid_until`
+
+6. The applicable contract for a Usage MUST be resolved according to the
+   contract validity applicable to that Usage/reservation context.
+
+7. The worker MUST NOT simply read the professional's latest/current contract
+   when materializing historical Billing.
+
+8. A future contract change MUST NOT silently rewrite:
+
+   - previously materialized Invoices;
+   - previously materialized Invoice Items;
+   - the Invoice materialization mode that applied to historical Usage.
+
+9. Professional Billing contract history is tenant-scoped.
+
+10. A contract record MUST belong to exactly one professional within the same
+    tenant.
+
+11. Professional Billing contract history is a Billing/commercial concern.
+
+12. The Invoice materialization mode MUST NOT be stored inside
+    `pricing_rules.rule_definition`.
+
+13. Pricing Rules remain responsible for financial pricing semantics, while the
+    Professional Billing Contract determines how those financial results are
+    grouped into Invoices.
+
+### Temporal behavior
+
+14. The contract validity model MUST permit:
+
+    - an active contract with no `valid_until`;
+    - a closed historical contract;
+    - a future contract beginning at a later `valid_from`.
+
+15. When a professional changes Billing mode, the previous historical contract
+    MUST remain preserved.
+
+16. The system MUST fail closed if no unambiguous applicable Billing contract
+    can be resolved for the Usage that is being financially materialized.
+
+### Non-goals
+
+This contract does not yet define:
+
+- the exact physical table name;
+- the complete database column set;
+- overlap-prevention constraints for contract validity periods;
+- administrative CRUD endpoints;
+- administrative UI;
+- Billing RBAC;
+- Billing Audit event names;
+- exact open-Invoice lookup rules;
+- Invoice closing cadence;
+- Payment creation or settlement;
+- worker `main.py` wiring.
+
