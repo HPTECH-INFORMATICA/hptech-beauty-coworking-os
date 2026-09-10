@@ -939,3 +939,71 @@ occurring after reception closing must always be excluded from charging.
    quantization, RBAC details, Invoice persistence mechanics, Payment handling,
    or worker `main.py` wiring.
 
+## M7-A3-T12 - Monetary Precision & Rounding Contract
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the monetary precision and rounding rules required by the M7 Pricing/Billing worker before any financial amount is materialized.
+
+This contract does not reopen or modify previously approved Pricing, Overtime, Reception Closing, forgiveness, or Billing business rules.
+
+### Contract
+
+1. All financial arithmetic MUST use decimal arithmetic.
+   - Python `Decimal` is the canonical worker representation.
+   - Binary floating-point arithmetic MUST NOT be used for financial calculations.
+
+2. Intermediate calculations MAY retain full available Decimal precision.
+   - Intermediate values MUST NOT be unnecessarily quantized after each operation.
+
+3. Monetary values that are materialized or persisted MUST be quantized to two decimal places:
+   - `Decimal("0.01")`
+
+4. The V1 currency remains:
+   - `BRL`
+
+5. The V1 monetary rounding mode is:
+   - `ROUND_HALF_UP`
+
+6. Examples:
+   - `1.664` -> `1.66`
+   - `1.665` -> `1.67`
+   - `1.666...` -> `1.67`
+
+7. Quantization MUST occur on the monetary result that will be persisted or materially exposed as a financial amount, rather than repeatedly during intermediate arithmetic.
+
+8. The existing physical Billing baseline remains authoritative:
+   - Invoice monetary amounts use `NUMERIC(12, 2)`.
+   - Invoice Item monetary amounts use `NUMERIC(12, 2)`.
+   - Payment amount uses `NUMERIC(12, 2)`.
+   - Invoice Item quantity uses `NUMERIC(12, 4)` and is not itself a monetary precision rule.
+
+9. Invoice totals MUST be derived from the monetary values materialized for their items.
+   - The worker MUST NOT independently recompute invoice totals using a separate arithmetic path that could produce a different rounded result.
+
+10. Example under the already approved proportional overtime rule:
+    - applicable overtime hourly price: `100.00`
+    - completed overtime minutes: `1`
+    - intermediate amount: `100.00 / 60 * 1`
+    - materialized monetary amount: `1.67`
+
+### Failure behavior
+
+If a financial calculation cannot be represented or validated under this contract, processing MUST fail closed and follow the existing M7-A3 Outbox retry/error lifecycle.
+
+### Non-goals
+
+This contract does not yet define:
+
+- Invoice persistence implementation;
+- Invoice Item persistence implementation;
+- exact OVERTIME item metadata;
+- administrative forgiveness execution;
+- RBAC for forgiveness;
+- conflict detection implementation;
+- terminal `FAILED` policy;
+- Payment creation or settlement;
+- worker `main.py` wiring.
+
