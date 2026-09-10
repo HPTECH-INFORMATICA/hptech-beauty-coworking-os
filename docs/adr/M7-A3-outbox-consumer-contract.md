@@ -1288,3 +1288,155 @@ This contract does not yet define:
 - Payment creation or settlement;
 - worker `main.py` wiring.
 
+## M7-A3-T16 - Professional Billing Contract Physical Schema
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the physical persistence model for the professional Billing contract
+history approved in M7-A3-T15.
+
+The schema must preserve tenant isolation, historical validity, and an
+unambiguous Invoice materialization mode for a professional at any applicable
+point in time.
+
+### Table
+
+The physical model SHALL use a dedicated table:
+
+`professional_billing_contracts`
+
+### Required columns
+
+The table MUST contain at least:
+
+- `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+- `tenant_id UUID NOT NULL`
+- `professional_id UUID NOT NULL`
+- `invoice_mode`
+- `valid_from TIMESTAMPTZ NOT NULL`
+- `valid_until TIMESTAMPTZ`
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+- `updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+
+### Invoice materialization mode
+
+1. `invoice_mode` MUST be physically restricted to the two modes approved in
+   M7-A3-T14:
+
+   - `PER_USAGE`
+   - `ACCUMULATED_OPEN_INVOICE`
+
+2. The database MUST reject any value outside those approved modes.
+
+3. There is no universal default mode.
+
+4. A contract record MUST explicitly declare its `invoice_mode`.
+
+### Tenant-safe professional ownership
+
+5. Every Billing contract belongs to exactly one professional within the same
+   tenant.
+
+6. The physical foreign key MUST preserve tenant isolation through:
+
+   `(professional_id, tenant_id) -> professionals(id, tenant_id)`
+
+7. Cross-tenant professional references MUST be impossible at the database
+   constraint level.
+
+### Historical validity
+
+8. `valid_from` is mandatory.
+
+9. `valid_until` MAY be NULL to represent an open-ended contract.
+
+10. When `valid_until` is present:
+
+    `valid_until > valid_from`
+
+    MUST be enforced physically.
+
+11. Historical contract rows MUST remain preserved when a future contract is
+    created.
+
+12. Future contracts MAY be stored before their `valid_from` becomes active.
+
+### Temporal non-overlap
+
+13. For the same `(tenant_id, professional_id)`, contract validity intervals
+    MUST NOT overlap.
+
+14. Temporal non-overlap MUST be enforced physically by PostgreSQL and MUST NOT
+    depend only on worker or API validation.
+
+15. An open-ended contract therefore prevents another overlapping contract from
+    becoming valid for the same professional until the prior interval is
+    properly closed.
+
+16. Adjacent validity intervals are allowed when one contract ends exactly when
+    the next contract begins.
+
+17. The physical interval semantics SHALL be modeled as half-open validity:
+
+    `[valid_from, valid_until)`
+
+    so that the exact `valid_until` instant belongs to the following contract,
+    when one exists.
+
+### Identity and supporting constraints
+
+18. The table MUST preserve a tenant-safe identity constraint compatible with
+    the rest of the BCOS schema:
+
+    `UNIQUE (id, tenant_id)`
+
+19. The physical schema SHOULD provide indexes required for efficient lookup by:
+
+    - `tenant_id`
+    - `professional_id`
+    - temporal validity
+
+20. Physical constraints are authoritative for invalid or ambiguous contract
+    states.
+
+### Separation of responsibilities
+
+21. `professional_billing_contracts` belongs to the Billing/commercial
+    configuration boundary.
+
+22. `invoice_mode` MUST NOT be stored in `pricing_rules.rule_definition`.
+
+23. `pricing_rules` remains responsible for pricing semantics.
+
+24. `professional_billing_contracts` determines how calculated financial
+    results are grouped into Invoices.
+
+### Migration direction
+
+25. This contract authorizes a future BCOS migration to introduce:
+
+    - the Invoice mode database type;
+    - the `professional_billing_contracts` table;
+    - tenant-safe foreign keys;
+    - validity constraints;
+    - PostgreSQL-enforced non-overlapping validity intervals;
+    - supporting indexes.
+
+26. The migration MUST preserve all previously locked schema and behavior.
+
+### Non-goals
+
+This contract does not yet define:
+
+- API CRUD endpoints for professional Billing contracts;
+- administrative UI;
+- RBAC for contract maintenance;
+- Audit event names;
+- exact worker contract-resolution SQL;
+- exact accumulated open-Invoice lookup;
+- Invoice closing cadence;
+- Payment behavior;
+- worker `main.py` wiring.
+
