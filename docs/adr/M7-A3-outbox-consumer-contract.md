@@ -1007,3 +1007,109 @@ This contract does not yet define:
 - Payment creation or settlement;
 - worker `main.py` wiring.
 
+## M7-A3-T13 - Multi-Hour Overtime Charging Contract
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze how overtime charging continues beyond the first hour while preserving the
+Coworking as the authority that defines the commercial proportionality and
+full-hour threshold.
+
+This contract does not authorize the worker to hard-code a universal commercial
+threshold.
+
+### Contract
+
+1. The Coworking defines the overtime commercial rule.
+
+2. The worker MUST NOT hard-code `29` minutes as a universal proportional limit
+   or `30` minutes as a universal full-hour threshold.
+
+3. The frozen Pricing Rule remains the authoritative source for these parameters:
+
+   - `overtime.proportional_until_minutes`
+   - `overtime.full_hour_from_minutes`
+   - `overtime.hourly_price_amount`
+
+4. A Coworking MAY configure the already discussed rule in which:
+
+   - exceeded minutes below the configured full-hour threshold are charged
+     proportionally;
+   - when the configured threshold is reached or exceeded, a full additional
+     hour is charged.
+
+5. When the configured threshold is `30`, exactly `30` minutes already reaches
+   the full-hour charging threshold.
+
+6. For overtime extending across multiple hours, charging is evaluated using
+   complete elapsed hour blocks plus the remaining minutes.
+
+7. Each complete 60-minute overtime block contributes one full overtime hour
+   using the frozen `overtime.hourly_price_amount`.
+
+8. Remaining minutes after the complete overtime hour blocks MUST be evaluated
+   using the proportional/full-hour parameters frozen by the Coworking in the
+   Pricing Rule.
+
+9. Example when the Coworking configuration is:
+
+   - `proportional_until_minutes = 29`
+   - `full_hour_from_minutes = 30`
+
+   then:
+
+   - 60 minutes = 1 full overtime hour;
+   - 61 through 89 minutes = 1 full overtime hour plus proportional remaining
+     minutes;
+   - 90 through 119 minutes = 2 full overtime hours;
+   - 120 minutes = 2 full overtime hours;
+   - 120 through 149 minutes follows the same rule for the remaining minutes;
+   - 150 minutes reaches 3 full overtime hours.
+
+10. The same algorithm MUST work with another valid Coworking-configured
+    proportional/full-hour threshold without changing worker source code.
+
+11. The commercial parameters used for calculation MUST come from the immutable
+    Booking `pricing_snapshot`, never from a newer live Pricing Rule.
+
+12. Monetary arithmetic and materialization continue to follow M7-A3-T12:
+
+    - Python `Decimal`;
+    - no binary float;
+    - BRL;
+    - materialized monetary values quantized to `Decimal("0.01")`;
+    - `ROUND_HALF_UP`.
+
+13. Overtime forgiveness remains an administrative decision under the already
+    approved rule:
+
+    - the original OVERTIME value remains recorded;
+    - any forgiven value is represented separately by DISCOUNT.
+
+### Supersession clarification
+
+This contract supersedes the prior technical interpretation that the worker may
+treat `29` and `30` as unconditional hard-coded commercial constants.
+
+The previously approved `29/30` behavior remains valid when those are the values
+configured and frozen by the Coworking for the applicable Pricing Rule.
+
+The Coworking remains the authority that defines the proportionality and the
+threshold at which remaining overtime becomes a full additional hour.
+
+### Non-goals
+
+This contract does not yet define:
+
+- Pricing Rule administration UI;
+- RBAC for changing commercial rules;
+- Invoice or Invoice Item persistence implementation;
+- exact OVERTIME metadata;
+- conflict detection implementation;
+- administrative forgiveness execution;
+- terminal `FAILED` policy;
+- Payment creation or settlement;
+- worker `main.py` wiring.
+
