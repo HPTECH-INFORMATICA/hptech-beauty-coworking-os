@@ -31,12 +31,19 @@ def test_no_overtime_when_checkout_is_at_booking_end() -> None:
         reception_is_closed=False,
     )
 
-    assert result.classification is OvertimeClassification.NONE
     assert result.actual_overtime_seconds == 0
-    assert result.billable_overtime_minutes == 0
+    assert result.completed_overtime_minutes == 0
+
+    assert result.before_reception_close.classification is OvertimeClassification.NONE
+    assert result.before_reception_close.actual_seconds == 0
+    assert result.before_reception_close.completed_minutes == 0
+
+    assert result.after_reception_close.classification is OvertimeClassification.NONE
+    assert result.after_reception_close.actual_seconds == 0
+    assert result.after_reception_close.completed_minutes == 0
 
 
-def test_less_than_one_complete_minute_is_not_billable() -> None:
+def test_less_than_one_complete_minute_is_accounted_but_not_promoted() -> None:
     result = classify_overtime(
         booking_ends_at=utc_dt(16, 0),
         checked_out_at=utc_dt(16, 0, 59),
@@ -45,9 +52,12 @@ def test_less_than_one_complete_minute_is_not_billable() -> None:
         reception_is_closed=False,
     )
 
-    assert result.classification is OvertimeClassification.NONE
     assert result.actual_overtime_seconds == 59
-    assert result.billable_overtime_minutes == 0
+    assert result.completed_overtime_minutes == 0
+    assert result.before_reception_close.actual_seconds == 59
+    assert result.before_reception_close.completed_minutes == 0
+    assert result.before_reception_close.classification is OvertimeClassification.NONE
+    assert result.after_reception_close.actual_seconds == 0
 
 
 @pytest.mark.parametrize(
@@ -59,7 +69,7 @@ def test_less_than_one_complete_minute_is_not_billable() -> None:
         (29, 59),
     ],
 )
-def test_one_through_twenty_nine_complete_minutes_are_proportional(
+def test_one_through_twenty_nine_complete_minutes_before_close_are_proportional(
     minutes: int,
     seconds: int,
 ) -> None:
@@ -71,8 +81,13 @@ def test_one_through_twenty_nine_complete_minutes_are_proportional(
         reception_is_closed=False,
     )
 
-    assert result.classification is OvertimeClassification.PROPORTIONAL
-    assert result.billable_overtime_minutes == minutes
+    assert result.completed_overtime_minutes == minutes
+    assert result.before_reception_close.completed_minutes == minutes
+    assert (
+        result.before_reception_close.classification
+        is OvertimeClassification.PROPORTIONAL
+    )
+    assert result.after_reception_close.completed_minutes == 0
 
 
 @pytest.mark.parametrize(
@@ -83,7 +98,7 @@ def test_one_through_twenty_nine_complete_minutes_are_proportional(
         (31, 0, 31),
     ],
 )
-def test_thirty_complete_minutes_or_more_reaches_full_hour_threshold(
+def test_thirty_complete_minutes_or_more_before_close_reaches_full_hour_threshold(
     minute: int,
     second: int,
     expected_minutes: int,
@@ -96,27 +111,43 @@ def test_thirty_complete_minutes_or_more_reaches_full_hour_threshold(
         reception_is_closed=False,
     )
 
-    assert result.classification is OvertimeClassification.FULL_HOUR
-    assert result.billable_overtime_minutes == expected_minutes
-
-
-def test_closed_reception_day_excludes_overtime() -> None:
-    result = classify_overtime(
-        booking_ends_at=utc_dt(16, 0),
-        checked_out_at=utc_dt(16, 20),
-        local_checked_out_at=local_dt(13, 20),
-        reception_closes_at=None,
-        reception_is_closed=True,
-    )
-
+    assert result.completed_overtime_minutes == expected_minutes
+    assert result.before_reception_close.completed_minutes == expected_minutes
     assert (
-        result.classification
-        is OvertimeClassification.EXCLUDED_AFTER_RECEPTION_CLOSE
+        result.before_reception_close.classification
+        is OvertimeClassification.FULL_HOUR
     )
-    assert result.billable_overtime_minutes == 0
+    assert result.after_reception_close.completed_minutes == 0
 
 
-def test_checkout_exactly_at_reception_close_is_not_excluded() -> None:
+def test_crossing_reception_close_preserves_both_overtime_segments() -> None:
+    result = classify_overtime(
+        booking_ends_at=utc_dt(20, 30),
+        checked_out_at=utc_dt(21, 20),
+        local_checked_out_at=local_dt(18, 20),
+        reception_closes_at=time(18, 0),
+        reception_is_closed=False,
+    )
+
+    assert result.actual_overtime_seconds == 50 * 60
+    assert result.completed_overtime_minutes == 50
+
+    assert result.before_reception_close.actual_seconds == 30 * 60
+    assert result.before_reception_close.completed_minutes == 30
+    assert (
+        result.before_reception_close.classification
+        is OvertimeClassification.FULL_HOUR
+    )
+
+    assert result.after_reception_close.actual_seconds == 20 * 60
+    assert result.after_reception_close.completed_minutes == 20
+    assert (
+        result.after_reception_close.classification
+        is OvertimeClassification.PROPORTIONAL
+    )
+
+
+def test_checkout_exactly_at_reception_close_stays_before_close_segment() -> None:
     result = classify_overtime(
         booking_ends_at=utc_dt(20, 30),
         checked_out_at=utc_dt(21, 0),
@@ -125,24 +156,73 @@ def test_checkout_exactly_at_reception_close_is_not_excluded() -> None:
         reception_is_closed=False,
     )
 
-    assert result.classification is OvertimeClassification.FULL_HOUR
-    assert result.billable_overtime_minutes == 30
+    assert result.completed_overtime_minutes == 30
+    assert result.before_reception_close.completed_minutes == 30
+    assert (
+        result.before_reception_close.classification
+        is OvertimeClassification.FULL_HOUR
+    )
+    assert result.after_reception_close.completed_minutes == 0
+    assert result.after_reception_close.classification is OvertimeClassification.NONE
 
 
-def test_checkout_after_reception_close_is_excluded() -> None:
+def test_overtime_starting_after_reception_close_is_fully_accounted_after_close() -> None:
     result = classify_overtime(
-        booking_ends_at=utc_dt(20, 30),
-        checked_out_at=utc_dt(21, 0, 1),
-        local_checked_out_at=local_dt(18, 0, 1),
+        booking_ends_at=utc_dt(21, 5),
+        checked_out_at=utc_dt(21, 25),
+        local_checked_out_at=local_dt(18, 25),
         reception_closes_at=time(18, 0),
         reception_is_closed=False,
     )
 
+    assert result.actual_overtime_seconds == 20 * 60
+    assert result.completed_overtime_minutes == 20
+    assert result.before_reception_close.completed_minutes == 0
+
+    assert result.after_reception_close.actual_seconds == 20 * 60
+    assert result.after_reception_close.completed_minutes == 20
     assert (
-        result.classification
-        is OvertimeClassification.EXCLUDED_AFTER_RECEPTION_CLOSE
+        result.after_reception_close.classification
+        is OvertimeClassification.PROPORTIONAL
     )
-    assert result.billable_overtime_minutes == 0
+
+
+def test_closed_reception_day_preserves_all_overtime_for_later_decision() -> None:
+    result = classify_overtime(
+        booking_ends_at=utc_dt(16, 0),
+        checked_out_at=utc_dt(16, 20),
+        local_checked_out_at=local_dt(13, 20),
+        reception_closes_at=None,
+        reception_is_closed=True,
+    )
+
+    assert result.actual_overtime_seconds == 20 * 60
+    assert result.completed_overtime_minutes == 20
+    assert result.before_reception_close.completed_minutes == 0
+
+    assert result.after_reception_close.actual_seconds == 20 * 60
+    assert result.after_reception_close.completed_minutes == 20
+    assert (
+        result.after_reception_close.classification
+        is OvertimeClassification.PROPORTIONAL
+    )
+
+
+def test_after_close_seconds_are_preserved_without_rounding_up() -> None:
+    result = classify_overtime(
+        booking_ends_at=utc_dt(20, 30),
+        checked_out_at=utc_dt(21, 20, 59),
+        local_checked_out_at=local_dt(18, 20, 59),
+        reception_closes_at=time(18, 0),
+        reception_is_closed=False,
+    )
+
+    assert result.actual_overtime_seconds == (50 * 60) + 59
+    assert result.completed_overtime_minutes == 50
+
+    assert result.before_reception_close.completed_minutes == 30
+    assert result.after_reception_close.actual_seconds == (20 * 60) + 59
+    assert result.after_reception_close.completed_minutes == 20
 
 
 def test_open_reception_day_without_close_time_fails_closed() -> None:
