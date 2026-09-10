@@ -1113,3 +1113,89 @@ This contract does not yet define:
 - Payment creation or settlement;
 - worker `main.py` wiring.
 
+## M7-A3-T14 - Invoice Materialization Mode Contract
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the business rule that Billing must support more than one Invoice
+materialization mode and that the Coworking, according to its commercial
+contract with each professional, defines which mode applies.
+
+### Contract
+
+1. BCOS MUST support both Invoice materialization modes:
+
+   - `PER_USAGE`
+   - `ACCUMULATED_OPEN_INVOICE`
+
+2. The Coworking is the authority that defines which Invoice materialization
+   mode applies according to the commercial contract established with the
+   professional.
+
+3. The worker MUST NOT choose an Invoice materialization mode by itself.
+
+4. The worker MUST NOT assume one of the modes as a universal default.
+
+### PER_USAGE
+
+5. In `PER_USAGE` mode, each completed Usage produces its own Invoice.
+
+6. Financial items generated from that Usage belong to the Invoice associated
+   with that specific Usage.
+
+7. Reprocessing the same `USAGE_COMPLETED` event MUST NOT create duplicate
+   financial items or duplicate effective billing for that Usage.
+
+### ACCUMULATED_OPEN_INVOICE
+
+8. In `ACCUMULATED_OPEN_INVOICE` mode, financial items from multiple completed
+   Usages of the same professional MAY be accumulated into an applicable open
+   Invoice.
+
+9. A new completed Usage MAY append its financial items to that applicable
+   open Invoice while the Invoice remains eligible to receive additional
+   charges under the professional contract.
+
+10. A settled, cancelled, or otherwise no-longer-eligible Invoice MUST NOT
+    receive new Usage charges.
+
+11. Reprocessing the same `USAGE_COMPLETED` event MUST NOT duplicate the
+    financial item for the same Usage and item type.
+
+### Existing physical idempotency
+
+12. The current Billing schema remains authoritative for Invoice Item
+    idempotency:
+
+    `UNIQUE (tenant_id, usage_id, item_type)`
+
+13. Billing materialization MUST remain tenant-safe.
+
+14. Invoice ownership remains associated with the professional through the
+    existing `professional_id`.
+
+### Contract authority
+
+15. The applicable Invoice materialization mode comes from the professional's
+    commercial arrangement configured by the Coworking.
+
+16. Changes to a professional's future commercial arrangement MUST NOT silently
+    rewrite already materialized historical Billing records.
+
+### Non-goals
+
+This contract does not yet define:
+
+- the exact database field or table that stores the professional's selected
+  Invoice materialization mode;
+- the administrative screen used to configure the mode;
+- the exact open-Invoice lookup query;
+- Invoice closing cadence or due-date policy;
+- manual Invoice closing;
+- Billing RBAC;
+- Billing Audit event names;
+- Payment creation or settlement;
+- worker `main.py` wiring.
+
