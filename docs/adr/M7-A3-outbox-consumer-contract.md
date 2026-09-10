@@ -880,3 +880,62 @@ rules of M7-A3-T7.
    penalty calculation, Invoice materialization, Payment handling, or worker
    runtime wiring.
 
+## M7-A3-T11 - Reception Closing Overtime Segmentation Contract
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the approved business rule for overtime that crosses the reception
+closing boundary.
+
+This contract supersedes only the previous interpretation that overtime
+occurring after reception closing must always be excluded from charging.
+
+### Approved Contract
+
+1. Reception closing does not erase overtime that occurs after `closes_at`.
+
+2. When overtime crosses the reception closing boundary, the worker must
+   account for the overtime in separate temporal segments:
+
+   - overtime occurring up to `closes_at`;
+   - overtime occurring after `closes_at`.
+
+3. Example:
+
+   - contracted booking end: 17:30;
+   - reception closes: 18:00;
+   - actual checkout: 18:20.
+
+   The system must account for:
+
+   - 30 minutes of overtime from 17:30 through 18:00;
+   - 20 minutes of overtime after reception closing, from 18:00 through 18:20.
+
+4. Overtime occurring after reception closing remains financially traceable and
+   must not be discarded or silently converted to zero.
+
+5. The overtime segment occurring after reception closing may be:
+
+   - charged; or
+   - forgiven by an authorized coworking decision.
+
+6. Forgiveness does not delete the original overtime record. When Billing is
+   materialized, the already approved T7 rule remains authoritative:
+
+   - the original OVERTIME amount remains recorded;
+   - forgiveness is represented separately through DISCOUNT.
+
+7. Exactly `closes_at` belongs to the segment up to reception closing.
+   Only elapsed time strictly after `closes_at` belongs to the
+   after-closing segment.
+
+8. M7-A3-T10 remains authoritative for conversion of elapsed durations into
+   completed whole overtime minutes.
+
+9. This contract defines temporal segmentation and charge/forgiveness
+   eligibility only. It does not define monetary rounding, currency
+   quantization, RBAC details, Invoice persistence mechanics, Payment handling,
+   or worker `main.py` wiring.
+
