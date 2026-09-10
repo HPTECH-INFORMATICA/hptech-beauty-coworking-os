@@ -1440,3 +1440,135 @@ This contract does not yet define:
 - Payment behavior;
 - worker `main.py` wiring.
 
+## M7-A3-T17 - Professional Billing Contract Resolution
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze how the worker resolves the historically applicable professional Billing
+contract for a completed Usage.
+
+The resolution must preserve the commercial agreement that applied to the
+Booking context and must not drift when the professional's contract changes
+later.
+
+### Authoritative resolution key
+
+1. Contract resolution MUST be tenant-safe.
+
+2. The lookup key is:
+
+   - `tenant_id`
+   - `professional_id`
+
+3. The authoritative temporal instant is:
+
+   `UsagePricingContext.booking_starts_at`
+
+4. `booking_starts_at` determines which historical professional Billing contract
+   applies to the Usage.
+
+5. The worker MUST NOT use the latest/current professional contract merely
+   because it is current at processing time.
+
+6. `checked_in_at` and `checked_out_at` MUST NOT determine the historical
+   Billing contract version.
+
+### Temporal applicability
+
+7. Contract validity follows the half-open interval approved in M7-A3-T16:
+
+   `[valid_from, valid_until)`
+
+8. A closed contract is applicable when:
+
+   `valid_from <= booking_starts_at`
+
+   AND
+
+   `booking_starts_at < valid_until`
+
+9. An open-ended contract is applicable when:
+
+   `valid_from <= booking_starts_at`
+
+   AND
+
+   `valid_until IS NULL`
+
+10. A contract ending exactly at `booking_starts_at` is NOT applicable to that
+    Booking.
+
+11. A contract beginning exactly at `booking_starts_at` IS applicable.
+
+### Resolution cardinality
+
+12. Exactly one professional Billing contract MUST resolve for the Usage.
+
+13. If no applicable contract exists, processing MUST fail closed.
+
+14. If more than one applicable contract is observed, processing MUST fail
+    closed.
+
+15. The PostgreSQL temporal exclusion constraint from M7-A3-T16 remains the
+    physical authority preventing overlapping professional contracts.
+
+### Historical integrity
+
+16. A later professional contract change MUST NOT change the Invoice
+    materialization mode applicable to an earlier Booking.
+
+17. A Booking created under `PER_USAGE` remains governed by that contract even
+    if the professional later changes to `ACCUMULATED_OPEN_INVOICE`.
+
+18. A Booking created under `ACCUMULATED_OPEN_INVOICE` remains governed by that
+    contract even if the professional later changes to `PER_USAGE`.
+
+19. Worker processing time is irrelevant to historical contract selection.
+
+### Separation of responsibilities
+
+20. Professional Billing contract resolution is separate from Pricing Rule
+    resolution.
+
+21. `pricing_snapshot` remains authoritative for frozen Pricing semantics.
+
+22. `professional_billing_contracts` remains authoritative for Invoice
+    materialization mode.
+
+23. The professional Billing contract MUST NOT be copied into or inferred from
+    `pricing_rules.rule_definition`.
+
+### Worker behavior
+
+24. The worker MAY hydrate the applicable professional Billing contract as part
+    of the financial processing context.
+
+25. The resolved result MUST expose at least:
+
+    - professional Billing contract id;
+    - tenant id;
+    - professional id;
+    - invoice materialization mode;
+    - valid_from;
+    - valid_until.
+
+26. Resolution errors MUST propagate as processing failures and MUST NOT cause an
+    Outbox event to be silently marked PROCESSED.
+
+### Non-goals
+
+This contract does not yet define:
+
+- Invoice creation;
+- InvoiceItem creation;
+- accumulated open-Invoice lookup;
+- Invoice closing cadence;
+- professional contract CRUD API;
+- administrative UI;
+- RBAC;
+- Audit event names;
+- Payment behavior;
+- worker `main.py` wiring.
+
