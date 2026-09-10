@@ -32,16 +32,28 @@ class OvertimeTemporalResult:
     after_reception_close: OvertimeSegment
 
 
-def _segment(seconds: int) -> OvertimeSegment:
+def _segment(
+    seconds: int,
+    *,
+    proportional_until_minutes: int,
+    full_hour_from_minutes: int,
+) -> OvertimeSegment:
     safe_seconds = max(seconds, 0)
     completed_minutes = safe_seconds // 60
+    remainder_minutes = completed_minutes % 60
 
     if completed_minutes == 0:
         classification = OvertimeClassification.NONE
-    elif completed_minutes < 30:
-        classification = OvertimeClassification.PROPORTIONAL
-    else:
+    elif completed_minutes >= 60:
         classification = OvertimeClassification.FULL_HOUR
+    elif remainder_minutes <= proportional_until_minutes:
+        classification = OvertimeClassification.PROPORTIONAL
+    elif remainder_minutes >= full_hour_from_minutes:
+        classification = OvertimeClassification.FULL_HOUR
+    else:
+        raise OvertimeTemporalError(
+            "overtime minutes are not covered by the configured proportional/full-hour rule"
+        )
 
     return OvertimeSegment(
         actual_seconds=safe_seconds,
@@ -57,6 +69,8 @@ def classify_overtime(
     local_checked_out_at: datetime,
     reception_closes_at: time | None,
     reception_is_closed: bool,
+    proportional_until_minutes: int,
+    full_hour_from_minutes: int,
 ) -> OvertimeTemporalResult:
     """Segment overtime without performing any monetary calculation."""
 
@@ -71,7 +85,11 @@ def classify_overtime(
     elapsed_seconds = int((checked_out_at - booking_ends_at).total_seconds())
 
     if elapsed_seconds <= 0:
-        empty = _segment(0)
+        empty = _segment(
+            0,
+            proportional_until_minutes=proportional_until_minutes,
+            full_hour_from_minutes=full_hour_from_minutes,
+        )
         return OvertimeTemporalResult(
             actual_overtime_seconds=0,
             completed_overtime_minutes=0,
@@ -80,11 +98,19 @@ def classify_overtime(
         )
 
     if reception_is_closed:
-        after_close = _segment(elapsed_seconds)
+        after_close = _segment(
+            elapsed_seconds,
+            proportional_until_minutes=proportional_until_minutes,
+            full_hour_from_minutes=full_hour_from_minutes,
+        )
         return OvertimeTemporalResult(
             actual_overtime_seconds=elapsed_seconds,
             completed_overtime_minutes=elapsed_seconds // 60,
-            before_reception_close=_segment(0),
+            before_reception_close=_segment(
+            0,
+            proportional_until_minutes=proportional_until_minutes,
+            full_hour_from_minutes=full_hour_from_minutes,
+        ),
             after_reception_close=after_close,
         )
 
@@ -116,8 +142,16 @@ def classify_overtime(
             (local_checked_out_at - local_close).total_seconds()
         )
 
-    before_close = _segment(before_close_seconds)
-    after_close = _segment(after_close_seconds)
+    before_close = _segment(
+        before_close_seconds,
+        proportional_until_minutes=proportional_until_minutes,
+        full_hour_from_minutes=full_hour_from_minutes,
+    )
+    after_close = _segment(
+        after_close_seconds,
+        proportional_until_minutes=proportional_until_minutes,
+        full_hour_from_minutes=full_hour_from_minutes,
+    )
 
     return OvertimeTemporalResult(
         actual_overtime_seconds=elapsed_seconds,

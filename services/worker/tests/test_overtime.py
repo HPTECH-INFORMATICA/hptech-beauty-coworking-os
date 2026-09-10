@@ -24,6 +24,8 @@ def local_dt(hour: int, minute: int, second: int = 0) -> datetime:
 
 def test_no_overtime_when_checkout_is_at_booking_end() -> None:
     result = classify_overtime(
+        proportional_until_minutes=29,
+        full_hour_from_minutes=30,
         booking_ends_at=utc_dt(16, 0),
         checked_out_at=utc_dt(16, 0),
         local_checked_out_at=local_dt(13, 0),
@@ -45,6 +47,8 @@ def test_no_overtime_when_checkout_is_at_booking_end() -> None:
 
 def test_less_than_one_complete_minute_is_accounted_but_not_promoted() -> None:
     result = classify_overtime(
+        proportional_until_minutes=29,
+        full_hour_from_minutes=30,
         booking_ends_at=utc_dt(16, 0),
         checked_out_at=utc_dt(16, 0, 59),
         local_checked_out_at=local_dt(13, 0, 59),
@@ -74,6 +78,8 @@ def test_one_through_twenty_nine_complete_minutes_before_close_are_proportional(
     seconds: int,
 ) -> None:
     result = classify_overtime(
+        proportional_until_minutes=29,
+        full_hour_from_minutes=30,
         booking_ends_at=utc_dt(16, 0),
         checked_out_at=utc_dt(16, minutes, seconds),
         local_checked_out_at=local_dt(13, minutes, seconds),
@@ -104,6 +110,8 @@ def test_thirty_complete_minutes_or_more_before_close_reaches_full_hour_threshol
     expected_minutes: int,
 ) -> None:
     result = classify_overtime(
+        proportional_until_minutes=29,
+        full_hour_from_minutes=30,
         booking_ends_at=utc_dt(16, 0),
         checked_out_at=utc_dt(16, minute, second),
         local_checked_out_at=local_dt(13, minute, second),
@@ -122,6 +130,8 @@ def test_thirty_complete_minutes_or_more_before_close_reaches_full_hour_threshol
 
 def test_crossing_reception_close_preserves_both_overtime_segments() -> None:
     result = classify_overtime(
+        proportional_until_minutes=29,
+        full_hour_from_minutes=30,
         booking_ends_at=utc_dt(20, 30),
         checked_out_at=utc_dt(21, 20),
         local_checked_out_at=local_dt(18, 20),
@@ -149,6 +159,8 @@ def test_crossing_reception_close_preserves_both_overtime_segments() -> None:
 
 def test_checkout_exactly_at_reception_close_stays_before_close_segment() -> None:
     result = classify_overtime(
+        proportional_until_minutes=29,
+        full_hour_from_minutes=30,
         booking_ends_at=utc_dt(20, 30),
         checked_out_at=utc_dt(21, 0),
         local_checked_out_at=local_dt(18, 0),
@@ -168,6 +180,8 @@ def test_checkout_exactly_at_reception_close_stays_before_close_segment() -> Non
 
 def test_overtime_starting_after_reception_close_is_fully_accounted_after_close() -> None:
     result = classify_overtime(
+        proportional_until_minutes=29,
+        full_hour_from_minutes=30,
         booking_ends_at=utc_dt(21, 5),
         checked_out_at=utc_dt(21, 25),
         local_checked_out_at=local_dt(18, 25),
@@ -189,6 +203,8 @@ def test_overtime_starting_after_reception_close_is_fully_accounted_after_close(
 
 def test_closed_reception_day_preserves_all_overtime_for_later_decision() -> None:
     result = classify_overtime(
+        proportional_until_minutes=29,
+        full_hour_from_minutes=30,
         booking_ends_at=utc_dt(16, 0),
         checked_out_at=utc_dt(16, 20),
         local_checked_out_at=local_dt(13, 20),
@@ -210,6 +226,8 @@ def test_closed_reception_day_preserves_all_overtime_for_later_decision() -> Non
 
 def test_after_close_seconds_are_preserved_without_rounding_up() -> None:
     result = classify_overtime(
+        proportional_until_minutes=29,
+        full_hour_from_minutes=30,
         booking_ends_at=utc_dt(20, 30),
         checked_out_at=utc_dt(21, 20, 59),
         local_checked_out_at=local_dt(18, 20, 59),
@@ -231,6 +249,8 @@ def test_open_reception_day_without_close_time_fails_closed() -> None:
         match="open reception day must define reception_closes_at",
     ):
         classify_overtime(
+        proportional_until_minutes=29,
+        full_hour_from_minutes=30,
             booking_ends_at=utc_dt(16, 0),
             checked_out_at=utc_dt(16, 20),
             local_checked_out_at=local_dt(13, 20),

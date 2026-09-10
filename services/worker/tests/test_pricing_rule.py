@@ -123,30 +123,26 @@ def test_rejects_invalid_decimal() -> None:
         parse_pricing_rule_definition(data)
 
 
-def test_rejects_changed_proportional_threshold() -> None:
+def test_accepts_coworking_configured_proportional_threshold() -> None:
     data = valid_rule()
     overtime = dict(data["overtime"])
-    overtime["proportional_until_minutes"] = 30
+    overtime["proportional_until_minutes"] = 14
     data["overtime"] = overtime
 
-    with pytest.raises(
-        PricingRuleDefinitionError,
-        match="proportional_until_minutes must be 29",
-    ):
-        parse_pricing_rule_definition(data)
+    parsed = parse_pricing_rule_definition(data)
+
+    assert parsed.overtime.proportional_until_minutes == 14
 
 
-def test_rejects_changed_full_hour_threshold() -> None:
+def test_accepts_coworking_configured_full_hour_threshold() -> None:
     data = valid_rule()
     overtime = dict(data["overtime"])
-    overtime["full_hour_from_minutes"] = 31
+    overtime["full_hour_from_minutes"] = 15
     data["overtime"] = overtime
 
-    with pytest.raises(
-        PricingRuleDefinitionError,
-        match="full_hour_from_minutes must be 30",
-    ):
-        parse_pricing_rule_definition(data)
+    parsed = parse_pricing_rule_definition(data)
+
+    assert parsed.overtime.full_hour_from_minutes == 15
 
 
 def test_rejects_non_boolean_forgiveness_flag() -> None:

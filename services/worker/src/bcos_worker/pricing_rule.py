@@ -102,9 +102,9 @@ def _parse_overtime(value: Any) -> OvertimeRule:
         "proportional_until_minutes",
         "overtime",
     )
-    if isinstance(proportional, bool) or proportional != 29:
+    if isinstance(proportional, bool) or not isinstance(proportional, int):
         raise PricingRuleDefinitionError(
-            "overtime.proportional_until_minutes must be 29"
+            "overtime.proportional_until_minutes must be an integer"
         )
 
     full_hour = _require_field(
@@ -112,9 +112,9 @@ def _parse_overtime(value: Any) -> OvertimeRule:
         "full_hour_from_minutes",
         "overtime",
     )
-    if isinstance(full_hour, bool) or full_hour != 30:
+    if isinstance(full_hour, bool) or not isinstance(full_hour, int):
         raise PricingRuleDefinitionError(
-            "overtime.full_hour_from_minutes must be 30"
+            "overtime.full_hour_from_minutes must be an integer"
         )
 
     forgiveness = _require_field(
@@ -129,8 +129,8 @@ def _parse_overtime(value: Any) -> OvertimeRule:
 
     return OvertimeRule(
         hourly_price_amount=hourly_price_amount,
-        proportional_until_minutes=29,
-        full_hour_from_minutes=30,
+        proportional_until_minutes=proportional,
+        full_hour_from_minutes=full_hour,
         forgiveness_allowed=forgiveness,
     )
 
