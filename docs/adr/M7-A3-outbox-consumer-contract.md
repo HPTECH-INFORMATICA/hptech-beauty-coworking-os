@@ -837,3 +837,46 @@ RBAC matrix for rule administration or forgiveness;
 Audit event names and metadata;
 Outbox terminal FAILED policy;
 Payment creation or settlement semantics.
+
+## M7-A3-T10 - Overtime Minute Precision Contract
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the temporal precision used to convert actual overtime duration into
+billable overtime minutes, without changing the already approved commercial
+rules of M7-A3-T7.
+
+### Approved Contract
+
+1. Actual overtime duration is measured from the contracted booking end time to
+   the authoritative Usage `checked_out_at`.
+
+2. Overtime is converted to billable minutes using **completed whole minutes**.
+
+3. Residual seconds do not promote the overtime duration to the next minute.
+
+4. Examples:
+   - less than 1 completed minute -> 0 billable overtime minutes;
+   - 1m00s through 1m59s -> 1 billable overtime minute;
+   - 29m59s -> 29 billable overtime minutes;
+   - 30m00s -> 30 billable overtime minutes;
+   - 30m59s -> 30 billable overtime minutes.
+
+5. The already approved full-hour threshold remains unchanged:
+   - 1 through 29 completed overtime minutes remain within the proportional /
+     forgivable range;
+   - exactly 30 completed overtime minutes reaches the full-next-hour threshold;
+   - more than 30 completed overtime minutes remains subject to the already
+     approved full-hour overtime rule.
+
+6. Reception closing evaluation remains based on the real local timestamp
+   defined by M7-A2-T1. Minute truncation must not move, round, or redefine the
+   reception `closes_at` boundary.
+
+7. This contract defines temporal quantification only. It does not define
+   monetary rounding, currency quantization, conflict detection, conflict
+   penalty calculation, Invoice materialization, Payment handling, or worker
+   runtime wiring.
+
