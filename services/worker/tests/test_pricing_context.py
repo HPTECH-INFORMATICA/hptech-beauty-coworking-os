@@ -67,6 +67,13 @@ def usage_row() -> dict[str, Any]:
                 "rule_definition": {
                     "schema_version": 1,
                     "modality": "HOURLY",
+                    "base_price_amount": "120.00",
+                    "overtime": {
+                        "hourly_price_amount": "120.00",
+                        "proportional_until_minutes": 29,
+                        "full_hour_from_minutes": 30,
+                        "forgiveness_allowed": True,
+                    },
                 }
             }
         },
@@ -100,6 +107,14 @@ async def test_hydrates_authoritative_tenant_safe_context() -> None:
     assert context.professional_id == PROFESSIONAL_ID
     assert context.unit_id == UNIT_ID
     assert context.usage_status == "COMPLETED"
+    assert context.pricing_rule.schema_version == 1
+    assert context.pricing_rule.modality == "HOURLY"
+    assert context.pricing_rule.base_price_amount == 120
+    assert context.pricing_rule.overtime.hourly_price_amount == 120
+    assert context.pricing_rule.overtime.proportional_until_minutes == 29
+    assert context.pricing_rule.overtime.full_hour_from_minutes == 30
+    assert context.pricing_rule.overtime.forgiveness_allowed is True
+    assert context.pricing_rule.conflict_penalty is None
     assert context.unit_timezone == "America/Sao_Paulo"
     assert context.local_checked_out_at.hour == 13
     assert context.local_checked_out_at.weekday() == 0
@@ -209,6 +224,57 @@ async def test_invalid_pricing_snapshot_fails_closed() -> None:
     with pytest.raises(
         PricingContextError,
         match="pricing_snapshot must be an object",
+    ):
+        await hydrate_usage_pricing_context(
+            session,  # type: ignore[arg-type]
+            tenant_id=TENANT_ID,
+            usage_id=USAGE_ID,
+        )
+
+
+@pytest.mark.asyncio
+async def test_missing_pricing_rule_in_snapshot_fails_closed() -> None:
+    row = usage_row()
+    row["pricing_snapshot"] = {}
+    session = FakeSession([row])
+
+    with pytest.raises(
+        PricingContextError,
+        match="pricing_snapshot.pricing_rule must be an object",
+    ):
+        await hydrate_usage_pricing_context(
+            session,  # type: ignore[arg-type]
+            tenant_id=TENANT_ID,
+            usage_id=USAGE_ID,
+        )
+
+
+@pytest.mark.asyncio
+async def test_missing_rule_definition_fails_closed() -> None:
+    row = usage_row()
+    row["pricing_snapshot"] = {"pricing_rule": {}}
+    session = FakeSession([row])
+
+    with pytest.raises(
+        PricingContextError,
+        match="rule_definition is required",
+    ):
+        await hydrate_usage_pricing_context(
+            session,  # type: ignore[arg-type]
+            tenant_id=TENANT_ID,
+            usage_id=USAGE_ID,
+        )
+
+
+@pytest.mark.asyncio
+async def test_invalid_frozen_rule_definition_fails_closed() -> None:
+    row = usage_row()
+    row["pricing_snapshot"]["pricing_rule"]["rule_definition"]["schema_version"] = 2
+    session = FakeSession([row])
+
+    with pytest.raises(
+        PricingContextError,
+        match="invalid frozen pricing rule definition: schema_version must be 1",
     ):
         await hydrate_usage_pricing_context(
             session,  # type: ignore[arg-type]

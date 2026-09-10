@@ -11,6 +11,12 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from bcos_worker.pricing_rule import (
+    PricingRuleDefinitionError,
+    PricingRuleDefinitionV1,
+    parse_pricing_rule_definition,
+)
+
 
 class PricingContextError(RuntimeError):
     """Raised when authoritative pricing context cannot be hydrated safely."""
@@ -38,6 +44,7 @@ class UsagePricingContext:
     booking_starts_at: datetime
     booking_ends_at: datetime
     pricing_snapshot: dict[str, Any]
+    pricing_rule: PricingRuleDefinitionV1
     unit_timezone: str
     local_checked_out_at: datetime
     reception_hours: ReceptionHours
@@ -110,6 +117,26 @@ async def hydrate_usage_pricing_context(
     if not isinstance(raw_snapshot, dict):
         raise PricingContextError("booking pricing_snapshot must be an object")
 
+    raw_pricing_rule = raw_snapshot.get("pricing_rule")
+    if not isinstance(raw_pricing_rule, dict):
+        raise PricingContextError(
+            "booking pricing_snapshot.pricing_rule must be an object"
+        )
+
+    if "rule_definition" not in raw_pricing_rule:
+        raise PricingContextError(
+            "booking pricing_snapshot.pricing_rule.rule_definition is required"
+        )
+
+    try:
+        pricing_rule = parse_pricing_rule_definition(
+            raw_pricing_rule["rule_definition"]
+        )
+    except PricingRuleDefinitionError as exc:
+        raise PricingContextError(
+            f"invalid frozen pricing rule definition: {exc}"
+        ) from exc
+
     unit_timezone = row["unit_timezone"]
     if not isinstance(unit_timezone, str) or not unit_timezone.strip():
         raise PricingContextError("unit timezone must be configured")
@@ -163,6 +190,7 @@ async def hydrate_usage_pricing_context(
         booking_starts_at=row["booking_starts_at"],
         booking_ends_at=row["booking_ends_at"],
         pricing_snapshot=dict(raw_snapshot),
+        pricing_rule=pricing_rule,
         unit_timezone=unit_timezone,
         local_checked_out_at=local_checked_out_at,
         reception_hours=ReceptionHours(
