@@ -1984,3 +1984,175 @@ T20 does not yet define:
 - Payment behavior;
 - worker `main.py` wiring.
 
+## M7-A3-T21 - Accumulated Invoice Lifecycle Configuration
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the V1 contractual configuration required to make the accumulated
+Invoice lifecycle deterministic without imposing a universal commercial
+calendar on the Coworking.
+
+The Coworking defines the applicable day, week, month and closing time
+according to its commercial contract with the professional.
+
+### Commercial authority
+
+1. Lifecycle calendar configuration is defined by the Coworking according to
+   the applicable contract with the professional.
+
+2. The BCOS MUST NOT impose a universal closing day, week, month or time.
+
+3. The worker MUST NOT invent missing lifecycle calendar values.
+
+4. There is no universal default closing time.
+
+5. Different professional Billing contracts MAY have different lifecycle
+   configurations within the same tenant.
+
+6. Contract termination, renewal, replacement and amendment/addendum MAY
+   establish new lifecycle configuration for future contractual validity
+   without rewriting historical Billing.
+
+### WEEKLY
+
+7. `WEEKLY` MUST have an explicitly configured weekday.
+
+8. `WEEKLY` MUST have an explicitly configured closing local time.
+
+9. The weekday uses the BCOS convention:
+
+   - `0` = Monday;
+   - `1` = Tuesday;
+   - `2` = Wednesday;
+   - `3` = Thursday;
+   - `4` = Friday;
+   - `5` = Saturday;
+   - `6` = Sunday.
+
+10. The worker MUST NOT infer a weekday or closing time when either is absent.
+
+### BIWEEKLY
+
+11. `BIWEEKLY` represents deterministic consecutive 14-day contractual cycles.
+
+12. `BIWEEKLY` MUST have an explicitly configured cycle anchor.
+
+13. The anchor establishes the contractual 14-day cycle boundary.
+
+14. `BIWEEKLY` MUST have an explicitly configured closing local time.
+
+15. The worker MUST NOT infer an anchor or closing time.
+
+### MONTHLY
+
+16. `MONTHLY` MUST have an explicitly configured day of month.
+
+17. `MONTHLY` MUST have an explicitly configured closing local time.
+
+18. The configured day of month MUST be within `1..31`.
+
+19. If a calendar month does not contain the configured day, the effective
+    closing day for that month is the last calendar day of that month.
+
+20. The worker MUST NOT infer a day of month or closing time.
+
+### MANUAL
+
+21. `MANUAL` has no automatic calendar cutoff.
+
+22. `MANUAL` MUST NOT require weekly, biweekly or monthly calendar fields.
+
+23. `MANUAL` MUST NOT cause the worker to infer an automatic closing timestamp.
+
+24. Manual closing remains an explicit Coworking action whose command/API is
+    outside T21.
+
+### Timezone
+
+25. Automatic lifecycle cutoff is interpreted using the IANA timezone of the
+    Unit associated with the Usage.
+
+26. Closing time is a local contractual wall-clock time and MUST be combined
+    with the applicable calendar boundary in the Unit timezone before temporal
+    comparison.
+
+27. The worker MUST NOT treat the configured local closing time as UTC.
+
+28. Historical Billing MUST continue to use the Unit and Usage context
+    applicable to the Usage being processed.
+
+### Historical authority
+
+29. Lifecycle configuration belongs to the historical professional Billing
+    contract context.
+
+30. M7-A3-T17 remains authoritative for selecting the professional Billing
+    contract applicable at `booking_starts_at`.
+
+31. Processing time MUST NOT determine which lifecycle configuration applies.
+
+32. A future lifecycle change MUST NOT retroactively change the accumulated
+    Invoice cycle applied to a historical Usage.
+
+### Fail-closed behavior
+
+33. Missing required configuration for an automatic lifecycle mode MUST fail
+    closed.
+
+34. Configuration incompatible with the selected lifecycle mode MUST be
+    rejected rather than silently ignored.
+
+35. Unsupported or ambiguous lifecycle configuration MUST fail closed.
+
+### Physical direction authorized for the next stage
+
+36. The physical schema MAY extend `professional_billing_contracts` to persist
+    the lifecycle mode and its mode-specific calendar configuration.
+
+37. The physical schema MUST preserve the distinction between:
+
+    - `PER_USAGE`, where accumulated lifecycle configuration does not apply;
+    - `ACCUMULATED_OPEN_INVOICE`, where a valid T20/T21 lifecycle
+      configuration is required.
+
+38. Physical constraints SHOULD enforce mode-compatible configuration wherever
+    PostgreSQL can express the invariant safely.
+
+39. No universal database default may choose a lifecycle mode, weekday,
+    day-of-month, cycle anchor or closing time for the Coworking.
+
+### Relationship with previous contracts
+
+40. M7-A3-T14 remains authoritative for Invoice materialization mode.
+
+41. M7-A3-T15 through T17 remain authoritative for historical professional
+    Billing contracts and their resolution.
+
+42. M7-A3-T18 remains authoritative for Invoice materialization idempotency.
+
+43. M7-A3-T19 remains authoritative for accumulated Invoice contractual
+    lifecycle and eligibility.
+
+44. M7-A3-T20 remains authoritative for the V1 lifecycle modes:
+    `WEEKLY`, `BIWEEKLY`, `MONTHLY`, `MANUAL`.
+
+### Non-goals
+
+T21 does not yet define:
+
+- exact PostgreSQL column names and types;
+- PostgreSQL lifecycle enum implementation;
+- the migration;
+- accumulated Invoice lookup/locking SQL;
+- Invoice materialization;
+- automatic closing execution;
+- manual closing API;
+- due-date calculation;
+- Payment behavior;
+- administrative UI;
+- RBAC;
+- Audit event names;
+- worker `main.py` wiring.
+
