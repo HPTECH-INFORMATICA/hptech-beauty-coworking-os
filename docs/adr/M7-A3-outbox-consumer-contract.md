@@ -1709,3 +1709,149 @@ This contract does not yet define:
 - Audit event names;
 - worker `main.py` wiring.
 
+## M7-A3-T19 - Accumulated Invoice Contract Lifecycle
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the commercial authority and lifecycle rules that determine whether an
+Invoice under `ACCUMULATED_OPEN_INVOICE` remains eligible to receive financial
+items from additional Usages.
+
+This contract preserves the Coworking's authority over its commercial
+arrangement with each professional and does not impose a universal Billing
+cycle.
+
+### Commercial authority
+
+1. Contractual and bureaucratic conditions are defined by the Coworking
+   together with the professional.
+
+2. The BCOS MUST register and execute the agreed commercial conditions; it MUST
+   NOT invent a universal commercial policy.
+
+3. The Coworking and professional may define contractual conditions involving,
+   as applicable:
+
+   - contract duration;
+   - Invoice closing conditions;
+   - renewal;
+   - a new contract;
+   - contractual amendments/addenda.
+
+4. No single Invoice closing cadence is mandatory for every professional or
+   tenant.
+
+5. When supported by the applicable commercial contract, closing policies may
+   include arrangements such as weekly, biweekly, monthly, manual or another
+   explicitly configured contractual cadence.
+
+6. The worker MUST NOT choose a closing policy on behalf of the Coworking.
+
+### Accumulated Invoice eligibility
+
+7. An Invoice may receive another Usage under
+   `ACCUMULATED_OPEN_INVOICE` only when it is:
+
+   - associated with the same tenant;
+   - associated with the same professional;
+   - `OPEN`;
+   - eligible under the professional's applicable historical Billing contract.
+
+8. `PAID` and `CANCELLED` Invoices MUST NOT receive new financial items.
+
+9. An Invoice that has been contractually closed or is no longer eligible under
+   the applicable contractual lifecycle MUST NOT receive new financial items.
+
+10. Merely finding an `OPEN` Invoice for the professional is NOT sufficient to
+    establish eligibility.
+
+11. The existing lookup index on tenant, professional and status is a lookup
+    aid only; it is not the commercial eligibility authority.
+
+### Historical integrity
+
+12. Contract lifecycle configuration MUST preserve history.
+
+13. Contract termination, renewal, replacement by a new contract or an
+    amendment/addendum MUST NOT rewrite previously materialized Billing.
+
+14. A future contractual change MUST NOT retroactively move InvoiceItems from
+    one Invoice to another.
+
+15. A future contractual change MUST NOT retroactively change the Invoice
+    materialization mode already applied to a historical Usage.
+
+16. The historical professional Billing contract resolution defined in
+    M7-A3-T17 remains authoritative for determining the contract applicable to
+    the Usage.
+
+### Contract changes
+
+17. Renewal, new contract and amendment/addendum are historically significant
+    commercial events and MUST be representable without destroying prior
+    contractual history.
+
+18. Where a contractual change modifies Billing behavior for future Usages, the
+    changed configuration MUST take effect according to its configured
+    temporal validity.
+
+19. The worker MUST NOT simply use the latest/current commercial configuration
+    when processing historical Billing.
+
+### Fail-closed behavior
+
+20. If the worker cannot unambiguously determine whether an accumulated Invoice
+    is eligible under the applicable contract, financial processing MUST fail
+    closed.
+
+21. Missing contractual configuration MUST NOT authorize implicit reuse of an
+    arbitrary OPEN Invoice.
+
+22. Multiple candidate Invoices without an authoritative eligibility rule MUST
+    NOT be resolved by arbitrary ordering, newest-record selection or
+    application guesswork.
+
+### Relationship with previous contracts
+
+23. M7-A3-T14 remains authoritative for the existence of both materialization
+    modes:
+
+    - `PER_USAGE`;
+    - `ACCUMULATED_OPEN_INVOICE`.
+
+24. M7-A3-T15 remains authoritative for historical professional Billing
+    contract configuration.
+
+25. M7-A3-T16 remains authoritative for the physical historical professional
+    Billing contract baseline.
+
+26. M7-A3-T17 remains authoritative for resolving the professional Billing
+    contract at `booking_starts_at`.
+
+27. M7-A3-T18 remains authoritative for Invoice and InvoiceItem idempotency.
+
+28. T19 does not authorize accumulated Invoice materialization until the
+    physical representation of its contractual eligibility/lifecycle is
+    separately frozen.
+
+### Non-goals
+
+This contract does not yet define:
+
+- the exact physical columns used to store closing policy;
+- the exact schema for weekly, biweekly, monthly, manual or other contractual
+  cadence configuration;
+- the exact accumulated Invoice eligibility query;
+- automatic versus manual closing commands;
+- due-date calculation;
+- professional contract CRUD API;
+- contract document storage;
+- electronic signature;
+- administrative UI;
+- RBAC;
+- Audit event names;
+- Payment behavior;
+- worker `main.py` wiring.
+
