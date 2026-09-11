@@ -2156,3 +2156,192 @@ T21 does not yet define:
 - Audit event names;
 - worker `main.py` wiring.
 
+## M7-A3-T22 - Physical Lifecycle Schema
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the physical V1 representation of accumulated Invoice lifecycle
+configuration on the historical professional Billing contract.
+
+This schema persists only contractual configuration. It does not yet authorize
+accumulated Invoice materialization.
+
+### Physical fields
+
+`professional_billing_contracts` SHALL be extended with:
+
+- `lifecycle_mode`
+- `lifecycle_weekday SMALLINT NULL`
+- `lifecycle_biweekly_anchor DATE NULL`
+- `lifecycle_month_day SMALLINT NULL`
+- `lifecycle_closing_time TIME WITHOUT TIME ZONE NULL`
+
+### Lifecycle mode vocabulary
+
+The PostgreSQL lifecycle mode SHALL support exactly:
+
+- `WEEKLY`
+- `BIWEEKLY`
+- `MONTHLY`
+- `MANUAL`
+
+No lifecycle mode SHALL have a database default.
+
+### PER_USAGE invariant
+
+1. When `invoice_mode = 'PER_USAGE'`:
+
+   - `lifecycle_mode` MUST be NULL;
+   - `lifecycle_weekday` MUST be NULL;
+   - `lifecycle_biweekly_anchor` MUST be NULL;
+   - `lifecycle_month_day` MUST be NULL;
+   - `lifecycle_closing_time` MUST be NULL.
+
+2. Accumulated lifecycle configuration MUST NOT be stored on a `PER_USAGE`
+   professional Billing contract.
+
+### ACCUMULATED_OPEN_INVOICE invariant
+
+3. When `invoice_mode = 'ACCUMULATED_OPEN_INVOICE'`, `lifecycle_mode` MUST be
+   explicitly configured.
+
+4. No universal lifecycle mode default is permitted.
+
+### WEEKLY physical configuration
+
+5. When `lifecycle_mode = 'WEEKLY'`:
+
+   - `lifecycle_weekday` MUST NOT be NULL;
+   - `lifecycle_weekday` MUST be within `0..6`;
+   - `lifecycle_closing_time` MUST NOT be NULL;
+   - `lifecycle_biweekly_anchor` MUST be NULL;
+   - `lifecycle_month_day` MUST be NULL.
+
+6. Weekday convention remains:
+
+   - `0` = Monday;
+   - `1` = Tuesday;
+   - `2` = Wednesday;
+   - `3` = Thursday;
+   - `4` = Friday;
+   - `5` = Saturday;
+   - `6` = Sunday.
+
+### BIWEEKLY physical configuration
+
+7. When `lifecycle_mode = 'BIWEEKLY'`:
+
+   - `lifecycle_biweekly_anchor` MUST NOT be NULL;
+   - `lifecycle_closing_time` MUST NOT be NULL;
+   - `lifecycle_weekday` MUST be NULL;
+   - `lifecycle_month_day` MUST be NULL.
+
+8. `lifecycle_biweekly_anchor` is a local calendar `DATE` that represents the
+   beginning of the first contractual 14-day cycle.
+
+9. Successive BIWEEKLY cycles advance in deterministic 14-day increments from
+   the configured anchor.
+
+10. The configured local closing time applies to the applicable contractual
+    BIWEEKLY boundary.
+
+### MONTHLY physical configuration
+
+11. When `lifecycle_mode = 'MONTHLY'`:
+
+   - `lifecycle_month_day` MUST NOT be NULL;
+   - `lifecycle_month_day` MUST be within `1..31`;
+   - `lifecycle_closing_time` MUST NOT be NULL;
+   - `lifecycle_weekday` MUST be NULL;
+   - `lifecycle_biweekly_anchor` MUST be NULL.
+
+12. If a calendar month does not contain the configured day, the effective
+    closing day is the final calendar day of that month, as frozen in T21.
+
+### MANUAL physical configuration
+
+13. When `lifecycle_mode = 'MANUAL'`:
+
+   - `lifecycle_weekday` MUST be NULL;
+   - `lifecycle_biweekly_anchor` MUST be NULL;
+   - `lifecycle_month_day` MUST be NULL;
+   - `lifecycle_closing_time` MUST be NULL.
+
+14. `MANUAL` MUST NOT imply or persist an automatic calendar cutoff.
+
+### Local closing time semantics
+
+15. `lifecycle_closing_time` is stored as `TIME WITHOUT TIME ZONE`.
+
+16. The stored value represents contractual local wall-clock time.
+
+17. The worker MUST NOT interpret this value as UTC.
+
+18. The applicable IANA timezone continues to come from the Unit associated
+    with the Usage, according to T21.
+
+### Physical constraints
+
+19. PostgreSQL MUST reject lifecycle configuration incompatible with
+    `invoice_mode`.
+
+20. PostgreSQL MUST reject mode-specific field combinations incompatible with
+    `lifecycle_mode`.
+
+21. PostgreSQL MUST enforce the valid weekday range `0..6`.
+
+22. PostgreSQL MUST enforce the valid month-day range `1..31`.
+
+23. PostgreSQL MUST NOT supply implicit commercial defaults for lifecycle mode,
+    weekday, anchor, month day or closing time.
+
+24. The lifecycle configuration remains part of the historical
+    `professional_billing_contracts` row and therefore follows the temporal
+    history guarantees frozen in T15-T17 and T19-T21.
+
+### Migration authorization
+
+25. A new Alembic migration is authorized to:
+
+    - create the lifecycle PostgreSQL enum;
+    - add the five lifecycle configuration columns;
+    - add the required CHECK constraints;
+    - preserve existing professional Billing contract data safely.
+
+26. The migration MUST NOT implement Invoice materialization, Invoice closing,
+    Payment behavior, APIs or worker runtime wiring.
+
+### Relationship with previous contracts
+
+27. T14 remains authoritative for Invoice materialization mode.
+
+28. T15-T17 remain authoritative for historical professional Billing contract
+    storage and resolution.
+
+29. T18 remains authoritative for Invoice and InvoiceItem idempotency.
+
+30. T19 remains authoritative for accumulated Invoice contractual lifecycle.
+
+31. T20 remains authoritative for lifecycle mode vocabulary.
+
+32. T21 remains authoritative for configurable day/week/month/time semantics.
+
+### Non-goals
+
+T22 does not yet define:
+
+- accumulated Invoice lookup SQL;
+- lifecycle cutoff calculation implementation;
+- automatic Invoice closing execution;
+- manual closing API;
+- due-date calculation;
+- Invoice materialization;
+- InvoiceItem materialization;
+- Payment behavior;
+- administrative UI;
+- RBAC;
+- Audit event names;
+- worker `main.py` wiring.
+
