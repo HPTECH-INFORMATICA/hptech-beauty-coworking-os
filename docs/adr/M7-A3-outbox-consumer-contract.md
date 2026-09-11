@@ -2345,3 +2345,151 @@ T22 does not yet define:
 - Audit event names;
 - worker `main.py` wiring.
 
+## M7-A3-T22.1 - Usage Billing Cycle Allocation Policy
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the contractual authority that determines how financial effects from a
+Usage are allocated when that Usage reaches or crosses an accumulated Invoice
+lifecycle boundary.
+
+The Coworking defines this policy for each professional according to the
+applicable commercial contract.
+
+### Contract authority
+
+1. `booking_starts_at` remains authoritative under M7-A3-T17 for resolving the
+   historical professional Billing contract applicable to the Usage.
+
+2. `booking_starts_at` MUST NOT be treated as a universal rule forcing every
+   financial effect of the Usage into one accumulated Invoice.
+
+3. After resolving the historical contract, the worker MUST apply the cycle
+   allocation policy configured by the Coworking for that contract.
+
+4. There is no universal allocation-policy default.
+
+5. The worker MUST NOT invent an allocation policy when configuration is
+   missing or ambiguous.
+
+### V1 allocation policies
+
+The V1 policies are:
+
+- `USAGE_COMPLETION`
+- `FIXED_CUTOFF_SPLIT`
+
+### USAGE_COMPLETION
+
+6. `USAGE_COMPLETION` represents a contractual arrangement in which the
+   financial lifecycle applicable to the Usage follows its effective
+   completion.
+
+7. A Usage is not automatically divided between accumulated Invoices merely
+   because its actual use extends beyond the originally scheduled end or a
+   calendar closing time.
+
+8. The authoritative actual completion remains the completed Usage checkout
+   context already established by the BCOS Usage flow.
+
+9. Overtime calculation remains based on actual use according to the previously
+   approved Pricing/Overtime contracts.
+
+### FIXED_CUTOFF_SPLIT
+
+10. `FIXED_CUTOFF_SPLIT` represents a contractual arrangement in which the
+    configured lifecycle cutoff is an effective financial allocation boundary.
+
+11. If a Usage crosses that cutoff, financial effects before and after the
+    cutoff MAY belong to different accumulated Invoice cycles.
+
+12. Financial effects up to the contractual cutoff belong to the cycle that is
+    closing.
+
+13. Financial effects after the contractual cutoff belong to the following
+    applicable cycle.
+
+14. The split MUST use the actual temporal Usage context and the contractual
+    lifecycle cutoff.
+
+15. The worker MUST NOT move post-cutoff financial effects back into the
+    previous cycle merely because the Usage began before the cutoff.
+
+### Separation from reception closing
+
+16. Billing-cycle allocation is distinct from Reception Hours segmentation.
+
+17. M7-A3-T11 remains authoritative for reception-closing overtime
+    segmentation and charge/forgive treatment.
+
+18. A lifecycle cutoff MUST NOT be interpreted as a reception closing time
+    unless the Coworking's configuration independently makes those instants
+    equal.
+
+### Historical integrity
+
+19. The allocation policy belongs to the historical professional Billing
+    contract configuration.
+
+20. Future termination, renewal, new contract or amendment/addendum MUST NOT
+    rewrite the allocation policy applied to historical Billing.
+
+21. Processing time MUST NOT determine which contract or allocation policy
+    applies.
+
+### Idempotency impact
+
+22. `FIXED_CUTOFF_SPLIT` means one Usage may legitimately produce financial
+    effects associated with more than one accumulated Invoice cycle.
+
+23. Therefore the existing physical uniqueness
+    `UNIQUE (tenant_id, usage_id, item_type)` on `invoice_items` MUST NOT be
+    silently assumed sufficient for split-cycle materialization.
+
+24. Any physical idempotency change required to represent split financial
+    effects MUST be separately frozen before implementation.
+
+25. M7-A3-T18 remains authoritative until such a physical extension is
+    explicitly approved; T22.1 does not silently modify the database schema.
+
+### Fail-closed behavior
+
+26. Missing allocation policy MUST fail closed.
+
+27. Unsupported allocation policy MUST fail closed.
+
+28. Ambiguous cycle allocation MUST fail closed.
+
+29. The worker MUST NOT choose between `USAGE_COMPLETION` and
+    `FIXED_CUTOFF_SPLIT` on behalf of the Coworking.
+
+### Relationship with previous contracts
+
+30. T14-T18 remain authoritative for Invoice modes, historical Billing
+    contracts, resolution and current idempotency guarantees.
+
+31. T19-T22 remain authoritative for accumulated Invoice lifecycle,
+    lifecycle modes, configurable calendar/time and physical lifecycle schema.
+
+32. T22.1 extends those contracts only by freezing the contractual allocation
+    behavior for a Usage that reaches or crosses a lifecycle boundary.
+
+### Non-goals
+
+T22.1 does not yet define:
+
+- physical allocation-policy column or PostgreSQL enum;
+- split InvoiceItem physical identity;
+- accumulated Invoice lookup SQL;
+- exact cycle-resolution algorithm;
+- automatic Invoice closing execution;
+- manual closing API;
+- due-date calculation;
+- Payment behavior;
+- administrative UI;
+- RBAC;
+- Audit event names;
+- worker `main.py` wiring.
+
