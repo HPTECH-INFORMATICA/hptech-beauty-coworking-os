@@ -2717,3 +2717,226 @@ T22.2 does not yet define:
 - Audit event names;
 - worker `main.py` wiring.
 
+## M7-A3-T22.3 - Split InvoiceItem Physical Schema Contract
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the physical database contract required to support split and
+non-split Usage-derived InvoiceItems while preserving idempotency and
+specific-charge discount auditability.
+
+### New InvoiceItem fields
+
+1. A later Alembic revision MUST introduce:
+
+   - `billing_period_start TIMESTAMPTZ NULL`
+   - `billing_period_end TIMESTAMPTZ NULL`
+   - `related_invoice_item_id UUID NULL`
+
+2. `billing_period_start` and `billing_period_end` form one temporal pair.
+
+3. Both fields MUST be NULL together or non-NULL together.
+
+4. When non-NULL:
+
+   `billing_period_start < billing_period_end`
+
+5. Zero-length or inverted intervals MUST be rejected by the database.
+
+### Non-segmented Usage-derived items
+
+6. A non-segmented Usage-derived InvoiceItem has:
+
+   - `usage_id IS NOT NULL`
+   - `billing_period_start IS NULL`
+   - `billing_period_end IS NULL`
+
+7. Non-segmented idempotency MUST preserve the logical guarantee:
+
+   `UNIQUE (tenant_id, usage_id, item_type)`
+
+   for rows matching the non-segmented predicate.
+
+8. A retry MUST NOT create a duplicate non-segmented financial effect.
+
+### Segmented Usage-derived items
+
+9. A segmented Usage-derived InvoiceItem has:
+
+   - `usage_id IS NOT NULL`
+   - `billing_period_start IS NOT NULL`
+   - `billing_period_end IS NOT NULL`
+
+10. Segmented idempotency MUST use the logical identity:
+
+    - `tenant_id`
+    - `usage_id`
+    - `item_type`
+    - `billing_period_start`
+    - `billing_period_end`
+
+11. The database MUST permit distinct legitimate temporal segments for the
+    same Usage and item type.
+
+12. The database MUST reject a duplicate of the same temporal segment.
+
+13. The segmented identity MUST be implemented using a partial unique index or
+    equivalent PostgreSQL mechanism whose NULL semantics do not weaken the
+    idempotency guarantee.
+
+### Existing InvoiceItem uniqueness
+
+14. The existing physical uniqueness on:
+
+    `(tenant_id, usage_id, item_type)`
+
+    MUST NOT simply be dropped without replacement.
+
+15. Its replacement MUST preserve protection for non-segmented items and add
+    protection for segmented items atomically within the migration.
+
+### Specific-charge DISCOUNT relationship
+
+16. `related_invoice_item_id` represents a DISCOUNT associated with one
+    specific original InvoiceItem.
+
+17. The relationship MUST be tenant-safe.
+
+18. The relationship MUST be Invoice-safe.
+
+19. A specific-charge DISCOUNT MUST NOT reference an InvoiceItem belonging to
+    another tenant.
+
+20. A specific-charge DISCOUNT MUST NOT reference an InvoiceItem belonging to
+    another Invoice.
+
+21. The physical relationship MUST therefore use the logical composite
+    reference:
+
+    `(tenant_id, invoice_id, related_invoice_item_id)`
+
+    to:
+
+    `(tenant_id, invoice_id, id)`
+
+22. The referenced InvoiceItem side MUST expose the required candidate key or
+    uniqueness necessary for PostgreSQL to enforce that composite foreign key.
+
+### Allowed relationship owner
+
+23. When `related_invoice_item_id IS NOT NULL`, the referencing InvoiceItem
+    MUST have:
+
+    `item_type = DISCOUNT`
+
+24. `BASE_LEASE`, `OVERTIME` and `ADJUSTMENT` MUST NOT carry a
+    `related_invoice_item_id`.
+
+25. A DISCOUNT MAY have `related_invoice_item_id IS NULL` because general
+    Invoice-level discounts remain a separate future Billing concern.
+
+### One specific DISCOUNT per original item in V1
+
+26. V1 permits at most one specific-charge DISCOUNT for one original
+    InvoiceItem.
+
+27. The database MUST enforce the logical uniqueness:
+
+    `(tenant_id, related_invoice_item_id)`
+
+    where `related_invoice_item_id IS NOT NULL`.
+
+28. A partial forgiveness is represented by the amount of that single
+    specific-charge DISCOUNT.
+
+29. Multiple rows MUST NOT be created merely to represent repeated partial
+    adjustments against the same original charge in V1.
+
+30. A future requirement for multiple specific discounts against one original
+    item requires a new approved contract and migration.
+
+### Original financial evidence
+
+31. Creating a specific-charge DISCOUNT MUST NOT delete the original charge.
+
+32. Creating a specific-charge DISCOUNT MUST NOT rewrite the original charge
+    into a discounted value.
+
+33. The original item and its related DISCOUNT remain separately auditable.
+
+### BASE_LEASE
+
+34. T22.3 does not authorize automatic BASE_LEASE segmentation.
+
+35. BASE_LEASE remains non-segmented unless a future approved business and
+    technical contract explicitly introduces proration.
+
+### OVERTIME
+
+36. OVERTIME MAY use temporal segmentation when required by
+    `FIXED_CUTOFF_SPLIT`.
+
+37. Distinct OVERTIME intervals from the same Usage MAY belong to different
+    accumulated Invoices when the approved lifecycle allocation requires it.
+
+38. Reprocessing the same OVERTIME interval MUST remain idempotent.
+
+### Migration boundary
+
+39. `0005_billing_lifecycle` MUST remain unchanged.
+
+40. These physical changes MUST be introduced only by a later Alembic
+    revision.
+
+41. The later migration MUST preserve tenant-safe foreign keys and existing
+    Billing referential integrity.
+
+42. Migration downgrade behavior MUST be explicitly defined.
+
+43. No database migration is executed by approval of T22.3 itself.
+
+### Fail-closed behavior
+
+44. Invalid interval pairs MUST fail closed.
+
+45. Duplicate temporal segment identity MUST fail closed.
+
+46. Cross-tenant related InvoiceItem references MUST fail closed.
+
+47. Cross-Invoice related InvoiceItem references MUST fail closed.
+
+48. A non-DISCOUNT item carrying `related_invoice_item_id` MUST fail closed.
+
+49. A second specific-charge DISCOUNT targeting the same original InvoiceItem
+    MUST fail closed in V1.
+
+### Relationship with previous contracts
+
+50. T18 remains authoritative for Invoice materialization idempotency.
+
+51. T22.1 remains authoritative for Usage billing-cycle allocation policy.
+
+52. T22.2 remains authoritative for temporal financial-segment identity and
+    specific-charge discount linkage.
+
+53. T22.3 freezes only their physical InvoiceItem schema representation.
+
+### Non-goals
+
+T22.3 does not define:
+
+- accumulated Invoice cycle lookup SQL;
+- cycle-resolution algorithm;
+- OVERTIME financial calculation formulas;
+- BASE_LEASE proration;
+- general Invoice-level discount behavior;
+- automatic Invoice closing;
+- Payment behavior;
+- due dates;
+- administrative UI;
+- RBAC;
+- Audit event names;
+- worker `main.py` wiring.
+
