@@ -3308,3 +3308,238 @@ T22.5 does not yet:
 - wire worker `main.py`;
 - define administrative UI or APIs for contract parametrization.
 
+
+## M7-A3-T23 - Invoice Materialization Contract
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze how the worker materializes the financial result of `USAGE_COMPLETED`
+into `Invoice` and `InvoiceItem` while preserving the professional Billing
+contract, historical integrity, lifecycle rules, allocation policy,
+idempotency and transactional guarantees already approved in M7-A3.
+
+### Contract source
+
+1. Invoice materialization MUST use the
+   `ProfessionalBillingContract` already resolved inside
+   `UsagePricingContext`.
+
+2. The materializer MUST NOT perform a second independent professional Billing
+   contract resolution.
+
+3. `booking_starts_at` remains authoritative only for selecting which historical
+   professional Billing contract version applies, according to M7-A3-T17.
+
+4. `booking_starts_at` MUST NOT be treated as a universal rule that forces all
+   financial effects from one Usage into one accumulated Invoice cycle.
+
+### Required professional Billing contract context
+
+5. The worker contract representation MUST expose the historical fields required
+   by the already-approved Billing lifecycle contracts, including:
+
+   - `lifecycle_mode`
+   - `lifecycle_weekday`
+   - `lifecycle_biweekly_anchor`
+   - `lifecycle_month_day`
+   - `lifecycle_closing_time`
+   - `cycle_allocation_policy`
+
+6. The worker MUST NOT infer any missing lifecycle or allocation-policy value.
+
+7. Historical professional Billing contract resolution remains tenant-safe and
+   professional-safe.
+
+### PER_USAGE materialization
+
+8. For `PER_USAGE`, the Usage-specific Invoice identity is:
+
+   `invoices.source_usage_id = usage_id`
+
+9. The Invoice MUST belong to the same tenant and professional as the Usage and
+   resolved historical professional Billing contract.
+
+10. Reprocessing the same `USAGE_COMPLETED` MUST NOT create a second PER_USAGE
+    Invoice for the same Usage.
+
+11. `cycle_allocation_policy` MUST be NULL for `PER_USAGE`.
+
+12. Accumulated Invoice lifecycle configuration does not apply to PER_USAGE
+    materialization.
+
+### ACCUMULATED_OPEN_INVOICE materialization
+
+13. For `ACCUMULATED_OPEN_INVOICE`:
+
+    `invoices.source_usage_id IS NULL`
+
+14. The worker MUST NOT select an arbitrary OPEN Invoice merely because it
+    belongs to the same professional.
+
+15. An eligible accumulated Invoice MUST correspond to the same tenant,
+    professional, applicable historical contract and correct contractual Billing
+    cycle.
+
+16. Lifecycle configuration and `cycle_allocation_policy` are mandatory for an
+    accumulated contract.
+
+17. Missing or ambiguous accumulated lifecycle or allocation context MUST fail
+    closed.
+
+18. OPEN status alone is insufficient to establish accumulated Invoice
+    eligibility.
+
+### Billing-cycle allocation policy
+
+19. `USAGE_COMPLETION` retains exactly the semantics frozen by M7-A3-T22.1.
+
+20. Under `USAGE_COMPLETION`, a nominal lifecycle cutoff MUST NOT by itself split
+    the Usage financial effects across multiple accumulated Invoice cycles.
+
+21. `FIXED_CUTOFF_SPLIT` retains exactly the semantics frozen by M7-A3-T22.1.
+
+22. Under `FIXED_CUTOFF_SPLIT`, a Usage crossing the contractual lifecycle
+    cutoff MAY produce financial effects in more than one accumulated Invoice
+    cycle.
+
+23. The materializer consumes the approved financial segmentation resulting from
+    Pricing/Billing processing; it MUST NOT invent a new allocation rule.
+
+24. Reception closing and accumulated Billing lifecycle cutoff remain separate
+    contractual concepts.
+
+### InvoiceItem materialization
+
+25. Non-segmented Usage-derived InvoiceItems retain the idempotent identity:
+
+    `tenant_id + usage_id + item_type`
+
+26. Segmented Usage-derived InvoiceItems retain the idempotent identity:
+
+    `tenant_id + usage_id + item_type + billing_period_start + billing_period_end`
+
+27. A retry MUST reuse or recognize the existing logical financial effect rather
+    than create a duplicate InvoiceItem.
+
+28. A materialization conflict in which the existing row does not represent the
+    same expected financial evidence MUST fail closed.
+
+29. `BASE_LEASE` MUST NOT be automatically split or prorated merely because a
+    Usage crosses a lifecycle cutoff.
+
+30. `OVERTIME` MAY be temporally segmented when required by
+    `FIXED_CUTOFF_SPLIT`.
+
+31. Temporal InvoiceItem segmentation remains governed by M7-A3-T22.2 and
+    M7-A3-T22.3.
+
+### Specific-charge DISCOUNT
+
+32. A DISCOUNT representing forgiveness or reduction of a specific materialized
+    charge MUST preserve the original InvoiceItem.
+
+33. Such a DISCOUNT MUST use `related_invoice_item_id`.
+
+34. The related InvoiceItem MUST belong to the same tenant and same Invoice.
+
+35. V1 permits at most one specific-charge DISCOUNT per original InvoiceItem.
+
+36. A retry MUST NOT create a second specific-charge DISCOUNT for the same
+    original InvoiceItem.
+
+37. General Invoice-level discount behavior remains outside this contract.
+
+### Transactional atomicity
+
+38. Invoice selection or creation, InvoiceItem materialization and the successful
+    transition of the Outbox event to `PROCESSED` MUST occur inside the same
+    financial transaction established by M7-A3-T5.
+
+39. A failure during materialization MUST roll back the complete financial
+    transaction.
+
+40. The Outbox event MUST NOT be marked `PROCESSED` if Invoice or InvoiceItem
+    materialization fails.
+
+41. Retry behavior continues to follow the approved Outbox retry and recovery
+    contracts.
+
+### Fail-closed behavior
+
+42. Professional Billing contract absence MUST fail closed.
+
+43. Ambiguous professional Billing contract resolution MUST fail closed.
+
+44. Unsupported `invoice_mode` MUST fail closed.
+
+45. Missing required accumulated lifecycle configuration MUST fail closed.
+
+46. Missing required accumulated `cycle_allocation_policy` MUST fail closed.
+
+47. Unsupported allocation policy MUST fail closed.
+
+48. Indeterminate accumulated Billing cycle MUST fail closed.
+
+49. Multiple accumulated Invoices matching a context that requires exactly one
+    eligible Invoice MUST fail closed.
+
+50. An idempotency conflict incompatible with the expected financial result MUST
+    fail closed.
+
+51. Cross-tenant or cross-professional Invoice materialization MUST fail closed.
+
+### Accumulated Invoice physical identity boundary
+
+52. T23 does NOT yet define the physical accumulated Invoice cycle identity.
+
+53. The worker MUST NOT invent a lookup rule equivalent to "first OPEN Invoice"
+    or "latest OPEN Invoice".
+
+54. A separate approved contract MUST define how an accumulated Invoice is
+    uniquely identified by its professional Billing contract and contractual
+    lifecycle cycle before ACCUMULATED_OPEN_INVOICE materialization is
+    implemented.
+
+55. A fixed physical identity such as contract plus cycle boundaries MUST NOT be
+    assumed until that separate contract is approved.
+
+### Relationship with previous contracts
+
+56. T14 remains authoritative for Invoice materialization mode.
+
+57. T15-T17 remain authoritative for historical professional Billing contract
+    persistence and resolution.
+
+58. T18 remains authoritative for PER_USAGE Invoice idempotency.
+
+59. T19-T22 remain authoritative for accumulated Invoice lifecycle and
+    configuration.
+
+60. T22.1 remains authoritative for Usage Billing cycle allocation policy.
+
+61. T22.2-T22.3 remain authoritative for segmented InvoiceItem identity and
+    specific-charge DISCOUNT linkage.
+
+62. T22.4 remains authoritative for allocation-policy physical representation.
+
+63. T22.5 remains authoritative for the migration boundary implementing the
+    required physical support.
+
+### Non-goals
+
+T23 does not yet define:
+
+- accumulated Invoice cycle physical identity;
+- accumulated Invoice lookup SQL;
+- exact lifecycle cutoff calculation implementation;
+- automatic Invoice closing execution;
+- manual closing API;
+- due-date calculation;
+- Payment behavior;
+- general Invoice-level discount behavior;
+- administrative UI;
+- RBAC;
+- Audit event names;
+- worker `main.py` wiring.
