@@ -106,6 +106,12 @@ def billing_contract_row() -> dict[str, Any]:
         "invoice_mode": "PER_USAGE",
         "valid_from": datetime(2026, 9, 1, 0, 0, tzinfo=UTC),
         "valid_until": None,
+        "lifecycle_mode": None,
+        "lifecycle_weekday": None,
+        "lifecycle_biweekly_anchor": None,
+        "lifecycle_month_day": None,
+        "lifecycle_closing_time": None,
+        "cycle_allocation_policy": None,
     }
 
 

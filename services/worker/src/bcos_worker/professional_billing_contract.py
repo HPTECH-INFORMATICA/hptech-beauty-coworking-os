@@ -1,9 +1,9 @@
-"""Historical professional Billing contract resolution."""
+﻿"""Historical professional Billing contract resolution."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime, time
 from uuid import UUID
 
 from sqlalchemy import text
@@ -22,6 +22,110 @@ class ProfessionalBillingContract:
     invoice_mode: str
     valid_from: datetime
     valid_until: datetime | None
+    lifecycle_mode: str | None
+    lifecycle_weekday: int | None
+    lifecycle_biweekly_anchor: date | None
+    lifecycle_month_day: int | None
+    lifecycle_closing_time: time | None
+    cycle_allocation_policy: str | None
+
+
+def _validate_contract_configuration(
+    *,
+    invoice_mode: str,
+    lifecycle_mode: str | None,
+    lifecycle_weekday: int | None,
+    lifecycle_biweekly_anchor: date | None,
+    lifecycle_month_day: int | None,
+    lifecycle_closing_time: time | None,
+    cycle_allocation_policy: str | None,
+) -> None:
+    if invoice_mode == "PER_USAGE":
+        if any(
+            value is not None
+            for value in (
+                lifecycle_mode,
+                lifecycle_weekday,
+                lifecycle_biweekly_anchor,
+                lifecycle_month_day,
+                lifecycle_closing_time,
+                cycle_allocation_policy,
+            )
+        ):
+            raise ProfessionalBillingContractError(
+                "PER_USAGE contract cannot define accumulated Billing lifecycle"
+            )
+        return
+
+    if invoice_mode != "ACCUMULATED_OPEN_INVOICE":
+        raise ProfessionalBillingContractError(
+            "unsupported professional Billing invoice mode"
+        )
+
+    if cycle_allocation_policy not in {
+        "USAGE_COMPLETION",
+        "FIXED_CUTOFF_SPLIT",
+    }:
+        raise ProfessionalBillingContractError(
+            "accumulated Billing contract has invalid cycle allocation policy"
+        )
+
+    if lifecycle_mode == "WEEKLY":
+        if (
+            lifecycle_weekday is None
+            or not 0 <= lifecycle_weekday <= 6
+            or lifecycle_closing_time is None
+            or lifecycle_biweekly_anchor is not None
+            or lifecycle_month_day is not None
+        ):
+            raise ProfessionalBillingContractError(
+                "invalid WEEKLY Billing lifecycle configuration"
+            )
+        return
+
+    if lifecycle_mode == "BIWEEKLY":
+        if (
+            lifecycle_biweekly_anchor is None
+            or lifecycle_closing_time is None
+            or lifecycle_weekday is not None
+            or lifecycle_month_day is not None
+        ):
+            raise ProfessionalBillingContractError(
+                "invalid BIWEEKLY Billing lifecycle configuration"
+            )
+        return
+
+    if lifecycle_mode == "MONTHLY":
+        if (
+            lifecycle_month_day is None
+            or not 1 <= lifecycle_month_day <= 31
+            or lifecycle_closing_time is None
+            or lifecycle_weekday is not None
+            or lifecycle_biweekly_anchor is not None
+        ):
+            raise ProfessionalBillingContractError(
+                "invalid MONTHLY Billing lifecycle configuration"
+            )
+        return
+
+    if lifecycle_mode == "MANUAL":
+        if any(
+            value is not None
+            for value in (
+                lifecycle_weekday,
+                lifecycle_biweekly_anchor,
+                lifecycle_month_day,
+                lifecycle_closing_time,
+            )
+        ):
+            raise ProfessionalBillingContractError(
+                "MANUAL Billing lifecycle cannot define automatic cutoff fields"
+            )
+        return
+
+    raise ProfessionalBillingContractError(
+        "unsupported accumulated Billing lifecycle mode"
+    )
 
 
 async def resolve_professional_billing_contract(
@@ -47,7 +151,13 @@ async def resolve_professional_billing_contract(
                 professional_id,
                 invoice_mode::text AS invoice_mode,
                 valid_from,
-                valid_until
+                valid_until,
+                lifecycle_mode::text AS lifecycle_mode,
+                lifecycle_weekday,
+                lifecycle_biweekly_anchor,
+                lifecycle_month_day,
+                lifecycle_closing_time,
+                cycle_allocation_policy::text AS cycle_allocation_policy
             FROM professional_billing_contracts
             WHERE tenant_id = :tenant_id
               AND professional_id = :professional_id
@@ -80,21 +190,28 @@ async def resolve_professional_billing_contract(
         )
 
     row = rows[0]
-    invoice_mode = row["invoice_mode"]
 
-    if invoice_mode not in {
-        "PER_USAGE",
-        "ACCUMULATED_OPEN_INVOICE",
-    }:
-        raise ProfessionalBillingContractError(
-            "unsupported professional Billing invoice mode"
-        )
+    _validate_contract_configuration(
+        invoice_mode=row["invoice_mode"],
+        lifecycle_mode=row["lifecycle_mode"],
+        lifecycle_weekday=row["lifecycle_weekday"],
+        lifecycle_biweekly_anchor=row["lifecycle_biweekly_anchor"],
+        lifecycle_month_day=row["lifecycle_month_day"],
+        lifecycle_closing_time=row["lifecycle_closing_time"],
+        cycle_allocation_policy=row["cycle_allocation_policy"],
+    )
 
     return ProfessionalBillingContract(
         id=row["id"],
         tenant_id=row["tenant_id"],
         professional_id=row["professional_id"],
-        invoice_mode=invoice_mode,
+        invoice_mode=row["invoice_mode"],
         valid_from=row["valid_from"],
         valid_until=row["valid_until"],
+        lifecycle_mode=row["lifecycle_mode"],
+        lifecycle_weekday=row["lifecycle_weekday"],
+        lifecycle_biweekly_anchor=row["lifecycle_biweekly_anchor"],
+        lifecycle_month_day=row["lifecycle_month_day"],
+        lifecycle_closing_time=row["lifecycle_closing_time"],
+        cycle_allocation_policy=row["cycle_allocation_policy"],
     )

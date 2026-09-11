@@ -36,6 +36,12 @@ async def test_resolves_contract_at_booking_start() -> None:
                 "invoice_mode": "PER_USAGE",
                 "valid_from": valid_from,
                 "valid_until": None,
+                "lifecycle_mode": None,
+                "lifecycle_weekday": None,
+                "lifecycle_biweekly_anchor": None,
+                "lifecycle_month_day": None,
+                "lifecycle_closing_time": None,
+                "cycle_allocation_policy": None,
             }
         ]
     )
@@ -80,6 +86,12 @@ async def test_accepts_accumulated_open_invoice_mode() -> None:
                     2026, 9, 1, 0, 0, tzinfo=UTC
                 ),
                 "valid_until": None,
+                "lifecycle_mode": "MANUAL",
+                "lifecycle_weekday": None,
+                "lifecycle_biweekly_anchor": None,
+                "lifecycle_month_day": None,
+                "lifecycle_closing_time": None,
+                "cycle_allocation_policy": "USAGE_COMPLETION",
             }
         ]
     )
@@ -129,6 +141,12 @@ async def test_fails_closed_when_contract_is_ambiguous() -> None:
                 2026, 9, 1, 0, 0, tzinfo=UTC
             ),
             "valid_until": None,
+            "lifecycle_mode": None,
+            "lifecycle_weekday": None,
+            "lifecycle_biweekly_anchor": None,
+            "lifecycle_month_day": None,
+            "lifecycle_closing_time": None,
+            "cycle_allocation_policy": None,
         }
 
     session = AsyncMock()
@@ -181,6 +199,12 @@ async def test_rejects_unknown_invoice_mode() -> None:
                     2026, 9, 1, 0, 0, tzinfo=UTC
                 ),
                 "valid_until": None,
+                "lifecycle_mode": None,
+                "lifecycle_weekday": None,
+                "lifecycle_biweekly_anchor": None,
+                "lifecycle_month_day": None,
+                "lifecycle_closing_time": None,
+                "cycle_allocation_policy": None,
             }
         ]
     )
