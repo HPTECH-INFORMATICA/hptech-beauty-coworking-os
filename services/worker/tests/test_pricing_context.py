@@ -22,6 +22,11 @@ class FakeMappingResult:
     def one_or_none(self) -> dict[str, Any] | None:
         return self._row
 
+    def all(self) -> list[dict[str, Any]]:
+        if self._row is None:
+            return []
+        return [self._row]
+
 
 class FakeSession:
     def __init__(self, rows: list[dict[str, Any] | None]) -> None:
@@ -47,6 +52,9 @@ BOOKING_ID = UUID("33333333-3333-3333-3333-333333333333")
 RESOURCE_ID = UUID("44444444-4444-4444-4444-444444444444")
 PROFESSIONAL_ID = UUID("55555555-5555-5555-5555-555555555555")
 UNIT_ID = UUID("66666666-6666-6666-6666-666666666666")
+BILLING_CONTRACT_ID = UUID(
+    "77777777-7777-7777-7777-777777777777"
+)
 
 
 def usage_row() -> dict[str, Any]:
@@ -90,9 +98,20 @@ def reception_row() -> dict[str, Any]:
     }
 
 
+def billing_contract_row() -> dict[str, Any]:
+    return {
+        "id": BILLING_CONTRACT_ID,
+        "tenant_id": TENANT_ID,
+        "professional_id": PROFESSIONAL_ID,
+        "invoice_mode": "PER_USAGE",
+        "valid_from": datetime(2026, 9, 1, 0, 0, tzinfo=UTC),
+        "valid_until": None,
+    }
+
+
 @pytest.mark.asyncio
 async def test_hydrates_authoritative_tenant_safe_context() -> None:
-    session = FakeSession([usage_row(), reception_row()])
+    session = FakeSession([usage_row(), reception_row(), billing_contract_row()])
 
     context = await hydrate_usage_pricing_context(
         session,  # type: ignore[arg-type]
@@ -115,6 +134,12 @@ async def test_hydrates_authoritative_tenant_safe_context() -> None:
     assert context.pricing_rule.overtime.full_hour_from_minutes == 30
     assert context.pricing_rule.overtime.forgiveness_allowed is True
     assert context.pricing_rule.conflict_penalty is None
+    assert context.professional_billing_contract.id == BILLING_CONTRACT_ID
+    assert (
+        context.professional_billing_contract.professional_id
+        == PROFESSIONAL_ID
+    )
+    assert context.professional_billing_contract.invoice_mode == "PER_USAGE"
     assert context.unit_timezone == "America/Sao_Paulo"
     assert context.local_checked_out_at.hour == 13
     assert context.local_checked_out_at.weekday() == 0
@@ -124,7 +149,7 @@ async def test_hydrates_authoritative_tenant_safe_context() -> None:
 
 @pytest.mark.asyncio
 async def test_primary_query_is_scoped_by_usage_and_tenant() -> None:
-    session = FakeSession([usage_row(), reception_row()])
+    session = FakeSession([usage_row(), reception_row(), billing_contract_row()])
 
     await hydrate_usage_pricing_context(
         session,  # type: ignore[arg-type]
@@ -146,7 +171,7 @@ async def test_primary_query_is_scoped_by_usage_and_tenant() -> None:
 
 @pytest.mark.asyncio
 async def test_reception_query_is_tenant_unit_and_local_day_scoped() -> None:
-    session = FakeSession([usage_row(), reception_row()])
+    session = FakeSession([usage_row(), reception_row(), billing_contract_row()])
 
     await hydrate_usage_pricing_context(
         session,  # type: ignore[arg-type]
@@ -164,6 +189,49 @@ async def test_reception_query_is_tenant_unit_and_local_day_scoped() -> None:
         "unit_id": UNIT_ID,
         "day_of_week": 0,
     }
+
+
+@pytest.mark.asyncio
+async def test_billing_contract_query_uses_t17_authority() -> None:
+    session = FakeSession(
+        [usage_row(), reception_row(), billing_contract_row()]
+    )
+
+    await hydrate_usage_pricing_context(
+        session,  # type: ignore[arg-type]
+        tenant_id=TENANT_ID,
+        usage_id=USAGE_ID,
+    )
+
+    sql, params = session.calls[2]
+
+    assert "professional_billing_contracts" in sql
+    assert "tenant_id = :tenant_id" in sql
+    assert "professional_id = :professional_id" in sql
+    assert "valid_from <= :booking_starts_at" in sql
+    assert ":booking_starts_at < valid_until" in sql
+    assert params == {
+        "tenant_id": TENANT_ID,
+        "professional_id": PROFESSIONAL_ID,
+        "booking_starts_at": datetime(
+            2026, 9, 7, 14, 0, tzinfo=UTC
+        ),
+    }
+
+
+@pytest.mark.asyncio
+async def test_missing_billing_contract_fails_closed() -> None:
+    session = FakeSession([usage_row(), reception_row(), None])
+
+    with pytest.raises(
+        PricingContextError,
+        match="professional Billing contract not found",
+    ):
+        await hydrate_usage_pricing_context(
+            session,  # type: ignore[arg-type]
+            tenant_id=TENANT_ID,
+            usage_id=USAGE_ID,
+        )
 
 
 @pytest.mark.asyncio
@@ -324,7 +392,7 @@ async def test_local_checkout_day_uses_unit_timezone() -> None:
     reception = reception_row()
     reception["day_of_week"] = local_day
 
-    session = FakeSession([row, reception])
+    session = FakeSession([row, reception, billing_contract_row()])
 
     context = await hydrate_usage_pricing_context(
         session,  # type: ignore[arg-type]
@@ -348,7 +416,7 @@ async def test_local_checkout_day_uses_unit_timezone() -> None:
 async def test_pricing_snapshot_is_copied() -> None:
     row = usage_row()
     original_snapshot = row["pricing_snapshot"]
-    session = FakeSession([row, reception_row()])
+    session = FakeSession([row, reception_row(), billing_contract_row()])
 
     context = await hydrate_usage_pricing_context(
         session,  # type: ignore[arg-type]

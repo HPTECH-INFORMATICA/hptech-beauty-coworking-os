@@ -16,6 +16,11 @@ from bcos_worker.pricing_rule import (
     PricingRuleDefinitionV1,
     parse_pricing_rule_definition,
 )
+from bcos_worker.professional_billing_contract import (
+    ProfessionalBillingContract,
+    ProfessionalBillingContractError,
+    resolve_professional_billing_contract,
+)
 
 
 class PricingContextError(RuntimeError):
@@ -45,6 +50,7 @@ class UsagePricingContext:
     booking_ends_at: datetime
     pricing_snapshot: dict[str, Any]
     pricing_rule: PricingRuleDefinitionV1
+    professional_billing_contract: ProfessionalBillingContract
     unit_timezone: str
     local_checked_out_at: datetime
     reception_hours: ReceptionHours
@@ -177,6 +183,20 @@ async def hydrate_usage_pricing_context(
             "reception hours configuration missing for local checkout day"
         )
 
+    try:
+        professional_billing_contract = (
+            await resolve_professional_billing_contract(
+                session,
+                tenant_id=tenant_id,
+                professional_id=row["professional_id"],
+                booking_starts_at=row["booking_starts_at"],
+            )
+        )
+    except ProfessionalBillingContractError as exc:
+        raise PricingContextError(
+            f"invalid professional Billing contract: {exc}"
+        ) from exc
+
     return UsagePricingContext(
         tenant_id=row["tenant_id"],
         usage_id=row["usage_id"],
@@ -191,6 +211,7 @@ async def hydrate_usage_pricing_context(
         booking_ends_at=row["booking_ends_at"],
         pricing_snapshot=dict(raw_snapshot),
         pricing_rule=pricing_rule,
+        professional_billing_contract=professional_billing_contract,
         unit_timezone=unit_timezone,
         local_checked_out_at=local_checked_out_at,
         reception_hours=ReceptionHours(
