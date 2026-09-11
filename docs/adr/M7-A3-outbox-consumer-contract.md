@@ -1572,3 +1572,140 @@ This contract does not yet define:
 - Payment behavior;
 - worker `main.py` wiring.
 
+## M7-A3-T18 - Invoice Materialization Idempotency Contract
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the physical and transactional idempotency rules required before the
+worker may materialize Billing Invoices.
+
+This contract preserves the two Invoice materialization modes approved in
+M7-A3-T14 and the historical professional Billing contract resolution approved
+in M7-A3-T17.
+
+### PER_USAGE physical identity
+
+1. `PER_USAGE` MUST have a physical Invoice identity tied to the Usage that
+   originated that Invoice.
+
+2. The `invoices` table MUST support:
+
+   `source_usage_id UUID NULL`
+
+3. For an Invoice materialized under `PER_USAGE`, `source_usage_id` MUST
+   reference the authoritative completed Usage.
+
+4. `source_usage_id` MUST be tenant-safe through a composite foreign key:
+
+   `(source_usage_id, tenant_id) -> usages(id, tenant_id)`
+
+5. PostgreSQL MUST physically guarantee that the same Usage cannot own more
+   than one PER_USAGE Invoice within the tenant.
+
+6. The physical uniqueness authority is:
+
+   `UNIQUE (tenant_id, source_usage_id) WHERE source_usage_id IS NOT NULL`
+
+7. The worker MUST NOT rely only on application checks to prevent duplicate
+   PER_USAGE Invoices.
+
+### ACCUMULATED_OPEN_INVOICE behavior
+
+8. For `ACCUMULATED_OPEN_INVOICE`, `source_usage_id` MUST remain NULL.
+
+9. An accumulated Invoice may contain financial items from multiple Usages and
+   therefore MUST NOT use a single Usage as its Invoice identity.
+
+10. The existing Invoice lookup index by tenant, professional and status may
+    assist future lookup, but it does not define commercial Invoice
+    eligibility.
+
+11. This contract does NOT define which OPEN accumulated Invoice is eligible
+    for reuse.
+
+12. `ACCUMULATED_OPEN_INVOICE` materialization MUST NOT be implemented until
+    the open-Invoice eligibility/lifecycle rule is separately frozen.
+
+### InvoiceItem idempotency
+
+13. The existing physical constraint:
+
+    `UNIQUE (tenant_id, usage_id, item_type)`
+
+    remains authoritative for preventing duplicate financial items generated
+    from the same Usage and InvoiceItemType.
+
+14. Invoice-level idempotency and InvoiceItem-level idempotency are separate
+    guarantees and both MUST be preserved.
+
+15. The worker MUST NOT treat the InvoiceItem uniqueness constraint alone as
+    sufficient protection against duplicate or orphan PER_USAGE Invoices.
+
+### Transactional boundary
+
+16. Invoice creation or reuse, InvoiceItem materialization, Invoice total
+    updates and Outbox success marking MUST remain inside the financial
+    processing transaction defined by M7-A3-T5.
+
+17. A failed financial transaction MUST roll back its Invoice and InvoiceItem
+    mutations.
+
+18. Reprocessing the same `USAGE_COMPLETED` event MUST NOT produce:
+
+    - duplicate effective charges;
+    - duplicate PER_USAGE Invoices;
+    - orphan Invoices caused by an InvoiceItem uniqueness conflict.
+
+### Materialization mode authority
+
+19. The worker MUST NOT choose the Invoice materialization mode.
+
+20. The mode remains authoritative from the historical professional Billing
+    contract resolved under M7-A3-T17.
+
+21. No universal default Invoice materialization mode is authorized.
+
+22. A future professional Billing contract change MUST NOT rewrite historical
+    Invoice materialization already performed for an earlier Usage.
+
+### Tenant isolation
+
+23. All Invoice identity and idempotency guarantees MUST be tenant-scoped.
+
+24. A Usage from one tenant MUST never identify or attach to an Invoice from
+    another tenant.
+
+### Physical schema authorization
+
+25. A migration adding nullable `invoices.source_usage_id` is authorized.
+
+26. That migration is also authorized to add:
+
+    - the tenant-safe Usage foreign key;
+    - the partial unique index/constraint for
+      `(tenant_id, source_usage_id)` where `source_usage_id IS NOT NULL`;
+    - any supporting index strictly required by this frozen contract.
+
+27. No unrelated Billing schema expansion is authorized by T18.
+
+### Non-goals
+
+This contract does not yet define:
+
+- accumulated OPEN Invoice eligibility;
+- accumulated Invoice closing cadence;
+- billing competence/period;
+- due-date calculation;
+- manual Invoice closing;
+- BASE_LEASE materialization semantics;
+- OVERTIME InvoiceItem metadata shape;
+- DISCOUNT materialization details;
+- Payment behavior;
+- Billing CRUD API;
+- administrative UI;
+- RBAC;
+- Audit event names;
+- worker `main.py` wiring.
+
