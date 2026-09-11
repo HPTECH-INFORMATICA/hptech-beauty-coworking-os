@@ -1855,3 +1855,132 @@ This contract does not yet define:
 - Payment behavior;
 - worker `main.py` wiring.
 
+## M7-A3-T20 - Accumulated Invoice Lifecycle Modes V1
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the V1 set of contractual lifecycle modes available for
+`ACCUMULATED_OPEN_INVOICE`.
+
+This contract does not create a universal closing cadence. The applicable mode
+is selected by the Coworking according to its commercial arrangement with the
+professional.
+
+### V1 lifecycle modes
+
+The supported lifecycle modes are exactly:
+
+- `WEEKLY`
+- `BIWEEKLY`
+- `MONTHLY`
+- `MANUAL`
+
+### Commercial authority
+
+1. The Coworking defines the lifecycle mode together with the professional
+   according to the applicable commercial contract.
+
+2. The BCOS MUST NOT choose a lifecycle mode automatically.
+
+3. There is no universal default lifecycle mode.
+
+4. Different professionals in the same tenant MAY use different lifecycle
+   modes.
+
+5. A professional's lifecycle mode MAY change over time through termination,
+   renewal, a new contract or an amendment/addendum, subject to the historical
+   contract rules already frozen in M7-A3-T15 and M7-A3-T19.
+
+### Mode semantics
+
+#### WEEKLY
+
+6. `WEEKLY` represents a contractually configured weekly Invoice lifecycle.
+
+7. T20 defines the mode identifier only. The exact weekday, cutoff timestamp
+   and closing calculation are not frozen by T20.
+
+#### BIWEEKLY
+
+8. `BIWEEKLY` represents a contractually configured biweekly Invoice lifecycle.
+
+9. T20 defines the mode identifier only. The exact biweekly anchor, interval
+   calculation and cutoff timestamp are not frozen by T20.
+
+#### MONTHLY
+
+10. `MONTHLY` represents a contractually configured monthly Invoice lifecycle.
+
+11. T20 defines the mode identifier only. The exact day-of-month, month-end
+    behavior and cutoff timestamp are not frozen by T20.
+
+#### MANUAL
+
+12. `MANUAL` means that automatic time-based Invoice closing MUST NOT be
+    inferred by the worker.
+
+13. A MANUAL accumulated Invoice remains subject to the eligibility rules
+    frozen in M7-A3-T19.
+
+14. The exact authorized command/API used to close a MANUAL Invoice is outside
+    T20.
+
+### Historical integrity
+
+15. Lifecycle mode configuration MUST be historically associated with the
+    applicable professional Billing contract.
+
+16. A future lifecycle mode change MUST NOT rewrite previously materialized
+    Billing.
+
+17. The applicable historical contract remains resolved according to
+    M7-A3-T17.
+
+18. The worker MUST NOT use the latest/current lifecycle mode merely because it
+    is current at processing time.
+
+### Fail-closed behavior
+
+19. Missing lifecycle configuration for an accumulated Billing contract MUST
+    NOT cause the worker to invent a mode.
+
+20. An unsupported lifecycle mode MUST fail closed.
+
+21. Ambiguous lifecycle configuration MUST fail closed.
+
+### Relationship with previous contracts
+
+22. M7-A3-T14 remains authoritative for the two Invoice materialization modes.
+
+23. M7-A3-T15 through T17 remain authoritative for historical professional
+    Billing contracts and their resolution.
+
+24. M7-A3-T18 remains authoritative for Invoice materialization idempotency.
+
+25. M7-A3-T19 remains authoritative for accumulated Invoice contractual
+    lifecycle and eligibility.
+
+26. T20 freezes only the V1 lifecycle mode vocabulary. It does not yet
+    authorize the physical schema or accumulated Invoice materialization.
+
+### Non-goals
+
+T20 does not yet define:
+
+- physical database columns for lifecycle configuration;
+- lifecycle enum implementation in PostgreSQL;
+- weekly weekday configuration;
+- biweekly anchor configuration;
+- monthly closing-day configuration;
+- cutoff timestamp calculation;
+- timezone application;
+- automatic closing execution;
+- manual closing API;
+- due-date calculation;
+- accumulated Invoice lookup SQL;
+- Invoice materialization code;
+- Payment behavior;
+- worker `main.py` wiring.
+
