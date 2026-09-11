@@ -3543,3 +3543,251 @@ T23 does not yet define:
 - RBAC;
 - Audit event names;
 - worker `main.py` wiring.
+
+## M7-A3-T24 - Accumulated Invoice Cycle Identity Contract
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the logical identity used to resolve accumulated Invoices safely and
+deterministically under `ACCUMULATED_OPEN_INVOICE`.
+
+### General identity rules
+
+1. An accumulated Invoice MUST belong to one historical professional Billing
+   contract version.
+
+2. `professional_id` alone MUST NOT identify an accumulated Invoice cycle.
+
+3. `booking_starts_at` remains authoritative only for resolving which historical
+   professional Billing contract applies.
+
+4. `booking_starts_at` MUST NOT be used as a universal accumulated Invoice cycle
+   identity.
+
+5. The worker MUST NOT select an accumulated Invoice using arbitrary rules such
+   as:
+
+   - first OPEN Invoice;
+   - latest OPEN Invoice;
+   - most recently created Invoice;
+   - any OPEN Invoice for the same professional.
+
+### Automatic lifecycle modes
+
+6. For `WEEKLY`, `BIWEEKLY` and `MONTHLY`, the logical accumulated Invoice cycle
+   identity is:
+
+   `tenant_id + professional_billing_contract_id + billing_cycle_start + billing_cycle_end`
+
+7. `professional_billing_contract_id` identifies the exact historical contract
+   version already resolved under M7-A3-T17 and M7-A3-T23.
+
+8. `billing_cycle_start` and `billing_cycle_end` represent the effective
+   contractual financial-cycle boundaries.
+
+9. Cycle boundaries MUST be calculated using the Unit IANA timezone and then
+   persisted as canonical UTC instants.
+
+10. Automatic-cycle boundaries MUST satisfy:
+
+    `billing_cycle_start < billing_cycle_end`
+
+11. The same tenant, historical professional Billing contract and exact cycle
+    interval MUST identify at most one accumulated Invoice.
+
+12. Reprocessing the same financial effect MUST resolve the same accumulated
+    Invoice rather than create another Invoice for the same logical cycle.
+
+### FIXED_CUTOFF_SPLIT
+
+13. Under `FIXED_CUTOFF_SPLIT`, one Usage MAY legitimately produce financial
+    effects in two different accumulated Invoice cycles.
+
+14. The pre-cutoff financial segment belongs to the Invoice identified by the
+    closing/current cycle.
+
+15. The post-cutoff financial segment belongs to the Invoice identified by the
+    following applicable cycle.
+
+16. The worker MUST NOT move both segments into one Invoice merely because the
+    Usage began before the lifecycle cutoff.
+
+### USAGE_COMPLETION
+
+17. Under `USAGE_COMPLETION`, nominal lifecycle cutoff crossing alone does not
+    split the Usage financial effects across multiple accumulated Invoice cycles.
+
+18. The financial-cycle result continues to follow the approved allocation-policy
+    semantics frozen in M7-A3-T22.1.
+
+### MANUAL lifecycle mode
+
+19. `MANUAL` has no automatic calendar cutoff.
+
+20. The worker MUST NOT invent a `billing_cycle_end` for MANUAL using:
+
+    - current time;
+    - Invoice creation time;
+    - Invoice issue time;
+    - first Usage time;
+    - last Usage time;
+    - arbitrary calendar boundaries.
+
+21. The system MAY create an accumulated Invoice when financial materialization
+    first requires one for an applicable MANUAL contract.
+
+22. Creation of the accumulated Invoice does NOT transfer closing authority to
+    the worker.
+
+23. Closing a MANUAL accumulated Invoice remains under explicit Coworking
+    control.
+
+24. The worker MUST NOT automatically close, rotate or replace a MANUAL
+    accumulated Invoice based on elapsed time or calendar progression.
+
+25. While exactly one accumulated Invoice remains eligible under the same tenant
+    and historical professional Billing contract, new financial effects MAY be
+    materialized into that Invoice.
+
+26. After the Coworking closes that MANUAL Invoice, it MUST NOT receive new
+    financial items.
+
+27. A later Usage MAY require creation of a new accumulated Invoice for the same
+    historical contract after the prior MANUAL Invoice is no longer eligible.
+
+28. The worker MUST NOT implicitly reopen a previously closed MANUAL Invoice.
+
+29. More than one simultaneously eligible MANUAL accumulated Invoice for the same
+    tenant and historical professional Billing contract MUST fail closed.
+
+30. MANUAL lifecycle semantics do not require the Coworking to pre-open an Invoice
+    before the first financial materialization.
+
+31. T24 does not define the API, UI, RBAC or administrative command used by the
+    Coworking to close a MANUAL accumulated Invoice.
+
+### PER_USAGE separation
+
+32. `PER_USAGE` remains physically and logically distinct from accumulated Invoice
+    identity.
+
+33. `PER_USAGE` continues to use:
+
+    `invoices.source_usage_id = usage_id`
+
+34. Accumulated Invoices continue to use:
+
+    `source_usage_id IS NULL`
+
+35. Accumulated Invoice cycle identity MUST NOT reuse or overload
+    `source_usage_id`.
+
+### Eligibility
+
+36. An accumulated Invoice is eligible only when it corresponds to the same:
+
+    - tenant;
+    - professional;
+    - historical professional Billing contract;
+    - applicable financial cycle or MANUAL lifecycle instance;
+    - materializable Invoice state.
+
+37. `OPEN` status alone is insufficient to identify or authorize an accumulated
+    Invoice.
+
+38. An Invoice belonging to another historical contract version MUST NOT receive
+    financial effects merely because the professional is the same.
+
+### Idempotency
+
+39. Automatic-cycle materialization MUST preserve one logical accumulated Invoice
+    per:
+
+    `tenant_id + professional_billing_contract_id + billing_cycle_start + billing_cycle_end`
+
+40. Retry MUST resolve the same logical accumulated Invoice.
+
+41. Competing attempts MUST NOT create duplicate accumulated Invoices for the same
+    logical automatic cycle.
+
+42. MANUAL accumulated Invoice materialization MUST preserve the invariant that at
+    most one eligible MANUAL Invoice exists for the same tenant and historical
+    professional Billing contract at a time.
+
+### Fail-closed behavior
+
+43. Missing historical professional Billing contract MUST fail closed.
+
+44. Ambiguous historical professional Billing contract resolution MUST fail closed.
+
+45. Indeterminate automatic Billing-cycle boundaries MUST fail closed.
+
+46. Invalid cycle interval MUST fail closed.
+
+47. Multiple automatic Invoices matching one exact logical cycle MUST fail closed.
+
+48. More than one eligible MANUAL Invoice for one historical contract MUST fail
+    closed.
+
+49. Unsupported lifecycle mode MUST fail closed.
+
+50. The worker MUST NOT choose a fallback Invoice when accumulated identity cannot
+    be resolved unambiguously.
+
+### Physical-schema boundary
+
+51. T24 freezes logical accumulated Invoice identity only.
+
+52. T24 does NOT yet authorize a database migration.
+
+53. A later physical-schema contract MUST define the required Invoice columns,
+    foreign keys, uniqueness, historical compatibility and downgrade behavior.
+
+54. Existing migration `0004_invoice_source_usage` remains authoritative for
+    PER_USAGE Invoice identity.
+
+55. Existing migrations `0005_billing_lifecycle` and
+    `0006_invoice_item_segmentation` remain unchanged.
+
+56. T24 approval does not apply any migration to Neon.
+
+### Relationship with previous contracts
+
+57. T14 remains authoritative for Invoice materialization mode.
+
+58. T15-T17 remain authoritative for historical professional Billing contract
+    storage and resolution.
+
+59. T18 remains authoritative for PER_USAGE Invoice identity.
+
+60. T19-T22 remain authoritative for accumulated Invoice lifecycle configuration.
+
+61. T22.1 remains authoritative for Usage cycle allocation policy.
+
+62. T22.2-T22.5 remain authoritative for InvoiceItem segmentation, discount
+    linkage, physical allocation policy and migration boundaries.
+
+63. T23 remains authoritative for Invoice materialization behavior and
+    transactional atomicity.
+
+64. T24 freezes only accumulated Invoice cycle identity and MANUAL lifecycle
+    selection semantics.
+
+### Non-goals
+
+T24 does not yet define:
+
+- physical accumulated Invoice schema;
+- Alembic migration implementation;
+- exact accumulated Invoice lookup SQL;
+- exact lifecycle cutoff calculation code;
+- automatic Invoice closing implementation;
+- MANUAL closing API or UI;
+- due-date calculation;
+- Payment behavior;
+- general Invoice-level discount behavior;
+- RBAC;
+- Audit event names;
+- worker `main.py` wiring.
