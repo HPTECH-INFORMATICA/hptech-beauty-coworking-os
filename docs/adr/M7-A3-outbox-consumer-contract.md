@@ -2940,3 +2940,138 @@ T22.3 does not define:
 - Audit event names;
 - worker `main.py` wiring.
 
+## M7-A3-T22.4 - Billing Cycle Allocation Policy Physical Contract
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the physical representation of the Coworking-defined accumulated
+Invoice cycle allocation policy established by M7-A3-T22.1.
+
+### Physical field
+
+1. `professional_billing_contracts` MUST expose:
+
+   `cycle_allocation_policy`
+
+2. The field belongs to the historical professional Billing contract.
+
+3. Its PostgreSQL type MUST be a dedicated enum:
+
+   `billing_cycle_allocation_policy`
+
+4. V1 enum values are exactly:
+
+   - `USAGE_COMPLETION`
+   - `FIXED_CUTOFF_SPLIT`
+
+5. There is no universal database default.
+
+### Materialization-mode relationship
+
+6. For `PER_USAGE`:
+
+   `cycle_allocation_policy IS NULL`
+
+7. For `ACCUMULATED_OPEN_INVOICE`:
+
+   `cycle_allocation_policy IS NOT NULL`
+
+8. An accumulated contract without an allocation policy MUST fail closed.
+
+9. A PER_USAGE contract MUST NOT carry an accumulated cycle allocation policy.
+
+### Contract authority
+
+10. The Coworking chooses the allocation policy according to the commercial
+    contract with the professional.
+
+11. The worker MUST NOT choose or infer the policy.
+
+12. `USAGE_COMPLETION` and `FIXED_CUTOFF_SPLIT` retain exactly the semantics
+    frozen by M7-A3-T22.1.
+
+### Historical integrity
+
+13. `cycle_allocation_policy` is versioned together with the historical
+    professional Billing contract.
+
+14. A future change in allocation policy MUST NOT rewrite a historical contract
+    version already applicable to prior Billing.
+
+15. Contract resolution remains governed by M7-A3-T17.
+
+16. `booking_starts_at` resolves which historical contract applies; it does not
+    replace the allocation policy when resolving financial effects across
+    accumulated Invoice cycles.
+
+### Lifecycle relationship
+
+17. T20-T22 remain authoritative for accumulated Invoice lifecycle mode,
+    calendar configuration, closing time and physical lifecycle fields.
+
+18. `cycle_allocation_policy` is orthogonal to `lifecycle_mode`.
+
+19. Lifecycle configuration determines the contractual cycle boundary.
+
+20. Allocation policy determines how a Usage that reaches or crosses that
+    boundary is allocated.
+
+21. The two concepts MUST NOT be collapsed into one enum or one implicit rule.
+
+### Migration boundary
+
+22. `0005_billing_lifecycle` MUST remain unchanged.
+
+23. `cycle_allocation_policy` MUST be introduced by a later Alembic revision.
+
+24. The later migration MUST add the enum, field and mode-consistency
+    constraint without silently weakening the lifecycle constraints already
+    frozen by T22.
+
+25. No database migration is executed by approval of T22.4 itself.
+
+### Fail-closed behavior
+
+26. Missing allocation policy for `ACCUMULATED_OPEN_INVOICE` MUST fail closed.
+
+27. Unsupported allocation policy MUST fail closed.
+
+28. Allocation policy present on `PER_USAGE` MUST fail closed.
+
+29. Processing time MUST NOT determine or replace the historical allocation
+    policy.
+
+### Relationship with previous contracts
+
+30. T14 remains authoritative for Invoice materialization mode.
+
+31. T15-T17 remain authoritative for professional Billing contract history and
+    resolution.
+
+32. T20-T22 remain authoritative for accumulated lifecycle configuration.
+
+33. T22.1 remains authoritative for allocation-policy semantics.
+
+34. T22.2-T22.3 remain authoritative for split InvoiceItem identity,
+    idempotency and specific-charge DISCOUNT linkage.
+
+35. T22.4 freezes only the physical contract field that records which
+    allocation policy the Coworking selected.
+
+### Non-goals
+
+T22.4 does not define:
+
+- accumulated Invoice cycle-resolution algorithm;
+- split financial calculations;
+- InvoiceItem migration details already governed by T22.3;
+- automatic Invoice closing;
+- Payment behavior;
+- due dates;
+- administrative UI;
+- RBAC;
+- Audit event names;
+- worker `main.py` wiring.
+
