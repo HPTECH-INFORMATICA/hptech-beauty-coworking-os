@@ -3075,3 +3075,236 @@ T22.4 does not define:
 - Audit event names;
 - worker `main.py` wiring.
 
+## M7-A3-T22.5 - Migration Boundary Contract
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the migration boundary that will physically implement the contracts
+approved in T22.3 and T22.4 without rewriting migration `0005_billing_lifecycle`
+and without inventing historical commercial policy.
+
+### Alembic boundary
+
+1. `0005_billing_lifecycle` remains immutable.
+
+2. The physical implementation of T22.3 and T22.4 MUST be introduced by a
+   later Alembic revision.
+
+3. The intended next physical revision is conceptually `0006`, subject to the
+   repository's actual Alembic head and revision naming rules at implementation
+   time.
+
+4. The later revision MUST depend on the then-current canonical Alembic head.
+
+### Professional Billing contract changes
+
+5. The later migration MUST introduce the dedicated PostgreSQL enum:
+
+   `billing_cycle_allocation_policy`
+
+6. V1 enum values are exactly:
+
+   - `USAGE_COMPLETION`
+   - `FIXED_CUTOFF_SPLIT`
+
+7. The later migration MUST add:
+
+   `professional_billing_contracts.cycle_allocation_policy`
+
+8. The column MUST be nullable at the physical migration boundary to preserve
+   pre-existing historical rows whose Coworking-defined policy is not known.
+
+9. There MUST be no universal database default.
+
+10. The migration MUST NOT backfill an allocation policy by inference.
+
+11. The migration MUST NOT choose `USAGE_COMPLETION` or
+    `FIXED_CUTOFF_SPLIT` on behalf of the Coworking.
+
+### Historical compatibility
+
+12. Existing historical `ACCUMULATED_OPEN_INVOICE` contracts MAY predate the
+    allocation-policy field.
+
+13. The mode-consistency rule introduced by T22.4 MUST therefore be installed
+    using PostgreSQL historical-compatibility semantics equivalent to
+    `CHECK ... NOT VALID`.
+
+14. Existing rows are not automatically rewritten or treated as if the
+    Coworking had selected a policy.
+
+15. New or updated rows remain subject to the database CHECK even while the
+    constraint is NOT VALID.
+
+16. The worker MUST continue to fail closed when an applicable accumulated
+    historical contract does not provide an unambiguous allocation policy.
+
+17. Later explicit Coworking parametrization may make such historical data
+    complete according to a separately authorized operational flow.
+
+### Materialization-mode consistency
+
+18. The physical consistency rule MUST preserve:
+
+    - `PER_USAGE` -> `cycle_allocation_policy IS NULL`
+    - `ACCUMULATED_OPEN_INVOICE` -> `cycle_allocation_policy IS NOT NULL`
+
+19. The rule MUST NOT introduce a fallback or implicit policy.
+
+### InvoiceItem fields
+
+20. The later migration MUST add:
+
+    - `billing_period_start TIMESTAMPTZ NULL`
+    - `billing_period_end TIMESTAMPTZ NULL`
+    - `related_invoice_item_id UUID NULL`
+
+21. The migration MUST add a temporal-pair CHECK requiring either:
+
+    - both billing-period fields NULL; or
+    - both non-NULL with `billing_period_start < billing_period_end`.
+
+### InvoiceItem idempotency replacement
+
+22. The existing uniqueness protecting:
+
+    `(tenant_id, usage_id, item_type)`
+
+    MUST NOT be removed until its replacement protections are created within
+    the same migration.
+
+23. Non-segmented Usage-derived items MUST preserve partial uniqueness
+    equivalent to:
+
+    `UNIQUE (tenant_id, usage_id, item_type)`
+
+    where:
+
+    - `usage_id IS NOT NULL`
+    - `billing_period_start IS NULL`
+    - `billing_period_end IS NULL`
+
+24. Segmented Usage-derived items MUST add partial uniqueness equivalent to:
+
+    `UNIQUE (
+        tenant_id,
+        usage_id,
+        item_type,
+        billing_period_start,
+        billing_period_end
+    )`
+
+    where:
+
+    - `usage_id IS NOT NULL`
+    - `billing_period_start IS NOT NULL`
+    - `billing_period_end IS NOT NULL`
+
+25. PostgreSQL NULL semantics MUST NOT create an idempotency gap.
+
+### Related InvoiceItem relationship
+
+26. `related_invoice_item_id` MUST support a tenant-safe and Invoice-safe
+    relationship.
+
+27. The referenced side MUST expose the candidate key required for the logical
+    composite foreign key:
+
+    `(tenant_id, invoice_id, related_invoice_item_id)`
+
+    referencing:
+
+    `(tenant_id, invoice_id, id)`
+
+28. Cross-tenant relationships MUST be rejected.
+
+29. Cross-Invoice relationships MUST be rejected.
+
+30. A row MUST NOT reference itself.
+
+31. The database MUST enforce:
+
+    `related_invoice_item_id IS NULL OR related_invoice_item_id <> id`
+
+32. When `related_invoice_item_id IS NOT NULL`, the referencing row MUST be a
+    `DISCOUNT`.
+
+33. Non-DISCOUNT items MUST NOT carry a related item reference.
+
+34. V1 MUST enforce at most one specific-charge DISCOUNT for one original item
+    using partial uniqueness equivalent to:
+
+    `UNIQUE (tenant_id, related_invoice_item_id)`
+
+    where `related_invoice_item_id IS NOT NULL`.
+
+### Migration ordering and safety
+
+35. Creation order MUST avoid temporarily removing idempotency or referential
+    integrity.
+
+36. Required candidate uniqueness MUST exist before creation of the composite
+    foreign key that depends on it.
+
+37. Replacement partial unique indexes MUST exist before the legacy
+    `(tenant_id, usage_id, item_type)` uniqueness is removed.
+
+38. The migration MUST be transactional according to the repository's existing
+    Alembic/PostgreSQL conventions.
+
+39. The migration MUST fail rather than silently coerce incompatible data.
+
+### Downgrade
+
+40. Downgrade behavior MUST be explicitly implemented.
+
+41. The downgrade MUST remove dependent foreign keys and constraints before
+    dropping supporting indexes, columns or enums.
+
+42. Downgrade MUST NOT fabricate merged InvoiceItem data if segmented rows
+    already exist.
+
+43. If downgrade cannot safely restore the previous uniqueness because real
+    split rows exist, the downgrade MUST fail closed rather than destroy or
+    silently collapse financial evidence.
+
+### Neon application boundary
+
+44. Approval of T22.5 does not apply any migration to Neon.
+
+45. Migration `0005_billing_lifecycle` remains pending application to Neon
+    until the BCOS database connection is available.
+
+46. A future `0006` MUST NOT be applied ahead of its dependency chain.
+
+47. Database application and verification remain separate explicit gates.
+
+### Relationship with previous contracts
+
+48. T22.1 remains authoritative for allocation-policy semantics.
+
+49. T22.2 remains authoritative for temporal financial-segment identity and
+    discount linkage.
+
+50. T22.3 remains authoritative for the InvoiceItem physical-schema contract.
+
+51. T22.4 remains authoritative for the physical allocation-policy field.
+
+52. T22.5 freezes only the safe migration boundary and historical compatibility
+    strategy.
+
+### Non-goals
+
+T22.5 does not yet:
+
+- create the Alembic revision;
+- modify migration `0005`;
+- apply database changes;
+- backfill historical Coworking policy;
+- implement cycle-resolution algorithms;
+- implement Pricing/Billing materialization;
+- wire worker `main.py`;
+- define administrative UI or APIs for contract parametrization.
+
