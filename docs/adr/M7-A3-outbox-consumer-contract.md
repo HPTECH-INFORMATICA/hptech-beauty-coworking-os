@@ -2493,3 +2493,227 @@ T22.1 does not yet define:
 - Audit event names;
 - worker `main.py` wiring.
 
+## M7-A3-T22.2 - Split InvoiceItem Identity & Discount Link Contract
+
+**Status:** HUMAN APPROVED
+
+### Purpose
+
+Freeze the logical identity and audit relationship required when one Usage
+legitimately produces financial effects in more than one accumulated Invoice
+cycle under M7-A3-T22.1.
+
+This contract preserves idempotency while allowing legitimate financial
+segmentation at a contractual lifecycle cutoff.
+
+### Temporal financial segment
+
+1. An InvoiceItem derived from a temporal portion of a Usage MAY represent an
+   explicit financial interval.
+
+2. The logical interval fields are:
+
+   - `billing_period_start`
+   - `billing_period_end`
+
+3. A temporal financial interval MUST satisfy:
+
+   `billing_period_start < billing_period_end`
+
+4. The interval represents the actual portion of Usage time to which that
+   financial effect applies.
+
+5. Temporal intervals use the canonical UTC persistence model already adopted
+   by BCOS. Contractual lifecycle cutoff calculation continues to use the
+   Unit IANA timezone before conversion to the persisted instant.
+
+6. A zero-length financial segment MUST NOT be materialized.
+
+### Fixed-cutoff split
+
+7. Under `FIXED_CUTOFF_SPLIT`, when a financial effect crosses the contractual
+   lifecycle cutoff, the worker MAY materialize separate InvoiceItems for the
+   portions before and after the cutoff.
+
+8. The pre-cutoff segment belongs to the closing/current applicable Invoice
+   cycle.
+
+9. The post-cutoff segment belongs to the following applicable Invoice cycle.
+
+10. Segmentation MUST NOT create overlapping temporal portions for the same
+    financial effect.
+
+11. Segmentation MUST NOT create an artificial gap in a continuous financial
+    effect unless another already-approved Pricing rule explicitly makes that
+    gap non-billable.
+
+### Usage-completion policy
+
+12. Under `USAGE_COMPLETION`, crossing the nominal lifecycle cutoff MUST NOT by
+    itself split the Usage financial effect into multiple Invoice cycles.
+
+13. T22.2 does not redefine how new Usages that begin after a nominal cutoff
+    are assigned while another Usage is still in progress. That behavior
+    remains outside this contract until explicitly frozen if required.
+
+### InvoiceItem idempotent identity
+
+14. The historical physical identity:
+
+    `UNIQUE (tenant_id, usage_id, item_type)`
+
+    is insufficient for temporal split materialization because two legitimate
+    segments of the same Usage and item type may belong to different cycles.
+
+15. For temporal Usage-derived financial segments, idempotent identity MUST
+    include:
+
+    - `tenant_id`
+    - `usage_id`
+    - `item_type`
+    - `billing_period_start`
+    - `billing_period_end`
+
+16. Reprocessing the same Usage, item type and exact financial interval MUST
+    NOT create a duplicate InvoiceItem.
+
+17. Two non-overlapping legitimate intervals for the same Usage and item type
+    MUST be independently materializable.
+
+18. T22.2 does not authorize silently dropping all protection previously
+    provided by T18.
+
+19. The physical migration MUST preserve an idempotency guarantee for
+    non-segmented Usage-derived InvoiceItems as well as segmented ones.
+
+### BASE_LEASE
+
+20. `BASE_LEASE` MUST NOT be automatically prorated or split merely because a
+    Usage crosses a lifecycle cutoff.
+
+21. Any future rule that prorates or divides `BASE_LEASE` across cycles requires
+    a separately approved business and technical contract.
+
+22. T22.2 therefore introduces no implicit BASE_LEASE proration formula.
+
+### OVERTIME
+
+23. `OVERTIME` MAY be represented by more than one InvoiceItem for the same
+    Usage when a contractual fixed-cutoff split requires distinct financial
+    intervals.
+
+24. Each OVERTIME segment MUST preserve the actual temporal interval on which
+    its financial calculation is based.
+
+25. Existing approved Pricing, overtime-minute precision, reception-closing,
+    multi-hour threshold, monetary precision and rounding contracts remain
+    authoritative.
+
+### Discount relationship
+
+26. A `DISCOUNT` that represents forgiveness or reduction of a specific
+    materialized charge MUST reference the original InvoiceItem rather than
+    replacing, deleting or mutating the original financial evidence.
+
+27. The logical relationship field is:
+
+    `related_invoice_item_id`
+
+28. The original charge remains auditable after the DISCOUNT is created.
+
+29. A DISCOUNT linked to a specific charge MUST NOT ambiguously apply to another
+    unrelated Usage segment.
+
+30. Physical enforcement of tenant safety and Invoice consistency for the
+    relationship MUST be defined in the corresponding schema contract before
+    migration implementation.
+
+31. The amount/sign representation of DISCOUNT remains governed by the Billing
+    monetary contract and MUST NOT be reinvented by T22.2.
+
+### General Invoice discounts
+
+32. T22.2 does not define a general commercial discount applied to an entire
+    Invoice.
+
+33. A general Invoice-level discount, if required later, is a separate Billing
+    concern and MUST NOT be conflated with forgiveness of a specific
+    Usage-derived charge.
+
+### Reception-closing separation
+
+34. T22.2 financial segmentation does not replace M7-A3-T11.
+
+35. Reception closing determines the approved reception/overtime segmentation
+    and treatment.
+
+36. Billing lifecycle cutoff determines accumulated Invoice-cycle allocation.
+
+37. If both boundaries affect the same Usage, each contract MUST remain
+    independently traceable in the resulting financial calculation.
+
+### Auditability
+
+38. A materialized temporal InvoiceItem MUST be explainable from:
+
+    - the resolved historical professional Billing contract;
+    - the Usage actual temporal context;
+    - the applicable Pricing snapshot/rule;
+    - the applicable lifecycle cutoff;
+    - the applicable allocation policy;
+    - the resulting financial interval.
+
+39. Retries MUST reproduce the same logical temporal segment identity.
+
+40. Processing time MUST NOT become part of financial segment identity.
+
+### Fail-closed behavior
+
+41. Invalid temporal interval MUST fail closed.
+
+42. Ambiguous cutoff allocation MUST fail closed.
+
+43. Overlapping duplicate financial segmentation MUST fail closed.
+
+44. A specific-charge DISCOUNT whose target cannot be unambiguously resolved
+    MUST fail closed.
+
+### Physical-schema impact
+
+45. T22.2 authorizes a later physical schema contract to introduce logical
+    equivalents of:
+
+    - `invoice_items.billing_period_start`
+    - `invoice_items.billing_period_end`
+    - `invoice_items.related_invoice_item_id`
+
+46. T22.2 does NOT itself modify the database.
+
+47. Migration `0005_billing_lifecycle` MUST NOT be rewritten to include these
+    fields.
+
+48. Any approved physical implementation MUST use a later Alembic revision.
+
+49. The existing InvoiceItem uniqueness must not be silently removed before the
+    replacement segmented/non-segmented idempotency constraints are explicitly
+    frozen.
+
+### Non-goals
+
+T22.2 does not yet define:
+
+- the exact PostgreSQL constraints/indexes for segmented and non-segmented
+  InvoiceItems;
+- the final self-referencing FK shape for `related_invoice_item_id`;
+- accumulated Invoice cycle lookup SQL;
+- financial item calculation formulas;
+- BASE_LEASE proration;
+- general Invoice-level discounts;
+- automatic Invoice closing;
+- Payment behavior;
+- due dates;
+- administrative UI;
+- RBAC;
+- Audit event names;
+- worker `main.py` wiring.
+
