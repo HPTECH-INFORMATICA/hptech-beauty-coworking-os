@@ -2,6 +2,17 @@ from __future__ import annotations
 
 import os
 from logging.config import fileConfig
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# BCOS_LOCAL_ENV
+_BCOS_LOCAL_ENV = Path(__file__).resolve().parents[2] / ".env.local"
+
+load_dotenv(
+    dotenv_path=_BCOS_LOCAL_ENV,
+    override=False,
+)
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool

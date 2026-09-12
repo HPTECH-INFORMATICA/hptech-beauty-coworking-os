@@ -45,3 +45,5 @@ pnpm-debug.log*
 # Python packaging metadata
 *.egg-info/
 *.tsbuildinfo
+.env.local
+.env.*.local

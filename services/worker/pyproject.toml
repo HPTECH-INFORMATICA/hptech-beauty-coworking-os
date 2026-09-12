@@ -6,6 +6,7 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "SQLAlchemy==2.0.52",
     "psycopg[binary]==3.3.4",
+    "python-dotenv>=1.2.3",
 ]
 
 [project.optional-dependencies]
