@@ -1,4 +1,4 @@
-﻿"""Tenant-scoped persistence for BCOS bookings."""
+"""Tenant-scoped persistence for BCOS bookings."""
 
 from __future__ import annotations
 
@@ -70,14 +70,14 @@ async def list_bookings(
                 completed_at
             FROM bookings
             WHERE tenant_id = :tenant_id
-              AND (:starts_from IS NULL OR starts_at >= :starts_from)
-              AND (:starts_until IS NULL OR starts_at <= :starts_until)
+              AND (CAST(:starts_from AS TIMESTAMPTZ) IS NULL OR starts_at >= CAST(:starts_from AS TIMESTAMPTZ))
+              AND (CAST(:starts_until AS TIMESTAMPTZ) IS NULL OR starts_at <= CAST(:starts_until AS TIMESTAMPTZ))
               AND (
-                    :professional_id IS NULL
-                    OR professional_id = :professional_id
+                    CAST(:professional_id AS UUID) IS NULL
+                    OR professional_id = CAST(:professional_id AS UUID)
               )
-              AND (:resource_id IS NULL OR resource_id = :resource_id)
-              AND (:status IS NULL OR status = :status)
+              AND (CAST(:resource_id AS UUID) IS NULL OR resource_id = CAST(:resource_id AS UUID))
+              AND (CAST(:status AS TEXT) IS NULL OR status::text = CAST(:status AS TEXT))
             ORDER BY starts_at, id
             """
         ),

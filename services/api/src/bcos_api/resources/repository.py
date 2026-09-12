@@ -1,4 +1,4 @@
-﻿"""Tenant-scoped persistence for BCOS resources."""
+"""Tenant-scoped persistence for BCOS resources."""
 
 from __future__ import annotations
 
@@ -53,8 +53,8 @@ async def list_resources(
             FROM resources
             WHERE tenant_id = :tenant_id
               AND deleted_at IS NULL
-              AND (:unit_id IS NULL OR unit_id = :unit_id)
-              AND (:category_id IS NULL OR category_id = :category_id)
+              AND (CAST(:unit_id AS UUID) IS NULL OR unit_id = CAST(:unit_id AS UUID))
+              AND (CAST(:category_id AS UUID) IS NULL OR category_id = CAST(:category_id AS UUID))
             ORDER BY name, id
             """
         ),
