@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import "./globals.css";
+
 export const metadata: Metadata = {
   title: "HPTECH Beauty Coworking OS",
-  description: "HPTECH Beauty Coworking OS application skeleton.",
+  description:
+    "Gestão operacional de coworking de beleza, estética e bem-estar.",
 };
 
 export default function RootLayout({
