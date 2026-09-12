@@ -15,6 +15,7 @@ from bcos_api.errors import (
     validation_exception_handler,
 )
 from bcos_api.openapi import normalize_openapi_schema
+from bcos_api.payments.router import router as payments_router
 from bcos_api.pricing.router import router as pricing_router
 from bcos_api.professionals.router import router as professionals_router
 from bcos_api.resource_categories.router import router as resource_categories_router
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     app.include_router(bookings_router)
     app.include_router(usages_router)
     app.include_router(pricing_router)
+    app.include_router(payments_router)
 
     return app
 
