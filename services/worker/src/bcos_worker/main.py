@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 
 from bcos_worker.runtime import run_worker
 from bcos_worker.session import get_session_factory
@@ -19,6 +20,8 @@ async def _run() -> None:
 
 
 def main() -> int:
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(_run())
     return 0
 
