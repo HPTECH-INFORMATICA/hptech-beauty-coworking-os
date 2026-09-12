@@ -1,7 +1,8 @@
-﻿"""FastAPI authentication dependencies."""
+"""FastAPI authentication dependencies."""
 
 from __future__ import annotations
 
+import os
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -10,6 +11,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from bcos_api.auth.identity import (
     AuthenticatedIdentity,
     AuthenticationFailed,
+    HomologationIdentityVerifier,
     IdentityVerifier,
     UnconfiguredIdentityVerifier,
 )
@@ -22,6 +24,21 @@ bearer_scheme = HTTPBearer(
 
 def get_identity_verifier() -> IdentityVerifier:
     """Return the configured trusted identity verifier."""
+
+    homologation_token = os.getenv(
+        "BCOS_HOMOLOGATION_BEARER_TOKEN",
+        "",
+    ).strip()
+    homologation_external_user_id = os.getenv(
+        "BCOS_HOMOLOGATION_EXTERNAL_USER_ID",
+        "",
+    ).strip()
+
+    if homologation_token and homologation_external_user_id:
+        return HomologationIdentityVerifier(
+            expected_token=homologation_token,
+            external_user_id=homologation_external_user_id,
+        )
 
     return UnconfiguredIdentityVerifier()
 
