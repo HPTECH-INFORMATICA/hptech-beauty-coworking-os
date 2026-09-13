@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from bcos_worker.accumulated_invoice_materializer import materialize_accumulated_invoice
 from bcos_worker.dispatcher import UsageCompletedEvent
 from bcos_worker.invoice_materializer import materialize_per_usage_invoice
 from bcos_worker.invoice_repository import InvoiceMaterializationError
@@ -54,9 +55,11 @@ async def handle_usage_completed(
         return
 
     if invoice_mode == "ACCUMULATED_OPEN_INVOICE":
-        raise InvoiceMaterializationError(
-            "ACCUMULATED_OPEN_INVOICE materialization is not implemented yet"
+        await materialize_accumulated_invoice(
+            session,
+            context,
         )
+        return
 
     raise InvoiceMaterializationError(
         f"Unsupported invoice materialization mode: {invoice_mode}"
