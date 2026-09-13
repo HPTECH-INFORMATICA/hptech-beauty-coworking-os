@@ -11,11 +11,15 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bcos_worker.billing_cycle import BillingCycleResolutionError, resolve_billing_cycle
+from bcos_worker.billing_cycle import BillingCycle, BillingCycleResolutionError, resolve_billing_cycle
 from bcos_worker.financial_effects import (
     FinancialEffect,
     FinancialEffectType,
     calculate_usage_financial_effects,
+)
+from bcos_worker.fixed_cutoff_split import (
+    FixedCutoffSplitError,
+    allocate_fixed_cutoff_overtime,
 )
 from bcos_worker.invoice_repository import (
     AccumulatedInvoiceIdentity,
@@ -72,6 +76,22 @@ def _consolidate_overtime(
             ],
         },
     )
+
+
+def _overtime_segment_metadata(
+    context: UsagePricingContext,
+    effect: FinancialEffect,
+) -> dict[str, Any]:
+    return {
+        "forgiveness_allowed": context.pricing_rule.overtime.forgiveness_allowed,
+        "reception_segments": [
+            {
+                "segment": effect.reception_segment,
+                "completed_minutes": int(effect.quantity),
+                "amount": format(effect.total_amount, ".2f"),
+            }
+        ],
+    }
 
 
 async def _ensure_nonsegmented_invoice_item(
@@ -209,6 +229,164 @@ async def _ensure_nonsegmented_invoice_item(
         )
 
 
+async def _ensure_segmented_invoice_item(
+    session: AsyncSession,
+    *,
+    invoice_id: UUID,
+    tenant_id: UUID,
+    usage_id: UUID,
+    effect: FinancialEffect,
+    metadata: dict[str, Any],
+) -> None:
+    period_start = effect.billing_period_start
+    period_end = effect.billing_period_end
+    if (
+        period_start is None
+        or period_end is None
+        or period_start.tzinfo is None
+        or period_end.tzinfo is None
+        or period_start >= period_end
+    ):
+        raise InvoiceMaterializationError(
+            "segmented accumulated InvoiceItem requires a valid Billing period"
+        )
+
+    await session.execute(
+        text(
+            """
+            INSERT INTO invoice_items (
+                tenant_id,
+                invoice_id,
+                usage_id,
+                item_type,
+                description,
+                quantity,
+                unit_amount,
+                total_amount,
+                metadata,
+                billing_period_start,
+                billing_period_end
+            )
+            VALUES (
+                :tenant_id,
+                :invoice_id,
+                :usage_id,
+                :item_type,
+                :description,
+                :quantity,
+                :unit_amount,
+                :total_amount,
+                CAST(:metadata AS jsonb),
+                :billing_period_start,
+                :billing_period_end
+            )
+            ON CONFLICT (
+                tenant_id,
+                usage_id,
+                item_type,
+                billing_period_start,
+                billing_period_end
+            )
+                WHERE usage_id IS NOT NULL
+                  AND billing_period_start IS NOT NULL
+                  AND billing_period_end IS NOT NULL
+            DO NOTHING
+            """
+        ),
+        {
+            "tenant_id": tenant_id,
+            "invoice_id": invoice_id,
+            "usage_id": usage_id,
+            "item_type": effect.item_type.value,
+            "description": effect.description,
+            "quantity": effect.quantity,
+            "unit_amount": effect.unit_amount,
+            "total_amount": effect.total_amount,
+            "metadata": json.dumps(metadata, sort_keys=True, separators=(",", ":")),
+            "billing_period_start": period_start,
+            "billing_period_end": period_end,
+        },
+    )
+
+    result = await session.execute(
+        text(
+            """
+            SELECT
+                id,
+                invoice_id,
+                tenant_id,
+                usage_id,
+                item_type::text AS item_type,
+                description,
+                quantity,
+                unit_amount,
+                total_amount,
+                metadata,
+                billing_period_start,
+                billing_period_end
+            FROM invoice_items
+            WHERE tenant_id = :tenant_id
+              AND usage_id = :usage_id
+              AND item_type = CAST(:item_type AS invoice_item_type)
+              AND billing_period_start = :billing_period_start
+              AND billing_period_end = :billing_period_end
+            ORDER BY created_at, id
+            """
+        ),
+        {
+            "tenant_id": tenant_id,
+            "usage_id": usage_id,
+            "item_type": effect.item_type.value,
+            "billing_period_start": period_start,
+            "billing_period_end": period_end,
+        },
+    )
+
+    rows = result.mappings().all()
+    if len(rows) != 1:
+        raise InvoiceMaterializationError(
+            "segmented accumulated InvoiceItem identity is missing or ambiguous"
+        )
+
+    row = rows[0]
+    if row["invoice_id"] != invoice_id:
+        raise InvoiceMaterializationError(
+            "existing segmented accumulated InvoiceItem belongs to another Invoice"
+        )
+    if row["usage_id"] != usage_id:
+        raise InvoiceMaterializationError(
+            "existing segmented accumulated InvoiceItem belongs to another Usage"
+        )
+    if row["item_type"] != effect.item_type.value:
+        raise InvoiceMaterializationError(
+            "existing segmented accumulated InvoiceItem type differs from expected value"
+        )
+    if row["description"] != effect.description:
+        raise InvoiceMaterializationError(
+            "existing segmented accumulated InvoiceItem description differs from expected value"
+        )
+    if Decimal(row["quantity"]) != effect.quantity:
+        raise InvoiceMaterializationError(
+            "existing segmented accumulated InvoiceItem quantity differs from expected value"
+        )
+    if Decimal(row["unit_amount"]) != effect.unit_amount:
+        raise InvoiceMaterializationError(
+            "existing segmented accumulated InvoiceItem unit amount differs from expected value"
+        )
+    if Decimal(row["total_amount"]) != effect.total_amount:
+        raise InvoiceMaterializationError(
+            "existing segmented accumulated InvoiceItem total differs from expected value"
+        )
+    if dict(row["metadata"]) != metadata:
+        raise InvoiceMaterializationError(
+            "existing segmented accumulated InvoiceItem metadata differs from expected value"
+        )
+    if row["billing_period_start"] != period_start or row["billing_period_end"] != period_end:
+        raise InvoiceMaterializationError(
+            "existing segmented accumulated InvoiceItem period differs from expected value"
+        )
+
+
 async def _recalculate_invoice_totals(
     session: AsyncSession,
     *,
@@ -278,6 +456,111 @@ async def _recalculate_invoice_totals(
     return subtotal_amount, discount_amount, total_amount
 
 
+def _resolve_cycle(
+    context: UsagePricingContext,
+    reference_instant,
+) -> BillingCycle | None:
+    try:
+        return resolve_billing_cycle(
+            contract=context.professional_billing_contract,
+            unit_timezone=context.unit_timezone,
+            reference_instant=reference_instant,
+        )
+    except BillingCycleResolutionError as exc:
+        raise InvoiceMaterializationError(
+            f"accumulated Billing cycle could not be resolved: {exc}"
+        ) from exc
+
+
+async def _get_invoice_for_cycle(
+    session: AsyncSession,
+    context: UsagePricingContext,
+    cycle: BillingCycle | None,
+) -> AccumulatedInvoiceIdentity:
+    return await get_or_create_accumulated_invoice(
+        session,
+        tenant_id=context.tenant_id,
+        professional_id=context.professional_id,
+        professional_billing_contract_id=context.professional_billing_contract.id,
+        cycle=cycle,
+    )
+
+
+async def _materialize_fixed_cutoff_split(
+    session: AsyncSession,
+    context: UsagePricingContext,
+) -> AccumulatedMaterializationResult:
+    effects = calculate_usage_financial_effects(context)
+
+    completion_cycle = _resolve_cycle(context, context.checked_out_at)
+    if completion_cycle is None:
+        raise InvoiceMaterializationError(
+            "FIXED_CUTOFF_SPLIT requires an automatic Billing lifecycle"
+        )
+
+    completion_invoice = await _get_invoice_for_cycle(
+        session,
+        context,
+        completion_cycle,
+    )
+
+    await _ensure_nonsegmented_invoice_item(
+        session,
+        invoice_id=completion_invoice.id,
+        tenant_id=context.tenant_id,
+        usage_id=context.usage_id,
+        effect=effects.base_lease,
+        metadata={},
+    )
+
+    affected: dict[UUID, AccumulatedInvoiceIdentity] = {
+        completion_invoice.id: completion_invoice
+    }
+
+    for overtime_effect in effects.overtime:
+        try:
+            allocations = allocate_fixed_cutoff_overtime(context, overtime_effect)
+        except FixedCutoffSplitError as exc:
+            raise InvoiceMaterializationError(
+                f"FIXED_CUTOFF_SPLIT cannot materialize OVERTIME: {exc}"
+            ) from exc
+
+        for allocation in allocations:
+            invoice = await _get_invoice_for_cycle(
+                session,
+                context,
+                allocation.cycle,
+            )
+            await _ensure_segmented_invoice_item(
+                session,
+                invoice_id=invoice.id,
+                tenant_id=context.tenant_id,
+                usage_id=context.usage_id,
+                effect=allocation.effect,
+                metadata=_overtime_segment_metadata(context, allocation.effect),
+            )
+            affected[invoice.id] = invoice
+
+    primary_totals: tuple[Decimal, Decimal, Decimal] | None = None
+    for invoice in affected.values():
+        totals = await _recalculate_invoice_totals(session, invoice=invoice)
+        if invoice.id == completion_invoice.id:
+            primary_totals = totals
+
+    if primary_totals is None:
+        raise InvoiceMaterializationError(
+            "FIXED_CUTOFF_SPLIT completion Invoice totals were not materialized"
+        )
+
+    subtotal_amount, discount_amount, total_amount = primary_totals
+    return AccumulatedMaterializationResult(
+        invoice=completion_invoice,
+        subtotal_amount=subtotal_amount,
+        discount_amount=discount_amount,
+        total_amount=total_amount,
+    )
+
+
 async def materialize_accumulated_invoice(
     session: AsyncSession,
     context: UsagePricingContext,
@@ -297,28 +580,11 @@ async def materialize_accumulated_invoice(
         )
 
     if allocation_policy == "FIXED_CUTOFF_SPLIT":
-        raise InvoiceMaterializationError(
-            "FIXED_CUTOFF_SPLIT requires deterministic temporal financial segmentation"
-        )
+        return await _materialize_fixed_cutoff_split(session, context)
 
-    try:
-        cycle = resolve_billing_cycle(
-            contract=contract,
-            unit_timezone=context.unit_timezone,
-            reference_instant=context.checked_out_at,
-        )
-    except BillingCycleResolutionError as exc:
-        raise InvoiceMaterializationError(
-            f"accumulated Billing cycle could not be resolved: {exc}"
-        ) from exc
+    cycle = _resolve_cycle(context, context.checked_out_at)
 
-    invoice = await get_or_create_accumulated_invoice(
-        session,
-        tenant_id=context.tenant_id,
-        professional_id=context.professional_id,
-        professional_billing_contract_id=contract.id,
-        cycle=cycle,
-    )
+    invoice = await _get_invoice_for_cycle(session, context, cycle)
 
     effects = calculate_usage_financial_effects(context)
 
