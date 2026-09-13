@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, time
+from dataclasses import replace
 from decimal import Decimal
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -139,3 +140,20 @@ def test_fixed_cutoff_split_fails_closed_when_rule_is_not_additive_across_cutoff
         match="does not preserve immutable financial evidence",
     ):
         allocate_fixed_cutoff_overtime(context, overtime)
+
+
+def test_fixed_cutoff_split_fails_closed_when_effect_crosses_multiple_cutoffs() -> None:
+    context = _context(lifecycle_closing_time=time(17, 45))
+    overtime = calculate_usage_financial_effects(context).overtime[0]
+    long_effect = replace(
+        overtime,
+        quantity=Decimal("10125"),
+        total_amount=Decimal("10125.00"),
+        billing_period_end=datetime(2026, 9, 18, 21, 15, tzinfo=UTC),
+    )
+
+    with pytest.raises(
+        FixedCutoffSplitError,
+        match="crosses more than one Billing cutoff",
+    ):
+        allocate_fixed_cutoff_overtime(context, long_effect)
