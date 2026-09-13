@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
-from bcos_worker.billing_cycle import BillingCycle, BillingCycleResolutionError, resolve_billing_cycle
+from bcos_worker.billing_cycle import (
+    BillingCycle,
+    BillingCycleResolutionError,
+    resolve_billing_cycle,
+)
 from bcos_worker.financial_effects import FinancialEffect, FinancialEffectType
 from bcos_worker.overtime_money import calculate_overtime_amount, quantize_money
 from bcos_worker.pricing_context import UsagePricingContext
@@ -99,11 +103,7 @@ def allocate_fixed_cutoff_overtime(
         raise FixedCutoffSplitError("OVERTIME temporal financial interval is invalid")
 
     start_cycle = _cycle_for(context, start)
-    end_probe = end
-    if end == start_cycle.end:
-        end_cycle = _cycle_for(context, end)
-    else:
-        end_cycle = _cycle_for(context, end)
+    end_cycle = _cycle_for(context, end - timedelta(microseconds=1))
 
     if start_cycle == end_cycle:
         segment = _segment_overtime(context, effect, start=start, end=end)
