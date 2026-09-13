@@ -1,6 +1,6 @@
 # ADR — M7-A3-T25 Accumulated Invoice Materialization Contract
 
-**Status:** HUMAN APPROVED
+**Status:** IMPLEMENTED / QUALITY GATE PASS / AWAITING HUMAN HOMOLOGATION
 
 > Quem pede um, pede bis.
 
@@ -204,8 +204,31 @@ T25 does not define or authorize:
 - changes to Outbox retry/backoff/recovery policy;
 - changes to the frontend.
 
+## Implementation verification
+
+Implementation is present on `main` and has passed the repository-wide BCOS Quality Gate through run `34766462286` at commit `644b8b7fe0d9fa6e17be1460dce06d5abb63cf7a`.
+
+Verified implementation evidence includes:
+
+- deterministic WEEKLY, BIWEEKLY, MONTHLY and MANUAL cycle behavior;
+- Unit IANA timezone conversion with UTC persisted cycle boundaries and exact-cutoff semantics;
+- automatic and MANUAL accumulated Invoice reuse/create/race behavior and OPEN-state enforcement;
+- `USAGE_COMPLETION` accumulated materialization;
+- supported `FIXED_CUTOFF_SPLIT` OVERTIME segmentation with exact temporal boundaries;
+- fail-closed sub-minute, multi-cutoff/non-materializable and non-additive monetary segmentation boundaries;
+- immutable financial-evidence conservation across supported split segments;
+- BASE_LEASE remains whole and nonsegmented under `FIXED_CUTOFF_SPLIT`;
+- segmented InvoiceItem retry idempotency and incompatible-evidence rejection;
+- PER_USAGE and ACCUMULATED handler dispatch coverage;
+- Billing writes and Outbox `PROCESSED` transition remain within the existing processing transaction;
+- API, Worker and Web repository quality gates all PASS.
+
+This verification does not self-grant HUMAN HOMOLOGATION. Final human homologation remains a separate governance action.
+
 ## Approval
 
 HUMAN APPROVED for implementation.
+
+Implementation completed and technically verified; HUMAN HOMOLOGATION remains pending.
 
 Quem pede um, pede bis.
