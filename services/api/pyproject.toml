@@ -21,6 +21,7 @@ dev = [
     "pytest==9.1.1",
     "pytest-asyncio==1.4.0",
     "httpx==0.28.1",
+    "types-python-dateutil>=2.9.0.20260807",
 ]
 [tool.ruff]
 target-version = "py312"
@@ -50,11 +51,6 @@ asyncio_mode = "strict"
 [build-system]
 requires = ["uv_build>=0.12.1,<0.13.0"]
 build-backend = "uv_build"
-
-[dependency-groups]
-dev = [
-    "types-python-dateutil>=2.9.0.20260807",
-]
 
 [tool.uv.build-backend]
 module-name = "bcos_api"
