@@ -320,13 +320,74 @@ async def test_fails_closed_when_existing_item_belongs_to_another_invoice(
 
 
 @pytest.mark.asyncio
-async def test_fixed_cutoff_split_fails_closed_before_database_writes() -> None:
+async def test_fixed_cutoff_split_dispatches_supported_temporal_segments(
+    monkeypatch,
+) -> None:
     context = _context(allocation_policy="FIXED_CUTOFF_SPLIT")
+    session = AsyncMock()
+    calls: list[tuple[str, object]] = []
+
+    async def _get_invoice(*args, **kwargs):
+        cycle = kwargs["cycle"]
+        calls.append(("invoice", cycle))
+        return _invoice()
+
+    async def _nonsegmented(*args, **kwargs):
+        calls.append(("base", kwargs["effect"].item_type.value))
+
+    async def _segmented(*args, **kwargs):
+        effect = kwargs["effect"]
+        calls.append(
+            (
+                "segment",
+                (effect.billing_period_start, effect.billing_period_end),
+            )
+        )
+
+    async def _totals(*args, **kwargs):
+        return Decimal("160.00"), Decimal("0.00"), Decimal("160.00")
+
+    monkeypatch.setattr(
+        "bcos_worker.accumulated_invoice_materializer.get_or_create_accumulated_invoice",
+        _get_invoice,
+    )
+    monkeypatch.setattr(
+        "bcos_worker.accumulated_invoice_materializer._ensure_nonsegmented_invoice_item",
+        _nonsegmented,
+    )
+    monkeypatch.setattr(
+        "bcos_worker.accumulated_invoice_materializer._ensure_segmented_invoice_item",
+        _segmented,
+    )
+    monkeypatch.setattr(
+        "bcos_worker.accumulated_invoice_materializer._recalculate_invoice_totals",
+        _totals,
+    )
+
+    result = await materialize_accumulated_invoice(session, context)
+
+    assert result.invoice.id == INVOICE_ID
+    assert result.total_amount == Decimal("160.00")
+    segment_calls = [value for kind, value in calls if kind == "segment"]
+    assert segment_calls == [
+        (
+            datetime(2026, 9, 11, 20, 30, tzinfo=UTC),
+            datetime(2026, 9, 11, 21, 0, tzinfo=UTC),
+        )
+    ]
+
+
+@pytest.mark.asyncio
+async def test_fixed_cutoff_split_manual_lifecycle_fails_closed_before_writes() -> None:
+    context = _context(
+        lifecycle_mode="MANUAL",
+        allocation_policy="FIXED_CUTOFF_SPLIT",
+    )
     session = AsyncMock()
 
     with pytest.raises(
         InvoiceMaterializationError,
-        match="deterministic temporal financial segmentation",
+        match="automatic Billing lifecycle",
     ):
         await materialize_accumulated_invoice(session, context)
 
