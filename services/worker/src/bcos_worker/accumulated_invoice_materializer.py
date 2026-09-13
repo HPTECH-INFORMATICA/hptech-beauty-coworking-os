@@ -11,7 +11,11 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bcos_worker.billing_cycle import BillingCycle, BillingCycleResolutionError, resolve_billing_cycle
+from bcos_worker.billing_cycle import (
+    BillingCycle,
+    BillingCycleResolutionError,
+    resolve_billing_cycle,
+)
 from bcos_worker.financial_effects import (
     FinancialEffect,
     FinancialEffectType,
