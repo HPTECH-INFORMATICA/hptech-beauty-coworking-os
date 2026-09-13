@@ -23,7 +23,12 @@ UNIT_ID = UUID("00000000-0000-0000-0000-000000000006")
 CONTRACT_ID = UUID("00000000-0000-0000-0000-000000000007")
 
 
-def _context(*, lifecycle_closing_time: time) -> UsagePricingContext:
+def _context(
+    *,
+    lifecycle_closing_time: time,
+    proportional_until_minutes: int = 60,
+    full_hour_from_minutes: int = 61,
+) -> UsagePricingContext:
     zone = ZoneInfo("America/Sao_Paulo")
     booking_starts_at = datetime(2026, 9, 11, 19, 30, tzinfo=UTC)
     booking_ends_at = datetime(2026, 9, 11, 20, 30, tzinfo=UTC)
@@ -35,8 +40,8 @@ def _context(*, lifecycle_closing_time: time) -> UsagePricingContext:
         base_price_amount=Decimal("100.00"),
         overtime=OvertimeRule(
             hourly_price_amount=Decimal("60.00"),
-            proportional_until_minutes=29,
-            full_hour_from_minutes=30,
+            proportional_until_minutes=proportional_until_minutes,
+            full_hour_from_minutes=full_hour_from_minutes,
             forgiveness_allowed=True,
         ),
         conflict_penalty=None,
@@ -105,6 +110,9 @@ def test_fixed_cutoff_split_produces_two_deterministic_overtime_segments() -> No
     assert post.effect.total_amount == Decimal("15.00")
     assert post.cycle.start == cutoff
 
+    assert pre.effect.quantity + post.effect.quantity == overtime.quantity
+    assert pre.effect.total_amount + post.effect.total_amount == overtime.total_amount
+
 
 def test_fixed_cutoff_split_fails_closed_when_a_segment_has_no_completed_minute() -> None:
     context = _context(lifecycle_closing_time=time(17, 30, 30))
@@ -113,5 +121,21 @@ def test_fixed_cutoff_split_fails_closed_when_a_segment_has_no_completed_minute(
     with pytest.raises(
         FixedCutoffSplitError,
         match="cannot produce two materializable segments",
+    ):
+        allocate_fixed_cutoff_overtime(context, overtime)
+
+
+def test_fixed_cutoff_split_fails_closed_when_rule_is_not_additive_across_cutoff() -> None:
+    context = _context(
+        lifecycle_closing_time=time(17, 45),
+        proportional_until_minutes=29,
+        full_hour_from_minutes=30,
+    )
+    overtime = calculate_usage_financial_effects(context).overtime[0]
+    assert overtime.total_amount == Decimal("60.00")
+
+    with pytest.raises(
+        FixedCutoffSplitError,
+        match="does not preserve immutable financial evidence",
     ):
         allocate_fixed_cutoff_overtime(context, overtime)
