@@ -4,55 +4,31 @@
 
 ## Projeto
 
-HPTECH Beauty Coworking OS
+HPTECH Beauty Coworking OS (BCOS), produto da HPTECH PLATFORM.
 
-## Repositório local
+Repositório local canônico: `C:\HudsonPedro\hptech-beauty-coworking-os`
 
-`C:\HudsonPedro\hptech-beauty-coworking-os`
+Repositório remoto: `HPTECH-INFORMATICA/hptech-beauty-coworking-os`
 
-Projeto independente do `hptech-platform`.
+O BCOS mantém isolamento técnico próprio. Integrações com outros produtos ou serviços da HPTECH PLATFORM devem ocorrer somente por contratos explícitos.
 
-Integração futura com a HPTECH Platform somente por contratos explícitos, sem acoplamento estrutural prematuro.
-
-## Product Baseline
+## Baselines homologadas
 
 - PRD MASTER v1.0 — HUMAN HOMOLOGATED / LOCKED
-
-## Architecture Baseline
-
 - Architecture Freeze v1.2 — HUMAN HOMOLOGATED / LOCKED
-
-## Database Baseline
-
 - PostgreSQL DDL v1.2.1 — HOMOLOGADO
 - Database Integrity Test Suite v1.1 — HOMOLOGADA
-- Migration executável inicial — materializada
-- PostgreSQL real / Neon BCOS — VALIDADO
-- Alembic revision — `0001_initial_bcos_schema`
-- Database Integrity Test Suite contra PostgreSQL real — PASS
-- Alembic downgrade → upgrade — PASS
-
-## API Baseline
-
 - OpenAPI V1 — MATERIALIZADO / VALIDADO / LOCKED
-- Arquivo: `docs/api/openapi.yaml`
-- Foundation commit: `cc1bf4a`
-- Prettier — PASS
-- Redocly — 0 errors
-- Warnings recomendados não bloqueantes permanecem registrados
+- BCOS-M0.2 Technical Foundation — HUMAN HOMOLOGATED / LOCKED
 
-## Technology Baseline
-
-BCOS-M0.2 — HUMAN HOMOLOGATED / LOCKED
-
-Stack homologada:
+## Stack canônica
 
 - Frontend: Next.js + React + TypeScript
 - Workspace: pnpm + Turborepo
 - Backend: Python 3.12 + FastAPI
 - Validation: Pydantic
 - Persistence: SQLAlchemy 2.x
-- Migrations: Alembic + PostgreSQL SQL explícito para invariantes críticas
+- Migrations: Alembic + PostgreSQL
 - Database: PostgreSQL / Neon
 - Worker: processo Python separado
 - Frontend Deploy: Vercel
@@ -63,135 +39,19 @@ Stack homologada:
 ## Princípios não negociáveis
 
 - Zero overlap físico.
-- Isolamento multi-tenant.
-- ResourceOccupancy como fonte canônica de indisponibilidade.
+- Isolamento multi-tenant rigoroso.
+- `ResourceOccupancy` como autoridade física de indisponibilidade.
 - Booking e Usage são entidades distintas.
 - Pricing, Billing e Payment são domínios distintos.
 - Pricing Snapshot é imutável.
-- Billing e Payments devem ser idempotentes.
-- Transactional Outbox para eventos financeiros críticos.
-- RBAC e autorização server-side.
-- Professional opera sob escopo own.
+- Billing e Payments são idempotentes.
+- Transactional Outbox protege eventos financeiros críticos.
+- RBAC e autorização são server-side.
+- Professional opera sob escopo próprio autorizado.
 - Regras críticas nunca dependem somente do frontend.
 - Zero Vendor Lock-in.
 
-## Estado oficial das etapas
-
-### BCOS-M0.1 — Repository Foundation
-
-Status: HUMAN HOMOLOGATED / LOCKED
-
-Fundação independente do repositório estabelecida e homologada.
-
-### BCOS-M0.2 — Technical Foundation
-
-Status: HUMAN HOMOLOGATED / LOCKED
-
-Inclui:
-
-- Technology Decision Gate
-- Repository Toolchain Policy
-- Node / pnpm / Turbo Workspace
-- Python Virtual Environment
-- Backend Toolchain
-- Frontend Quality Toolchain
-- Backend Quality Toolchain
-- Dependency Lock Strategy
-- Application Skeleton
-- Database Executable Baseline
-- Real PostgreSQL Validation
-- OpenAPI V1
-
-Marcos Git relevantes:
-
-- `52ba61a` — BCOS-M0.2-F: establish database executable baseline
-- `f022133` — BCOS-M0.2-G: validate real PostgreSQL baseline
-- `cc1bf4a` — BCOS-M0.2-H: establish OpenAPI v1 contract
-
-### BCOS-M1 — Identity / Tenancy / RBAC
-
-Status: HUMAN HOMOLOGATED / LOCKED
-
-Commit:
-
-- `19e0c28` — BCOS-M1: establish identity tenancy and RBAC foundation
-
-Baseline:
-
-- identidade autenticada representada por contrato interno;
-- integração criptográfica HPTECH Identity ainda não acoplada;
-- configuração sem adapter real permanece fail-closed;
-- tenant context validado server-side;
-- memberships tenant-scoped;
-- RBAC server-side;
-- OWNER / ADMIN / RECEPTION / PROFESSIONAL;
-- Professional own-scope estabelecido;
-- isolamento tenant preservado.
-
-### BCOS-M2 — Units / Resources / Professionals
-
-Status: HUMAN HOMOLOGATED / LOCKED
-
-Commits:
-
-- `800b16e` — BCOS-M2: implement units resources and professionals
-- `f160a47` — BCOS-M2: align HTTP API with frozen OpenAPI contract
-
-Baseline:
-
-- Units;
-- Reception Hours;
-- Resource Categories;
-- Resources;
-- Professionals;
-- serviços tenant-scoped;
-- autorização OPERATIONS;
-- integração HTTP;
-- alinhamento com OpenAPI congelado;
-- erros padronizados;
-- testes de regressão.
-
-Validação final:
-
-- API suite — 87 passed
-- Ruff — PASS
-- mypy — PASS
-- OpenAPI M2 response map — PASS
-- ErrorResponse — PASS
-- Professional PATCH IntegrityError regression — PASS
-- secret audit — PASS
-
-### BCOS-M3 — ResourceOccupancy / Availability
-
-Status: HUMAN HOMOLOGATED / LOCKED
-
-Commit:
-
-- `96bdfe5` — BCOS-M3: implement resource availability foundation
-
-Baseline:
-
-- ResourceOccupancy permanece autoridade física definitiva;
-- intervalo canônico `[)`;
-- ACTIVE occupancy bloqueia disponibilidade;
-- RELEASED occupancy não bloqueia;
-- PostgreSQL EXCLUDE USING gist permanece autoridade contra overlap;
-- Availability é consulta preventiva para UX;
-- Availability não reserva recurso;
-- filtros tenant/unit/resource/category;
-- validação de relações tenant-safe;
-- nenhuma escrita de ResourceOccupancy exposta pelo M3.
-
-Validação final:
-
-- PostgreSQL M3 Availability Test Suite — PASS
-- API regression — 109 passed
-- Ruff — PASS
-- mypy — PASS
-- secret audit — PASS
-- Git checkpoint — committed / pushed / synchronized
-
-## Estado atual
+## Estado oficial consolidado
 
 ```text
 BCOS-M0.1 ........ HUMAN HOMOLOGATED / LOCKED
@@ -199,103 +59,167 @@ BCOS-M0.2 ........ HUMAN HOMOLOGATED / LOCKED
 BCOS-M1 .......... HUMAN HOMOLOGATED / LOCKED
 BCOS-M2 .......... HUMAN HOMOLOGATED / LOCKED
 BCOS-M3 .......... HUMAN HOMOLOGATED / LOCKED
-BCOS-M4 .......... PRE-IMPLEMENTATION AUDIT IN PROGRESS / IMPLEMENTATION NOT AUTHORIZED
-BCOS-M5+ ......... NOT AUTHORIZED
+BCOS-M4 .......... IMPLEMENTED / GATES PREVIOUSLY APPROVED
+BCOS-M5 .......... IMPLEMENTED / GATES PREVIOUSLY APPROVED
+BCOS-M6 .......... HUMAN HOMOLOGATED / LOCKED
+BCOS-M7 .......... IN PROGRESS
+BCOS-M7-A1 ....... PASS
+BCOS-M7-A2 ....... HUMAN HOMOLOGATED / LOCKED
+BCOS-M7-A3 ....... IN PROGRESS
+BCOS-M7-A3-T25 ... IMPLEMENTED / QUALITY GATE PASS / AWAITING HUMAN HOMOLOGATION
 ```
 
-## BCOS-M4 — Booking / Recurrence / Extension
+Este documento não promove retroativamente M4 ou M5 a `HUMAN HOMOLOGATED / LOCKED` sem evidência explícita de homologação. Ele apenas remove o antigo estado documental que dizia que essas implementações ainda não estavam autorizadas, pois o repositório já avançou além delas.
 
-Status:
+## Marcos homologados relevantes
 
-PRE-IMPLEMENTATION AUDIT IN PROGRESS / IMPLEMENTATION NOT AUTHORIZED
+### BCOS-M0.1 — Repository Foundation
 
-Auditoria concluída até o momento:
+Status: HUMAN HOMOLOGATED / LOCKED.
 
-M4-A1 — Physical Booking Baseline — PASS / LOCKED
-M4-A2 — Booking Status Enum — PASS / LOCKED
-M4-A3 — Frozen Booking API Contract — PASS / LOCKED
-M4-A4 — Pricing Snapshot Dependency — PASS / LOCKED
-M4-A5 — Pricing Contract Boundary — PASS / LOCKED
-M4-A6 — Existing Architecture Audit — PASS / LOCKED
+Fundação independente do repositório estabelecida e homologada.
 
-Constatações:
+### BCOS-M0.2 — Technical Foundation
 
-BookingCreate não recebe pricing_snapshot do cliente.
-bookings.pricing_snapshot é obrigatório no banco.
-Pricing Snapshot é imutável após criação.
-Pricing é domínio distinto de Booking.
-PricingRule.rule_definition possui estrutura aberta no OpenAPI.
-A semântica do Pricing Engine não está definida pelo contrato OpenAPI.
-M4 não deve inventar cálculo financeiro nem antecipar silenciosamente M6.
-ResourceOccupancy continua sendo a autoridade definitiva contra overlap.
-PENDING não adquire ocupação física definitiva.
-CONFIRMED deve adquirir ResourceOccupancy de forma transacional.
-confirmação concorrente deve depender da constraint EXCLUDE como autoridade final.
-M4 ainda não possui autorização de implementação.
+Status: HUMAN HOMOLOGATED / LOCKED.
+
+Inclui toolchain Node/pnpm/Turbo, ambiente Python, qualidade backend/frontend, skeleton das aplicações, database executable baseline, PostgreSQL real e OpenAPI V1.
+
+Marcos Git relevantes:
+
+- `52ba61a` — database executable baseline
+- `f022133` — real PostgreSQL baseline
+- `cc1bf4a` — OpenAPI v1 contract
+
+### BCOS-M1 — Identity / Tenancy / RBAC
+
+Status: HUMAN HOMOLOGATED / LOCKED.
+
+Marco Git: `19e0c28`.
+
+Baseline inclui tenant context server-side, memberships tenant-scoped, RBAC OWNER / ADMIN / RECEPTION / PROFESSIONAL e own-scope de Professional.
+
+### BCOS-M2 — Units / Resources / Professionals
+
+Status: HUMAN HOMOLOGATED / LOCKED.
+
+Marcos Git:
+
+- `800b16e`
+- `f160a47`
+
+Baseline inclui Units, Reception Hours, Resource Categories, Resources, Professionals, serviços tenant-scoped e alinhamento HTTP/OpenAPI.
+
+### BCOS-M3 — ResourceOccupancy / Availability
+
+Status: HUMAN HOMOLOGATED / LOCKED.
+
+Marco Git: `96bdfe5`.
+
+`ResourceOccupancy` permanece a autoridade física definitiva; intervalo canônico `[)`; PostgreSQL `EXCLUDE USING gist` permanece a autoridade final contra overlap; Availability é consulta preventiva e não reserva recurso.
+
+### BCOS-M4 — Booking / Pricing Contracts
+
+Estado documental reconciliado: implementação existente no repositório; não está mais em fase de “implementação não autorizada”.
+
+Gates registrados incluem M4-A1 a M4-A6 PASS/LOCKED. Booking não recebe Pricing Snapshot do cliente; snapshot é obrigatório e imutável; Pricing permanece domínio distinto; `ResourceOccupancy` continua autoridade contra overlap.
+
+### BCOS-M6
+
+Status: HUMAN HOMOLOGATED / LOCKED.
+
+Marco Git homologado: `527acda53f5dc0f9fcf7b23aa8e4f2d9c444cb86`.
+
+### BCOS-M7 — Outbox / Billing
+
+Status geral: IN PROGRESS.
+
+M7-A1 Physical Billing Baseline — PASS.
+
+M7-A2 Frozen Contract / Billing Boundary — HUMAN HOMOLOGATED / LOCKED. Marco registrado: `3a65ba4`.
+
+M7-A3 estabelece o consumidor Outbox e a materialização Billing. O contrato aprovado mantém claim curto e transacional, `FOR UPDATE SKIP LOCKED`, processamento de no máximo um evento por iteração, recuperação por `processing_started_at`, e processamento financeiro + `PROCESSED` atômicos na mesma transação.
+
+## M7-A3-T25 — Accumulated Invoice Materialization
+
+Status: IMPLEMENTED / QUALITY GATE PASS / AWAITING HUMAN HOMOLOGATION.
+
+Contrato: `docs/adr/M7-A3-T25-accumulated-invoice-materialization-contract.md`.
+
+A implementação atual cobre `ACCUMULATED_OPEN_INVOICE`, ciclos WEEKLY / BIWEEKLY / MONTHLY / MANUAL, identidade acumulada por contrato/ciclo, `USAGE_COMPLETION`, e materialização determinística de `FIXED_CUTOFF_SPLIT` para efeitos temporais suportados.
+
+Regras preservadas:
+
+- Unit IANA timezone define fronteiras locais; persistência é UTC.
+- Instante exatamente no cutoff pertence ao novo ciclo.
+- MONTHLY faz clamp para o último dia do mês quando necessário.
+- MANUAL não é fechado/rotacionado automaticamente pelo worker.
+- `BASE_LEASE` não é automaticamente dividido ou rateado por cruzar cutoff.
+- OVERTIME pode ser segmentado somente quando a evidência temporal e monetária aprovada permite segmentação determinística.
+- Segmentação incompatível ou não determinística falha fechada.
+- Mais de um cutoff por efeito temporal permanece fora do V1 T25.
+- InvoiceItems segmentados preservam identidade temporal e idempotência.
+- Totais são derivados dos InvoiceItems persistidos.
+- Escritas financeiras e Outbox `PROCESSED` permanecem atômicos.
+
+Quality Gate de implementação T25 verificado no run `34766462286`, commit `644b8b7fe0d9fa6e17be1460dce06d5abb63cf7a`:
+
+- API — PASS
+- Worker — PASS
+- Web — PASS
+- Ruff — PASS
+- mypy — PASS
+- pytest — PASS
+- Alembic single-head — PASS
+- frontend lint/typecheck/tests/build — PASS
+
+O registro técnico do T25 foi atualizado após esse gate. A homologação humana continua separada e não é autodeclarada por este documento.
+
 ## Banco de dados
 
-Projeto Neon independente:
+Projeto Neon independente: `hptech-beauty-coworking-os`.
 
-hptech-beauty-coworking-os
+Baseline conhecida:
 
-Baseline validada:
+- Branch Neon: production
+- Database: neondb
+- Role: neondb_owner
+- PostgreSQL real validado
+- migrations aplicadas conforme baseline do projeto
+- integridade física validada
 
-Branch Neon: production
-Database: neondb
-Role: neondb_owner
-conexão BCOS validada
-PostgreSQL real validado
-migration inicial aplicada
-integridade física validada
+Regra permanente: nunca reutilizar, inspecionar ou assumir banco, projeto, branch, credencial ou connection string de outro produto como se pertencesse ao BCOS.
 
-Regra permanente:
+## Quality Gate do repositório
 
-Nunca reutilizar, inspecionar ou assumir banco, projeto, branch, credencial ou connection string da HPTECH Platform para BCOS.
+`.github/workflows/quality-gate.yml` protege os três eixos do monorepo:
 
-## Git
-Branch: main
-HEAD homologado atual: 96bdfe55823060d0d2c853cae485ab02f8f934e5
-Short SHA: 96bdfe5
-Commit: BCOS-M3: implement resource availability foundation
-origin/main: configurado
-main sincronizada com origin/main
-Working tree confirmado limpo antes desta reconciliação documental
-Repositório remoto: GitHub / HPTECH-INFORMATICA / hptech-beauty-coworking-os
-## Ambientes e ferramentas
-Ambiente Python canônico: <repo>\.venv
-Não usar services/api/.venv
-Não usar uv run --project services/api
-PowerShell atual não utiliza && como separador
-CODEX: temporariamente indisponível por limite de uso
-ChatGPT: arquitetura, engenharia, desenvolvimento orientado, auditoria e validação
+- API: Ruff, mypy, pytest e Alembic single-head;
+- Worker: Ruff, mypy e pytest;
+- Web: lint estrito, typecheck, testes e build.
+
+Correções de arquitetura e Billing devem permanecer cobertas por esse gate antes de promoção de baseline.
+
 ## Débitos controlados
-README.md permanece documentalmente defasado em relação ao estado M1–M3 e deverá ser reconciliado separadamente.
-Adapter criptográfico real da HPTECH Identity permanece fora da baseline implementada do M1.
-Questões registradas das baselines locked não devem ser alteradas silenciosamente em M4.
-Semântica do Pricing Engine permanece pertencente ao estágio de Pricing; M4 não deve inventá-la.
-## Próxima atividade autorizada
 
-Continuar exclusivamente a auditoria pré-implementação do BCOS-M4.
+- A exposição funcional do frontend ainda é menor do que a arquitetura/domínio já implementados no backend; isso deve ser tratado como reconciliação de produto, sem inventar módulos fora do PRD/Architecture Freeze.
+- README e demais documentos antigos podem conter estado histórico defasado e devem ser reconciliados contra implementação real, ADRs e homologações antes de serem tratados como autoridade de estado.
+- Integrações externas futuras continuam fora da baseline até contrato explícito.
 
-Implementação de M4 permanece não autorizada até fechamento do Gate correspondente.
+## Próxima atividade
+
+Fechar o gate de homologação humana do M7-A3-T25 somente após confirmação humana explícita. Até essa confirmação, o estado técnico permanece `IMPLEMENTED / QUALITY GATE PASS / AWAITING HUMAN HOMOLOGATION`.
+
+Em paralelo, continuar a Product Reconciliation Gate para localizar e corrigir deriva documental/técnica sem reabrir silenciosamente baselines homologadas.
 
 ## Regra de Governança
 
-Antes de qualquer implementação:
+Antes de alteração estrutural: revisar, analisar, verificar, investigar, diagnosticar, comparar com as baselines e avaliar impacto.
 
-revisar;
-analisar;
-verificar;
-investigar;
-diagnosticar;
-comparar com as baselines;
-avaliar impacto;
-implementar somente depois do Gate aprovado.
-
-Nenhuma etapa implementada torna-se baseline sem Gate de homologação.
+Nenhuma etapa implementada torna-se baseline `HUMAN HOMOLOGATED / LOCKED` sem homologação humana explícita.
 
 Etapa homologada não é reaberta silenciosamente.
 
-Qualquer alteração estrutural exige novo ID, análise de impacto e atualização das baselines afetadas.
+Qualquer alteração estrutural exige rastreabilidade e atualização das baselines afetadas.
 
-"Quem pede um, pede bis."
+> "Quem pede um, pede bis."
