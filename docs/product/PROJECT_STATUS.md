@@ -66,7 +66,7 @@ BCOS-M7 .......... IN PROGRESS
 BCOS-M7-A1 ....... PASS
 BCOS-M7-A2 ....... HUMAN HOMOLOGATED / LOCKED
 BCOS-M7-A3 ....... IN PROGRESS
-BCOS-M7-A3-T25 ... IMPLEMENTED / QUALITY GATE PASS / AWAITING HUMAN HOMOLOGATION
+BCOS-M7-A3-T25 ... HUMAN HOMOLOGATED / LOCKED
 ```
 
 Este documento não promove retroativamente M4 ou M5 a `HUMAN HOMOLOGATED / LOCKED` sem evidência explícita de homologação. Ele apenas remove o antigo estado documental que dizia que essas implementações ainda não estavam autorizadas, pois o repositório já avançou além delas.
@@ -142,11 +142,11 @@ M7-A3 estabelece o consumidor Outbox e a materialização Billing. O contrato ap
 
 ## M7-A3-T25 — Accumulated Invoice Materialization
 
-Status: IMPLEMENTED / QUALITY GATE PASS / AWAITING HUMAN HOMOLOGATION.
+Status: HUMAN HOMOLOGATED / LOCKED.
 
 Contrato: `docs/adr/M7-A3-T25-accumulated-invoice-materialization-contract.md`.
 
-A implementação atual cobre `ACCUMULATED_OPEN_INVOICE`, ciclos WEEKLY / BIWEEKLY / MONTHLY / MANUAL, identidade acumulada por contrato/ciclo, `USAGE_COMPLETION`, e materialização determinística de `FIXED_CUTOFF_SPLIT` para efeitos temporais suportados.
+A implementação cobre `ACCUMULATED_OPEN_INVOICE`, ciclos WEEKLY / BIWEEKLY / MONTHLY / MANUAL, identidade acumulada por contrato/ciclo, `USAGE_COMPLETION`, e materialização determinística de `FIXED_CUTOFF_SPLIT` para efeitos temporais suportados.
 
 Regras preservadas:
 
@@ -173,7 +173,9 @@ Quality Gate de implementação T25 verificado no run `34766462286`, commit `644
 - Alembic single-head — PASS
 - frontend lint/typecheck/tests/build — PASS
 
-O registro técnico do T25 foi atualizado após esse gate. A homologação humana continua separada e não é autodeclarada por este documento.
+A reconciliação subsequente do repositório também passou integralmente no Quality Gate `34766615865`, commit `32829af83e47473ebf288cabcf895c56110727e3`.
+
+Homologação humana explícita registrada em 2026-09-13. T25 está LOCKED e não deve ser reaberto silenciosamente.
 
 ## Banco de dados
 
@@ -208,7 +210,7 @@ Correções de arquitetura e Billing devem permanecer cobertas por esse gate ant
 
 ## Próxima atividade
 
-Fechar o gate de homologação humana do M7-A3-T25 somente após confirmação humana explícita. Até essa confirmação, o estado técnico permanece `IMPLEMENTED / QUALITY GATE PASS / AWAITING HUMAN HOMOLOGATION`.
+Continuar BCOS-M7-A3 a partir da baseline T25 agora HUMAN HOMOLOGATED / LOCKED, preservando todos os contratos já congelados. Antes de qualquer nova alteração estrutural, identificar no repositório o próximo gap real do fluxo Outbox/Billing e abrir um gate rastreável sem reabrir T25.
 
 Em paralelo, continuar a Product Reconciliation Gate para localizar e corrigir deriva documental/técnica sem reabrir silenciosamente baselines homologadas.
 
