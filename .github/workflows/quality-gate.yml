@@ -47,7 +47,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint web
-        run: pnpm --filter @hptech/bcos-web lint -- --max-warnings=0
+        working-directory: apps/web
+        run: pnpm exec eslint . --max-warnings=0
 
       - name: Typecheck web
         run: pnpm --filter @hptech/bcos-web typecheck
