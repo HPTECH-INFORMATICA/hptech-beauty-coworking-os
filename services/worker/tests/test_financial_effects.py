@@ -119,6 +119,39 @@ def test_only_overtime_before_reception_close_is_chargeable() -> None:
     assert overtime.quantity == Decimal("30")
     assert overtime.unit_amount == Decimal("60.00")
     assert overtime.total_amount == Decimal("60.00")
+    assert overtime.billing_period_start == datetime(
+        2026, 9, 11, 20, 30, tzinfo=UTC
+    )
+    assert overtime.billing_period_end == datetime(
+        2026, 9, 11, 21, 0, tzinfo=UTC
+    )
+
+
+def test_checkout_exactly_at_reception_close_materializes_pre_close_overtime() -> None:
+    context = _context(
+        checked_out_at=datetime(2026, 9, 11, 21, 0, tzinfo=UTC),
+    )
+
+    result = calculate_usage_financial_effects(context)
+
+    assert len(result.overtime) == 1
+    overtime = result.overtime[0]
+    assert overtime.quantity == Decimal("30")
+    assert overtime.total_amount == Decimal("60.00")
+    assert overtime.billing_period_end == datetime(
+        2026, 9, 11, 21, 0, tzinfo=UTC
+    )
+
+
+def test_overtime_starting_after_reception_close_never_materializes_charge() -> None:
+    context = _context(
+        checked_out_at=datetime(2026, 9, 11, 21, 25, tzinfo=UTC),
+        reception_closes_at=time(17, 0),
+    )
+
+    result = calculate_usage_financial_effects(context)
+
+    assert result.overtime == ()
 
 
 def test_closed_reception_day_never_generates_overtime_charge() -> None:
