@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import StrEnum
 
@@ -24,6 +25,8 @@ class FinancialEffect:
     unit_amount: Decimal
     total_amount: Decimal
     reception_segment: str | None = None
+    billing_period_start: datetime | None = None
+    billing_period_end: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,6 +69,23 @@ def calculate_usage_financial_effects(
     # but it must never materialize a financial OVERTIME effect.
     segment = temporal.before_reception_close
     if segment.completed_minutes > 0:
+        closes_at = context.reception_hours.closes_at
+        if closes_at is None:
+            raise RuntimeError(
+                "chargeable overtime requires reception closing evidence"
+            )
+
+        local_close = datetime.combine(
+            context.local_checked_out_at.date(),
+            closes_at,
+            tzinfo=context.local_checked_out_at.tzinfo,
+        )
+        chargeable_end = min(context.local_checked_out_at, local_close).astimezone(UTC)
+        chargeable_start = context.booking_ends_at.astimezone(UTC)
+
+        if chargeable_start >= chargeable_end:
+            raise RuntimeError("chargeable overtime interval is invalid")
+
         money = calculate_overtime_amount(
             hourly_price_amount=rule.overtime.hourly_price_amount,
             completed_minutes=segment.completed_minutes,
@@ -81,6 +101,8 @@ def calculate_usage_financial_effects(
                 unit_amount=quantize_money(rule.overtime.hourly_price_amount),
                 total_amount=money.amount,
                 reception_segment="BEFORE_RECEPTION_CLOSE",
+                billing_period_start=chargeable_start,
+                billing_period_end=chargeable_end,
             )
         )
 
