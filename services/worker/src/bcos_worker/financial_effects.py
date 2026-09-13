@@ -61,13 +61,11 @@ def calculate_usage_financial_effects(
 
     overtime_effects: list[FinancialEffect] = []
 
-    for segment_name, segment in (
-        ("BEFORE_RECEPTION_CLOSE", temporal.before_reception_close),
-        ("AFTER_RECEPTION_CLOSE", temporal.after_reception_close),
-    ):
-        if segment.completed_minutes <= 0:
-            continue
-
+    # M7-A2-T1 freezes reception closing as the maximum chargeable instant.
+    # Overtime after reception close remains temporally classified for auditability,
+    # but it must never materialize a financial OVERTIME effect.
+    segment = temporal.before_reception_close
+    if segment.completed_minutes > 0:
         money = calculate_overtime_amount(
             hourly_price_amount=rule.overtime.hourly_price_amount,
             completed_minutes=segment.completed_minutes,
@@ -82,7 +80,7 @@ def calculate_usage_financial_effects(
                 quantity=Decimal(segment.completed_minutes),
                 unit_amount=quantize_money(rule.overtime.hourly_price_amount),
                 total_amount=money.amount,
-                reception_segment=segment_name,
+                reception_segment="BEFORE_RECEPTION_CLOSE",
             )
         )
 
