@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import StrEnum
 
@@ -69,19 +69,8 @@ def calculate_usage_financial_effects(
     # but it must never materialize a financial OVERTIME effect.
     segment = temporal.before_reception_close
     if segment.completed_minutes > 0:
-        closes_at = context.reception_hours.closes_at
-        if closes_at is None:
-            raise RuntimeError(
-                "chargeable overtime requires reception closing evidence"
-            )
-
-        local_close = datetime.combine(
-            context.local_checked_out_at.date(),
-            closes_at,
-            tzinfo=context.local_checked_out_at.tzinfo,
-        )
-        chargeable_end = min(context.local_checked_out_at, local_close).astimezone(UTC)
-        chargeable_start = context.booking_ends_at.astimezone(UTC)
+        chargeable_start = context.booking_ends_at
+        chargeable_end = chargeable_start + timedelta(seconds=segment.actual_seconds)
 
         if chargeable_start >= chargeable_end:
             raise RuntimeError("chargeable overtime interval is invalid")
