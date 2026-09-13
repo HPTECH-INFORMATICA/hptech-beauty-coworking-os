@@ -1,6 +1,6 @@
 # ADR — M7-A3-T25 Accumulated Invoice Materialization Contract
 
-**Status:** IMPLEMENTED / QUALITY GATE PASS / AWAITING HUMAN HOMOLOGATION
+**Status:** HUMAN HOMOLOGATED / LOCKED
 
 > Quem pede um, pede bis.
 
@@ -206,7 +206,7 @@ T25 does not define or authorize:
 
 ## Implementation verification
 
-Implementation is present on `main` and has passed the repository-wide BCOS Quality Gate through run `34766462286` at commit `644b8b7fe0d9fa6e17be1460dce06d5abb63cf7a`.
+Implementation is present on `main` and passed the repository-wide BCOS Quality Gate at run `34766462286`, commit `644b8b7fe0d9fa6e17be1460dce06d5abb63cf7a`. Subsequent repository/documentation reconciliation also passed the complete Quality Gate at run `34766615865`, commit `32829af83e47473ebf288cabcf895c56110727e3`.
 
 Verified implementation evidence includes:
 
@@ -223,12 +223,10 @@ Verified implementation evidence includes:
 - Billing writes and Outbox `PROCESSED` transition remain within the existing processing transaction;
 - API, Worker and Web repository quality gates all PASS.
 
-This verification does not self-grant HUMAN HOMOLOGATION. Final human homologation remains a separate governance action.
+## Homologation
 
-## Approval
+HUMAN HOMOLOGATED / LOCKED by explicit human approval on 2026-09-13.
 
-HUMAN APPROVED for implementation.
-
-Implementation completed and technically verified; HUMAN HOMOLOGATION remains pending.
+T25 is now a locked BCOS-M7-A3 baseline. It MUST NOT be reopened or altered silently. Any structural change to this contract requires a new traceable gate/ADR and impact analysis against the locked baseline.
 
 Quem pede um, pede bis.
