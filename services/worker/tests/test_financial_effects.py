@@ -103,35 +103,9 @@ def test_materializes_base_lease_without_overtime() -> None:
     assert result.overtime == ()
 
 
-def test_segments_overtime_across_reception_closing() -> None:
+def test_only_overtime_before_reception_close_is_chargeable() -> None:
     context = _context(
         checked_out_at=datetime(2026, 9, 11, 21, 20, tzinfo=UTC),
-    )
-
-    result = calculate_usage_financial_effects(context)
-
-    assert len(result.overtime) == 2
-
-    before_close, after_close = result.overtime
-
-    assert before_close.item_type is FinancialEffectType.OVERTIME
-    assert before_close.reception_segment == "BEFORE_RECEPTION_CLOSE"
-    assert before_close.quantity == Decimal("30")
-    assert before_close.unit_amount == Decimal("60.00")
-    assert before_close.total_amount == Decimal("60.00")
-
-    assert after_close.item_type is FinancialEffectType.OVERTIME
-    assert after_close.reception_segment == "AFTER_RECEPTION_CLOSE"
-    assert after_close.quantity == Decimal("20")
-    assert after_close.unit_amount == Decimal("60.00")
-    assert after_close.total_amount == Decimal("20.00")
-
-
-def test_closed_reception_keeps_overtime_financially_traceable() -> None:
-    context = _context(
-        checked_out_at=datetime(2026, 9, 11, 20, 50, tzinfo=UTC),
-        reception_closes_at=None,
-        reception_is_closed=True,
     )
 
     result = calculate_usage_financial_effects(context)
@@ -140,6 +114,20 @@ def test_closed_reception_keeps_overtime_financially_traceable() -> None:
 
     overtime = result.overtime[0]
 
-    assert overtime.reception_segment == "AFTER_RECEPTION_CLOSE"
-    assert overtime.quantity == Decimal("20")
-    assert overtime.total_amount == Decimal("20.00")
+    assert overtime.item_type is FinancialEffectType.OVERTIME
+    assert overtime.reception_segment == "BEFORE_RECEPTION_CLOSE"
+    assert overtime.quantity == Decimal("30")
+    assert overtime.unit_amount == Decimal("60.00")
+    assert overtime.total_amount == Decimal("60.00")
+
+
+def test_closed_reception_day_never_generates_overtime_charge() -> None:
+    context = _context(
+        checked_out_at=datetime(2026, 9, 11, 20, 50, tzinfo=UTC),
+        reception_closes_at=None,
+        reception_is_closed=True,
+    )
+
+    result = calculate_usage_financial_effects(context)
+
+    assert result.overtime == ()
