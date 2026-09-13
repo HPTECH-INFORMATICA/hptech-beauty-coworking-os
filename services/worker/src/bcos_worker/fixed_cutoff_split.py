@@ -87,7 +87,9 @@ def allocate_fixed_cutoff_overtime(
     """Allocate one approved OVERTIME effect across at most one lifecycle cutoff.
 
     Monetary segments reuse the already-approved overtime calculation. No BASE_LEASE
-    proration or new monetary formula is introduced here.
+    proration or new monetary formula is introduced here. A split is materializable
+    only when independently calculated segments conserve the original immutable
+    financial effect exactly; otherwise the operation fails closed.
     """
 
     if effect.item_type is not FinancialEffectType.OVERTIME:
@@ -109,6 +111,10 @@ def allocate_fixed_cutoff_overtime(
         segment = _segment_overtime(context, effect, start=start, end=end)
         if segment is None:
             raise FixedCutoffSplitError("OVERTIME segment has no completed minute")
+        if segment.total_amount != effect.total_amount or segment.quantity != effect.quantity:
+            raise FixedCutoffSplitError(
+                "OVERTIME segment does not preserve immutable financial evidence"
+            )
         return (AllocatedFinancialEffect(cycle=start_cycle, effect=segment),)
 
     cutoff = start_cycle.end
@@ -124,6 +130,13 @@ def allocate_fixed_cutoff_overtime(
     if pre is None or post is None:
         raise FixedCutoffSplitError(
             "OVERTIME cutoff split cannot produce two materializable segments"
+        )
+
+    split_quantity = pre.quantity + post.quantity
+    split_total = quantize_money(pre.total_amount + post.total_amount)
+    if split_quantity != effect.quantity or split_total != effect.total_amount:
+        raise FixedCutoffSplitError(
+            "OVERTIME cutoff split does not preserve immutable financial evidence"
         )
 
     return (
