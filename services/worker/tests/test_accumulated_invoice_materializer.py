@@ -168,9 +168,9 @@ def _overtime_item_row():
         "usage_id": USAGE_ID,
         "item_type": "OVERTIME",
         "description": "Overtime",
-        "quantity": Decimal("50"),
+        "quantity": Decimal("30"),
         "unit_amount": Decimal("60.00"),
-        "total_amount": Decimal("80.00"),
+        "total_amount": Decimal("60.00"),
         "metadata": {
             "forgiveness_allowed": True,
             "reception_segments": [
@@ -178,12 +178,7 @@ def _overtime_item_row():
                     "segment": "BEFORE_RECEPTION_CLOSE",
                     "completed_minutes": 30,
                     "amount": "60.00",
-                },
-                {
-                    "segment": "AFTER_RECEPTION_CLOSE",
-                    "completed_minutes": 20,
-                    "amount": "20.00",
-                },
+                }
             ],
         },
         "billing_period_start": None,
@@ -213,7 +208,7 @@ async def test_materializes_usage_completion_into_accumulated_invoice(
         _MappingResult(rows=[_overtime_item_row()]),
         _MappingResult(
             one={
-                "subtotal_amount": Decimal("180.00"),
+                "subtotal_amount": Decimal("160.00"),
                 "discount_amount": Decimal("0.00"),
             }
         ),
@@ -223,9 +218,9 @@ async def test_materializes_usage_completion_into_accumulated_invoice(
     result = await materialize_accumulated_invoice(session, context)
 
     assert result.invoice.id == INVOICE_ID
-    assert result.subtotal_amount == Decimal("180.00")
+    assert result.subtotal_amount == Decimal("160.00")
     assert result.discount_amount == Decimal("0.00")
-    assert result.total_amount == Decimal("180.00")
+    assert result.total_amount == Decimal("160.00")
     assert session.execute.await_count == 6
 
     base_params = session.execute.await_args_list[0].args[1]
@@ -234,13 +229,13 @@ async def test_materializes_usage_completion_into_accumulated_invoice(
 
     overtime_params = session.execute.await_args_list[2].args[1]
     assert overtime_params["item_type"] == "OVERTIME"
-    assert overtime_params["quantity"] == Decimal("50")
-    assert overtime_params["total_amount"] == Decimal("80.00")
+    assert overtime_params["quantity"] == Decimal("30")
+    assert overtime_params["total_amount"] == Decimal("60.00")
 
     totals_params = session.execute.await_args_list[5].args[1]
-    assert totals_params["subtotal_amount"] == Decimal("180.00")
+    assert totals_params["subtotal_amount"] == Decimal("160.00")
     assert totals_params["discount_amount"] == Decimal("0.00")
-    assert totals_params["total_amount"] == Decimal("180.00")
+    assert totals_params["total_amount"] == Decimal("160.00")
 
 
 @pytest.mark.asyncio
@@ -265,7 +260,7 @@ async def test_retry_reuses_existing_accumulated_invoice_items(
         _MappingResult(rows=[_overtime_item_row()]),
         _MappingResult(
             one={
-                "subtotal_amount": Decimal("180.00"),
+                "subtotal_amount": Decimal("160.00"),
                 "discount_amount": Decimal("0.00"),
             }
         ),
@@ -282,7 +277,7 @@ async def test_retry_reuses_existing_accumulated_invoice_items(
         _MappingResult(rows=[_overtime_item_row()]),
         _MappingResult(
             one={
-                "subtotal_amount": Decimal("180.00"),
+                "subtotal_amount": Decimal("160.00"),
                 "discount_amount": Decimal("0.00"),
             }
         ),
@@ -292,7 +287,7 @@ async def test_retry_reuses_existing_accumulated_invoice_items(
     second = await materialize_accumulated_invoice(session, context)
 
     assert first.invoice.id == second.invoice.id == INVOICE_ID
-    assert first.total_amount == second.total_amount == Decimal("180.00")
+    assert first.total_amount == second.total_amount == Decimal("160.00")
     assert session.execute.await_count == 6
 
 
