@@ -8,7 +8,7 @@ Sistema operacional SaaS B2B multi-tenant para a operação de coworkings de bel
 
 O BCOS está em desenvolvimento funcional avançado. As fundações de identidade/tenancy/RBAC, unidades/recursos/profissionais, disponibilidade, Booking/Usage, Pricing e a infraestrutura de Billing/Transactional Outbox já possuem implementação no repositório.
 
-O trabalho ativo está em **BCOS-M7 — Outbox / Billing**. O contrato **M7-A3-T25 — Accumulated Invoice Materialization** está implementado, passou pelo Quality Gate completo e aguarda homologação humana explícita antes de ser marcado como `HUMAN HOMOLOGATED / LOCKED`.
+O trabalho ativo está em **BCOS-M7 — Outbox / Billing**. O contrato **M7-A3-T25 — Accumulated Invoice Materialization** está `HUMAN HOMOLOGATED / LOCKED`. A reconciliação **M7-A3-T26 — Reception Closing Authority Reconciliation** está tecnicamente materializada e em validação/homologação, preservando M7-A2-T1 como autoridade V1: tempo de overtime estritamente posterior ao fechamento da recepção não gera cobrança financeira de `OVERTIME`.
 
 O estado detalhado e rastreável do projeto está em `docs/product/PROJECT_STATUS.md`.
 
