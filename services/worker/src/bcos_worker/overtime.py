@@ -1,4 +1,4 @@
-"""Temporal overtime classification for HUMAN APPROVED M7-A2-T1/T7/T10/T11."""
+"""Temporal overtime classification for approved BCOS reception rules."""
 
 from __future__ import annotations
 
@@ -72,7 +72,7 @@ def classify_overtime(
     proportional_until_minutes: int,
     full_hour_from_minutes: int,
 ) -> OvertimeTemporalResult:
-    """Segment overtime without performing any monetary calculation."""
+    """Classify temporal evidence; financial chargeability is decided downstream."""
 
     if booking_ends_at.tzinfo is None or checked_out_at.tzinfo is None:
         raise OvertimeTemporalError(
@@ -103,14 +103,15 @@ def classify_overtime(
             proportional_until_minutes=proportional_until_minutes,
             full_hour_from_minutes=full_hour_from_minutes,
         )
-        return OvertimeTemporalResult(
-            actual_overtime_seconds=elapsed_seconds,
-            completed_overtime_minutes=elapsed_seconds // 60,
-            before_reception_close=_segment(
+        before_close = _segment(
             0,
             proportional_until_minutes=proportional_until_minutes,
             full_hour_from_minutes=full_hour_from_minutes,
-        ),
+        )
+        return OvertimeTemporalResult(
+            actual_overtime_seconds=elapsed_seconds,
+            completed_overtime_minutes=elapsed_seconds // 60,
+            before_reception_close=before_close,
             after_reception_close=after_close,
         )
 
