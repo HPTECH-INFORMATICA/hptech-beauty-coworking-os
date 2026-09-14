@@ -8,7 +8,6 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 _INVOICE_COLUMNS = """
     id, professional_id, source_usage_id, professional_billing_contract_id,
     billing_cycle_start, billing_cycle_end, manual_closed_at,
