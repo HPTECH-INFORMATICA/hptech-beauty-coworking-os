@@ -8,11 +8,11 @@ Sistema operacional SaaS B2B multi-tenant para a operação de coworkings de bel
 
 O BCOS está em desenvolvimento funcional avançado. Identity/Tenancy/RBAC, Units/Resources/Professionals, Availability, Booking/Usage, Pricing, Billing materialization, Payments e Transactional Outbox possuem implementação relevante no repositório.
 
-O trabalho ativo está em **BCOS-M7 — Outbox / Billing**. **M7-A3-T25 — Accumulated Invoice Materialization**, **T28 — Billing Operational Read Boundary**, **T29 — Invoice Lifecycle Write Boundary** e **T30 — MANUAL Invoice Closure Audit Contract** estão `HUMAN HOMOLOGATED / LOCKED`.
+O trabalho ativo está em **BCOS-M7 — Outbox / Billing**. **M7-A3-T25 — Accumulated Invoice Materialization**, **T26 — Reception Closing Authority Reconciliation**, **T28 — Billing Operational Read Boundary**, **T29 — Invoice Lifecycle Write Boundary**, **T30 — MANUAL Invoice Closure Audit Contract** e **T31 — Static OpenAPI Billing Reconciliation** estão `HUMAN HOMOLOGATED / LOCKED`.
 
-T28 disponibiliza leitura Billing operacional tenant-scoped. T29/T30 acrescentam a única mutação de lifecycle autorizada neste recorte: fechamento explícito de Invoice acumulada MANUAL, protegido por `OPERATIONS`, idempotente e auditado transacionalmente. Isso não autoriza Financeiro frontend nem generic Invoice CRUD.
+T28 disponibiliza leitura Billing operacional tenant-scoped. T29/T30 acrescentam a única mutação de lifecycle autorizada neste recorte: fechamento explícito de Invoice acumulada MANUAL, protegido por `OPERATIONS`, idempotente e auditado transacionalmente. T31 reconciliou esse runtime com o OpenAPI estático sem criar novas semânticas. Isso não autoriza generic Invoice CRUD.
 
-**T26 — Reception Closing Authority Reconciliation** permanece `TECHNICALLY RECONCILED / AWAITING HUMAN HOMOLOGATION`. **T27 — Terminal Outbox Failure Policy** permanece `PROPOSED / AWAITING HUMAN APPROVAL`.
+**T27 — Terminal Outbox Failure Policy** permanece em `AUTHORITY GAP / IMPLEMENTATION BLOCKED`: o enum físico já possui `FAILED`, mas os contratos Outbox anteriormente aprovados deixaram deliberadamente indefinidos o máximo de tentativas e o threshold terminal. Nenhum valor será inventado fora da autoridade já aprovada.
 
 O estado detalhado e rastreável está em `docs/product/PROJECT_STATUS.md`; a auditoria de superfície está em `docs/product/PRODUCT_RECONCILIATION.md`.
 
@@ -25,9 +25,13 @@ O estado detalhado e rastreável está em `docs/product/PROJECT_STATUS.md`; a au
 - OpenAPI V1 — MATERIALIZADO / VALIDADO / LOCKED
 - BCOS-M0.2 Technical Foundation — HUMAN HOMOLOGATED / LOCKED
 - M7-A3-T25 — HUMAN HOMOLOGATED / LOCKED
+- M7-A3-T26 — HUMAN HOMOLOGATED / LOCKED
 - M7-A3-T28 — HUMAN HOMOLOGATED / LOCKED
 - M7-A3-T29 — HUMAN HOMOLOGATED / LOCKED
 - M7-A3-T30 — HUMAN HOMOLOGATED / LOCKED
+- M7-A3-T31 — HUMAN HOMOLOGATED / LOCKED
+
+PRD MASTER v1.0 e Architecture Freeze v1.2 são autoridades imutáveis de implementação. Código, banco, API, testes e documentação devem ser reconciliados a elas; essas baselines não são reabertas ou alteradas durante o desenvolvimento.
 
 ## Arquitetura central
 
@@ -54,7 +58,11 @@ A baseline T28 permite leitura tenant-scoped de Invoice/InvoiceItems e projeçã
 
 T29/T30 permitem explicitamente fechar somente uma Invoice acumulada MANUAL dentro da identidade e estados financeiros aprovados. O fechamento persiste `manual_closed_at`, não reescreve itens/totais, não liquida Payment e registra uma única auditoria `INVOICE_MANUAL_CLOSED` na primeira mutação. Repetição é idempotente e não duplica auditoria.
 
-Automatic-cycle e PER_USAGE não recebem close explícito. Reopen, cancelamento, ajustes/descontos, vencimento/emissão e generic Invoice CRUD permanecem fora desse contrato.
+T31 mantém o OpenAPI estático reconciliado com essa superfície runtime. Automatic-cycle e PER_USAGE não recebem close explícito. Reopen, cancelamento, ajustes/descontos, vencimento/emissão e generic Invoice CRUD permanecem fora desse contrato.
+
+## Outbox
+
+O worker possui claim concorrente seguro, retry com backoff, sanitização de erro, recuperação de `PROCESSING` abandonado e runtime sequencial já implementados. O terminal `FAILED` permanece fail-closed enquanto o máximo de tentativas não estiver sustentado por autoridade previamente aprovada; a existência física do enum não autoriza inventar o threshold.
 
 ## Stack
 
@@ -77,7 +85,7 @@ Automatic-cycle e PER_USAGE não recebem close explícito. Reopen, cancelamento,
 - Worker: Ruff, mypy e pytest;
 - Web: lint estrito, typecheck, testes e build.
 
-T29/T30 passaram pelo Quality Gate da implementação e pelo gate pós-merge em `main` antes da homologação final.
+A reconciliação T26/T31 e de autoridade foi integrada no commit `a7a2a8c3894e0a7289df230c778fd637b33d01f7`; o Quality Gate pós-merge `#117` foi concluído com sucesso em 2026-09-14.
 
 ## Estrutura
 
@@ -100,7 +108,7 @@ T29/T30 passaram pelo Quality Gate da implementação e pelo gate pós-merge em 
 
 Antes de alteração estrutural: revisar, analisar, verificar, investigar, diagnosticar, comparar com baselines e avaliar impacto.
 
-Nenhuma implementação se torna `HUMAN HOMOLOGATED / LOCKED` sem homologação humana explícita. Etapas homologadas não são reabertas silenciosamente.
+PRD MASTER v1.0 e Architecture Freeze v1.2 são imutáveis. Implementação deve conformar-se a elas. Etapas homologadas não são reabertas silenciosamente e decisões ausentes não são inventadas.
 
 ## Isolamento do produto
 
