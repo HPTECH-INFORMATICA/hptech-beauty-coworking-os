@@ -18,7 +18,7 @@ This matrix reconciles the product surface against the actual repository. It doe
 | Pricing | Frozen PricingRule definition consumed from Booking snapshot | Pricing structures persisted | Pricing router included | No Pricing administration UI | API/worker pricing tests present | M4/M7-A3 | ENGINE IMPLEMENTED; administration intentionally not yet reconciled |
 | Billing / Invoice | PER_USAGE and ACCUMULATED_OPEN_INVOICE materialization implemented; T25 locked | Invoice, InvoiceItem, billing contract/cycle schema through migration 0007 | No Invoice/Billing router is included in current FastAPI application | No Financeiro/Billing route | Worker materialization/regression tests present | M7-A1/A2/A3/T25 | CORE MATERIALIZATION IMPLEMENTED; operational Billing API/UI is a real product gap |
 | Payments | Confirmed PIX service is implemented with idempotency and Invoice status recomputation | Payments persisted | Payments router included | No payment/receivables UI | API payment tests exist | M7 contracts still contain older historical non-goal wording in places | API IMPLEMENTED; frontend exposure/document reconciliation incomplete |
-| Outbox Worker | Claim/retry/recovery/runtime and USAGE_COMPLETED dispatch implemented | Outbox persisted with processing recovery fields | Internal worker concern | No UI required for processing itself | Worker suite + repository Quality Gate | M7-A3 | IMPLEMENTED; terminal FAILED policy remains explicitly undefined |
+| Outbox Worker | Claim/retry/recovery/runtime and USAGE_COMPLETED dispatch implemented | Outbox persisted with processing recovery fields; `FAILED` already exists in physical enum | Internal worker concern | No UI required for processing itself | Worker suite + repository Quality Gate; consumer regression proves rollback before retry | M7-A3; T27 proposed | IMPLEMENTED RETRY/RECOVERY; terminal FAILED policy is now explicitly proposed in T27 and awaits human approval |
 | Reception OS | Domain building blocks exist across bookings/usages/resources/professionals | Uses existing operational schema | Multiple operational routers exist | Single current `app/page.tsx`; visible reception navigation is not a complete routed OS | One frontend page test plus backend suites | Product framing documented | PARTIAL PRODUCT SURFACE — largest visible delivery gap |
 | Professional Portal | Own-scope authorization exists in backend | Uses tenant/professional records | Supporting APIs exist | No dedicated portal route/shell | Backend authorization tests exist | PRD/M1 | NOT EXPOSED IN FRONTEND |
 | Owner Dashboard | Supporting operational/financial data exists in backend/database | Existing schema | No dedicated dashboard aggregation API identified in current app registration | No Owner Dashboard route | No dedicated dashboard test surface identified | PRD/product intent | NOT IMPLEMENTED AS PRODUCT SURFACE |
@@ -30,13 +30,15 @@ This matrix reconciles the product surface against the actual repository. It doe
 2. The current Next.js App Router contains only the root page plus layout/styles. The frontend product surface is therefore materially narrower than the implemented backend.
 3. Billing is a concrete asymmetry: worker/database materialization exists, but the FastAPI application currently registers no Billing/Invoice router and the frontend exposes no Financeiro workflow.
 4. Payments are further ahead than some historical contract non-goal wording suggests: the current API registers a Payments router and contains confirmed PIX settlement behavior. Historical ADR text must remain historical unless explicitly superseded; live product/status documentation should reflect the actual implementation.
-5. `M7-A3-T26` is a proposed reconciliation gate for the reception-closing contradiction. It is not HUMAN HOMOLOGATED / LOCKED until explicit human approval.
+5. The canonical `M7-A3-T26 — Reception Closing Authority Reconciliation` is **TECHNICALLY RECONCILED / AWAITING HUMAN HOMOLOGATION**. Its protected implementation follows M7-A2-T1: after-reception-close temporal evidence remains auditable but MUST NOT materialize financial OVERTIME. T26 is not HUMAN HOMOLOGATED / LOCKED until explicit human approval.
+6. `M7-A3-T27 — Terminal Outbox Failure Policy Contract` is **PROPOSED / AWAITING HUMAN APPROVAL**. It closes the documentary design gap around maximum attempts and terminal `FAILED`, but no terminal behavior is authorized for implementation until explicit approval.
+7. Consumer atomicity is already regression-protected: a processing failure rolls back the processing transaction, does not attempt `PROCESSED`, and persists retry in a separate transaction. No duplicate regression is needed for that existing lifecycle.
 
 ## Controlled next gaps
 
-The next M7-A3 decision must be selected from actual unresolved contracts, not invented from generic product expectations. Current verified candidates are:
+The next M7-A3 implementation decision must come from an approved contract, not from generic product expectations. Current verified boundaries are:
 
-- terminal Outbox `FAILED` / maximum-attempt policy, repeatedly left undefined by M7-A3 contracts;
+- T27 terminal Outbox `FAILED` / maximum-attempt policy — contract proposed, implementation blocked only on human approval;
 - Billing/Invoice operational boundary needed before exposing accumulated invoices to Reception/Owner workflows;
 - explicit Invoice closing lifecycle for accumulated cycles/manual closing, if required by the frozen product rules.
 
