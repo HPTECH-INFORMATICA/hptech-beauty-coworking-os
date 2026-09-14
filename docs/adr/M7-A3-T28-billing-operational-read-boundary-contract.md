@@ -2,7 +2,7 @@
 
 > "Quem pede um, pede bis."
 
-**Status:** PROPOSED / AWAITING HUMAN APPROVAL
+**Status:** HUMAN APPROVED / IMPLEMENTATION AUTHORIZED
 
 ## Purpose
 
@@ -32,9 +32,9 @@ The current repository establishes all of the following:
 4. The FastAPI application currently registers Payments but no Invoice/Billing router.
 5. Therefore a future Financeiro surface must not bypass the API or query Billing tables directly from the frontend.
 
-## Proposed V1 read boundary
+## Approved V1 read boundary
 
-If human-approved, the first Billing operational API is read-only and tenant-scoped.
+The first Billing operational API is read-only and tenant-scoped.
 
 ### Invoice summary
 
@@ -71,7 +71,7 @@ Invoice detail MAY expose confirmed-payment totals and remaining amount as deter
 - An Invoice ID from another tenant MUST never disclose existence or financial data.
 - The endpoint MUST use the existing authenticated TenantContext/RBAC infrastructure rather than accepting tenant authority from request payloads.
 - Exact role/permission exposure for Owner, Admin, Reception and Professional MUST be reconciled against the frozen RBAC baseline before implementation. T28 does not silently broaden Professional access to coworking-wide financial data.
-- If the current RBAC baseline does not unambiguously define Billing read permission for a role, implementation must fail closed for that role and open a separate authorization gate rather than invent permission semantics.
+- The current RBAC baseline grants `OPERATIONS` to Owner, Admin and Reception, while Professional has only `PROFESSIONAL_OWN`. Because confirmed PIX settlement already requires `OPERATIONS`, the V1 Billing read boundary SHALL also require `OPERATIONS`. Professional therefore fails closed and receives no coworking-wide Invoice read access.
 
 ## Query/filter boundary
 
@@ -84,7 +84,7 @@ The first read boundary MAY support only filters backed by existing persisted id
 
 No search semantics based on invented labels, receivable aging, due date, overdue status or accounting categories are authorized.
 
-Pagination/order must be deterministic. Implementation must choose and test a stable persisted ordering before exposing list pagination.
+Pagination/order must be deterministic. The approved implementation uses persisted ordering `created_at DESC, id DESC` with bounded `limit` and non-negative `offset`.
 
 ## Write prohibition
 
@@ -114,7 +114,7 @@ T28 intentionally does not answer those questions. They require a separate trace
 
 ## Required implementation evidence
 
-If T28 is approved for implementation, tests must prove at least:
+Tests must prove at least:
 
 - tenant isolation for list and detail;
 - no cross-tenant Invoice disclosure by guessed ID;
@@ -140,8 +140,6 @@ This prevents the frontend from becoming the source of financial truth or depend
 
 ## Promotion rule
 
-This is a proposed operational API contract. No Billing read endpoint is authorized by this document alone.
-
-Only explicit human approval may promote T28 to an approved implementation baseline.
+Human approval was explicitly granted on 2026-09-14, promoting T28 to an implementation-authorized baseline. Technical completion and final HUMAN HOMOLOGATION remain separate gates and MUST NOT be inferred from this approval.
 
 > "Quem pede um, pede bis."
