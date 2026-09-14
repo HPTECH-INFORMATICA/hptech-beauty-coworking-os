@@ -2,7 +2,7 @@
 
 > "Quem pede um, pede bis."
 
-**Status:** HUMAN APPROVED / IMPLEMENTATION AUTHORIZED
+**Status:** HUMAN HOMOLOGATED / LOCKED
 
 ## Purpose
 
@@ -45,28 +45,31 @@ The reconciliation must:
 
 T31 is reconciliation only. It may describe behavior already locked by T28/T29/T30, but it cannot expand or reinterpret those gates.
 
-The existing OpenAPI V1 baseline remains locked until this additive reconciliation is implemented, validated and separately homologated.
+The existing OpenAPI V1 baseline remains locked with this homologated additive reconciliation.
 
-## Validation requirements
+## Validation evidence
 
-Implementation must prove:
+Implementation was integrated to `main` by PR #5 at squash commit `7be0ad8281ec583bbd768926b9ac11ac6c9c173b`.
 
-- the static OpenAPI parses successfully;
-- existing static contract tests remain green;
-- Billing list/detail paths remain documented;
-- the MANUAL close path and operationId match runtime exactly;
-- documented Billing schemas cover the homologated runtime fields without inventing new fields;
-- no unrelated static API path or schema is modified except where strictly required by shared references;
-- full BCOS Quality Gate remains green.
+Verification evidence:
+
+- PR Quality Gate #106 completed successfully;
+- post-merge `main` BCOS Quality Gate #107, run `34905954114`, completed successfully;
+- API, Worker and Web jobs completed successfully;
+- the static MANUAL close path is documented as `POST /api/v1/invoices/{invoice_id}/close` with operationId `closeManualInvoice`;
+- the static Invoice/InvoiceDetail/InvoiceItem projections were reconciled with the already homologated runtime Billing surface;
+- no runtime code, migration, frontend, T26 or T27 semantics were changed by T31.
 
 ## Non-goals
 
 T31 does not authorize runtime API changes, migrations, frontend work, Financeiro UI, T26 homologation, T27 implementation, new Invoice lifecycle semantics, new Payment behavior, new Outbox events or a wholesale rewrite/regeneration of the static OpenAPI document.
 
-## Approval record
+## Homologation record
 
-Human approval was explicitly granted on 2026-09-14. T31 is therefore **HUMAN APPROVED / IMPLEMENTATION AUTHORIZED** for the exact narrow reconciliation above.
+Human implementation approval was explicitly granted on 2026-09-14. After implementation, PR integration and green post-merge verification, final human homologation was explicitly granted on 2026-09-14.
 
-Final implementation homologation remains separate after implementation and green verification.
+T31 is therefore **HUMAN HOMOLOGATED / LOCKED** for the exact narrow reconciliation above.
+
+This homologation does not approve or homologate T26 or T27.
 
 > "Quem pede um, pede bis."
