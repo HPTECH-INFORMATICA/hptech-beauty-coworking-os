@@ -2,174 +2,68 @@
 
 > "Quem pede um, pede bis."
 
-**Status:** PROPOSED / AWAITING HUMAN APPROVAL
+**Status:** HUMAN APPROVED / IMPLEMENTATION AUTHORIZED
 
 ## Purpose
 
-Resolve the Invoice lifecycle gap exposed by the locked T25 accumulated-materialization contract and the locked T28 Billing operational read boundary before any Billing lifecycle write API or Financeiro UI is implemented.
-
-T29 is a business/architecture decision gate. This proposal does not authorize production code, migration, frontend work, or a new Invoice status.
+Resolve the Invoice lifecycle gap exposed by locked T25 and T28 before a Billing lifecycle write API is promoted.
 
 ## Existing authority preserved
 
-T29 MUST NOT reopen or reinterpret:
+T29 does not reopen T25, T28, PER_USAGE identity, InvoiceItem evidence, confirmed PIX Payment behavior, T26, T27, or the independently locked static OpenAPI V1 baseline.
 
-- T25 accumulated Invoice identity and materialization;
-- T28 tenant-scoped read-only Billing API;
-- PER_USAGE Invoice identity;
-- persisted InvoiceItem evidence and total derivation;
-- existing confirmed PIX Payment behavior;
-- T26 reception-closing authority, still awaiting human homologation;
-- T27 terminal Outbox failure policy, still awaiting human approval;
-- the independently locked static OpenAPI V1 baseline.
+## Approved V1 lifecycle boundary
 
-## Physical evidence already present
+### MANUAL accumulated Invoice closure
 
-Migration `0007_invoice_cycle_identity` already persists `manual_closed_at TIMESTAMPTZ NULL` and enforces at most one active MANUAL accumulated Invoice per tenant + historical professional Billing contract while `manual_closed_at IS NULL`.
+V1 allows explicit closure only for an accumulated MANUAL Invoice with `source_usage_id IS NULL`, a historical `professional_billing_contract_id`, NULL automatic cycle boundaries, and an active lifecycle represented by `manual_closed_at IS NULL`.
 
-T25 explicitly requires the worker to materialize only into `OPEN` Invoices and explicitly prohibits the worker from closing, rotating, reopening, or assigning `manual_closed_at` to MANUAL Invoices.
+Closure persists a timezone-aware UTC `manual_closed_at`. It must not rewrite InvoiceItems or totals. After closure, the worker must not append financial effects to that Invoice; later completed Usage may resolve/create the next active MANUAL Invoice under locked T25 identity rules.
 
-The existing Payment service may transition an Invoice from `OPEN` to `PARTIALLY_PAID` or `PAID` when confirmed PIX evidence is registered. It rejects payment into `CANCELLED` or already `PAID` Invoices.
+### Authorization
 
-Therefore the schema and existing behavior prove that a lifecycle boundary is required, but they do not by themselves authorize who closes an Invoice or the legal post-close mutations.
+Closure requires existing `Permission.OPERATIONS`: Owner, Admin and Reception are allowed; Professional fails closed. No new permission is introduced.
 
-## Proposed V1 lifecycle boundary
+### Financial state
 
-### 1. MANUAL accumulated Invoice closure
+Only `OPEN` and `PARTIALLY_PAID` MANUAL Invoices are eligible for first closure. `PAID` and `CANCELLED` fail closed. No `CLOSED` Invoice status is introduced: `manual_closed_at` is the materialization lifecycle boundary while `status` remains financial/payment state.
 
-V1 SHOULD allow explicit closure only for an accumulated MANUAL Invoice identified by all of:
+### Automatic cycles and PER_USAGE
 
-- `source_usage_id IS NULL`;
-- `professional_billing_contract_id IS NOT NULL`;
-- `billing_cycle_start IS NULL`;
-- `billing_cycle_end IS NULL`;
-- `manual_closed_at IS NULL`.
+WEEKLY, BIWEEKLY and MONTHLY accumulated Invoices receive no explicit close/issue mutation in V1. PER_USAGE Invoices receive no close operation.
 
-Closure SHOULD persist `manual_closed_at` as a timezone-aware UTC instant.
+### Concurrency and idempotency
 
-Closure MUST NOT rewrite, delete, move, merge, or regenerate existing InvoiceItems.
+The command is tenant-scoped and locks the target Invoice before mutation. First valid close atomically persists `manual_closed_at`. Repeated close of the same already-closed MANUAL Invoice is idempotent and must preserve the original close instant. Concurrent attempts must converge on one closure and the lifecycle endpoint itself must not create a successor Invoice.
 
-Closure MUST NOT silently change Invoice totals; totals remain derived from persisted InvoiceItems.
+### Payment interaction
 
-After successful closure, the worker MUST NOT append new automatic financial effects to that closed MANUAL Invoice. A later completed Usage may resolve/create the next active MANUAL Invoice according to the already-locked T25 identity rules.
+Closure does not mark paid, create Payment, cancel, forgive balance or bypass Payments. A closed MANUAL Invoice with remaining balance may continue to receive a valid existing Payment when its financial status permits it.
 
-### 2. Authorization proposal
+### Post-close mutation boundary
 
-V1 SHOULD require existing `Permission.OPERATIONS`, preserving the same coworking-wide operational authority used by T28 Billing reads and confirmed PIX registration.
+T29 does not authorize reopening, cancellation, manual InvoiceItem creation, adjustments, discounts, due dates, issuance/overdue semantics, Pricing changes, Payment changes, Outbox retry changes or frontend work.
 
-Under the current RBAC baseline this permits Owner, Admin and Reception and excludes Professional.
+## API implementation boundary
 
-No new permission is proposed by T29 unless human approval explicitly requires a narrower role boundary.
+One tenant-scoped MANUAL Invoice closure command is authorized after the audit-event boundary below is separately approved. Generic Invoice CRUD is forbidden.
 
-### 3. Eligible financial state
+## Audit requirement — implementation blocker identified
 
-A MANUAL Invoice SHOULD be closable only while its persisted status is `OPEN` or `PARTIALLY_PAID`.
+Repository audit after human approval confirmed an existing generic transactional `audit_logs` writer and an established API precedent where `BOOKING_CANCELLED` is persisted in the same caller-owned transaction as its operational mutation.
 
-A `PAID` or `CANCELLED` Invoice SHOULD fail closed for the explicit MANUAL-close operation because no new lifecycle mutation is required to establish payment/cancellation state.
+No previously approved audit action/entity/metadata contract for MANUAL Invoice closure was found. T29 therefore does **not** authorize inventing an Invoice closure event name during implementation. T30 is the separate traceable decision gate for that audit boundary.
 
-This proposal does not redefine Payment semantics and does not create a new `CLOSED` Invoice status. `manual_closed_at` is the MANUAL materialization lifecycle boundary; `status` remains the existing financial/payment state.
+Production implementation of the T29 lifecycle command is authorized in principle but remains blocked from promotion until T30 is human-approved. This is the exact stop condition required by the original T29 audit requirement.
 
-### 4. Automatic accumulated cycles
+## Required implementation tests
 
-WEEKLY, BIWEEKLY and MONTHLY Invoices already have immutable persisted `billing_cycle_start` / `billing_cycle_end` identity. V1 T29 SHOULD NOT add an explicit close/issue mutation to automatic-cycle Invoices.
+After the audit boundary is approved, tests must cover tenant isolation; OPERATIONS/Professional authorization; MANUAL identity; OPEN and PARTIALLY_PAID closure; PAID/CANCELLED rejection; already-closed idempotency; immutable close instant; automatic/PER_USAGE rejection; no InvoiceItem/total/Payment side effect; worker non-rematerialization into closed MANUAL Invoice; successor identity under T25/database uniqueness; concurrency; and approved audit behavior.
 
-Their cycle boundary already prevents later Usage allocation into the wrong cycle through T25 cycle resolution. Adding a second close state without a proven business requirement would duplicate lifecycle authority.
+## Approval record
 
-### 5. PER_USAGE Invoices
+Human approval explicitly granted on 2026-09-14. This approval authorizes the V1 business/lifecycle choices above; it is not final implementation homologation.
 
-T29 SHOULD NOT add a close operation to PER_USAGE Invoices. Their lifecycle identity is the completed source Usage and their financial state continues to be governed by existing Invoice/Payment semantics.
-
-### 6. Concurrency and idempotency
-
-The lifecycle write MUST be tenant-scoped and lock the target Invoice row before mutation.
-
-A first valid close MUST atomically persist `manual_closed_at`.
-
-A repeated close request against the same already-closed Invoice SHOULD be idempotent only when the caller is requesting closure of that same Invoice and no contradictory mutation is requested; it MUST NOT reopen or replace the recorded close instant.
-
-Concurrent attempts MUST converge on one persisted closure and MUST NOT produce two active successor MANUAL Invoices through the lifecycle endpoint itself.
-
-### 7. Payment interaction
-
-Closing a MANUAL Invoice MUST NOT mark it paid, create a Payment, cancel it, forgive remaining balance, or bypass the existing Payment API.
-
-A closed MANUAL Invoice with remaining balance MAY continue to receive a valid existing Payment if its financial `status` otherwise permits payment. This preserves the separation between materialization closure and settlement.
-
-### 8. Mutation prohibition after closure
-
-After `manual_closed_at` is set:
-
-- automatic worker materialization into that Invoice is forbidden by T25;
-- InvoiceItems MUST remain immutable through the lifecycle endpoint;
-- totals MUST NOT be manually overwritten;
-- reopening is not authorized in V1;
-- cancellation is not authorized by T29;
-- manual ADJUSTMENT/DISCOUNT creation is not authorized by T29;
-- due-date or issuance semantics are not authorized by T29.
-
-## Proposed API boundary after approval
-
-If T29 is human-approved, implementation MAY add one tenant-scoped lifecycle command for MANUAL accumulated Invoice closure. Exact route naming MUST be reconciled with the API contract gate before promotion.
-
-The implementation MUST NOT add generic Invoice CRUD or unrelated financial writes.
-
-## Audit requirement
-
-A financial lifecycle write is operationally significant. Before implementation promotion, the repository MUST identify the existing Audit/Outbox authority applicable to this command. If no approved event contract exists, the implementation MUST stop at a separate traceable audit-event decision rather than invent an event name silently.
-
-## Required tests after approval
-
-Implementation tests MUST cover:
-
-- tenant isolation;
-- `OPERATIONS` authorization and Professional fail-closed behavior;
-- MANUAL identity validation;
-- OPEN closure;
-- PARTIALLY_PAID closure;
-- PAID/CANCELLED rejection under the approved rule;
-- already-closed idempotency;
-- immutable original close instant;
-- automatic-cycle and PER_USAGE rejection;
-- no InvoiceItem or total mutation;
-- no Payment side effect;
-- worker cannot rematerialize into the closed MANUAL Invoice;
-- successor MANUAL identity remains governed by T25/database uniqueness;
-- concurrency behavior;
-- audit/event behavior once separately authorized if necessary.
-
-## Non-goals
-
-T29 does not authorize:
-
-- a new Invoice status;
-- generic Invoice edit/delete;
-- reopening;
-- cancellation;
-- manual InvoiceItem creation;
-- discounts/adjustments;
-- due dates;
-- issuance/overdue/collection semantics;
-- automatic-cycle explicit close;
-- PER_USAGE close;
-- Payment changes;
-- Pricing changes;
-- Outbox retry-policy changes;
-- Financeiro frontend;
-- static OpenAPI V1 modification before its own reconciliation gate;
-- database migration unless implementation proves a missing physical invariant.
-
-## Human decisions required
-
-Approval of T29 means approval of the following V1 business choices:
-
-1. MANUAL accumulated Invoice closure is explicit and represented by existing `manual_closed_at` rather than a new Invoice status.
-2. Owner, Admin and Reception may close through existing `OPERATIONS`; Professional may not.
-3. OPEN and PARTIALLY_PAID are eligible for closure; PAID and CANCELLED are not.
-4. Closing stops future materialization into that MANUAL Invoice but does not settle its balance.
-5. Closed unpaid/partially-paid MANUAL Invoices may still receive valid Payments through the existing Payment boundary.
-6. Automatic-cycle and PER_USAGE Invoices receive no new explicit close operation in V1.
-7. Reopening/cancellation/adjustment/discount/due-date/issuance behavior remains outside this gate.
-
-Until explicit human approval, this document is proposal-only and MUST NOT be treated as implementation authorization.
+Final state at this gate: **HUMAN APPROVED / IMPLEMENTATION AUTHORIZED**.
 
 > "Quem pede um, pede bis."
