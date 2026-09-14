@@ -1009,8 +1009,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvoiceDetail"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+
+  /api/v1/invoices/{invoice_id}/close:
+    post:
+      tags:
+        - Invoices
+      summary: Fechar fatura manual acumulada
+      operationId: closeManualInvoice
+      description: |
+        Registra o fechamento explícito de uma Invoice acumulada MANUAL.
+
+        A operação exige contexto autenticado do tenant e permissão
+        OPERATIONS. O fechamento materializa manual_closed_at e não liquida
+        o saldo, não altera o status financeiro e não cria pagamento.
+
+        Apenas Invoices MANUAL elegíveis podem ser fechadas. Repetições
+        idempotentes preservam o instante original de fechamento.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - $ref: "#/components/parameters/InvoicePathId"
+      responses:
+        "200":
+          description: Fatura manual fechada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
   /api/v1/payments:
     post:
@@ -2259,6 +2293,7 @@ components:
         - quantity
         - unit_amount
         - total_amount
+        - created_at
       properties:
         id:
           type: string
@@ -2278,9 +2313,24 @@ components:
           $ref: "#/components/schemas/Money"
         total_amount:
           $ref: "#/components/schemas/Money"
-        metadata:
-          type: object
-          additionalProperties: true
+        billing_period_start:
+          type:
+            - string
+            - "null"
+          format: date-time
+        billing_period_end:
+          type:
+            - string
+            - "null"
+          format: date-time
+        related_invoice_item_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
 
     Invoice:
       type: object
@@ -2292,7 +2342,8 @@ components:
         - subtotal_amount
         - discount_amount
         - total_amount
-        - issued_at
+        - created_at
+        - updated_at
       properties:
         id:
           type: string
@@ -2300,6 +2351,34 @@ components:
         professional_id:
           type: string
           format: uuid
+        source_usage_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        professional_billing_contract_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        billing_cycle_start:
+          type:
+            - string
+            - "null"
+          format: date-time
+        billing_cycle_end:
+          type:
+            - string
+            - "null"
+          format: date-time
+        manual_closed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+          description: |
+            Instante UTC do fechamento explícito de uma Invoice acumulada
+            MANUAL. Não representa liquidação financeira.
         status:
           $ref: "#/components/schemas/InvoiceStatus"
         currency:
@@ -2311,23 +2390,11 @@ components:
           $ref: "#/components/schemas/Money"
         total_amount:
           $ref: "#/components/schemas/Money"
-        issued_at:
+        created_at:
           type: string
           format: date-time
-        due_at:
-          type:
-            - string
-            - "null"
-          format: date-time
-        paid_at:
-          type:
-            - string
-            - "null"
-          format: date-time
-        cancelled_at:
-          type:
-            - string
-            - "null"
+        updated_at:
+          type: string
           format: date-time
 
     InvoiceDetail:
@@ -2336,11 +2403,17 @@ components:
         - type: object
           required:
             - items
+            - confirmed_amount
+            - remaining_amount
           properties:
             items:
               type: array
               items:
                 $ref: "#/components/schemas/InvoiceItem"
+            confirmed_amount:
+              $ref: "#/components/schemas/Money"
+            remaining_amount:
+              $ref: "#/components/schemas/Money"
 
     Payment:
       type: object
