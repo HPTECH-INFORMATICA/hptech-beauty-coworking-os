@@ -2,21 +2,21 @@
 
 > "Quem pede um, pede bis."
 
-**Status:** HUMAN APPROVED / IMPLEMENTATION AUTHORIZED
+**Status:** HUMAN HOMOLOGATED / LOCKED
 
 ## Purpose
 
-Define the exact audit evidence required by approved T29 before the MANUAL accumulated Invoice closure command may be promoted to production.
+Define the exact audit evidence required by T29 for the MANUAL accumulated Invoice closure command.
 
 T30 is intentionally narrow. It does not reopen T29 lifecycle semantics and does not authorize any additional Billing mutation.
 
 ## Existing audit authority
 
-The API already provides `create_audit_log(...)`, which writes tenant, actor external user id, action, entity type, entity id and JSON metadata into `audit_logs` inside the caller-owned database transaction.
+The API provides `create_audit_log(...)`, which writes tenant, actor external user id, action, entity type, entity id and JSON metadata into `audit_logs` inside the caller-owned database transaction.
 
 Existing Booking cancellation uses that mechanism transactionally with action `BOOKING_CANCELLED` and entity type `BOOKING`. T30 follows that established audit mechanism rather than adding a new audit subsystem or Outbox event.
 
-## Approved V1 audit evidence
+## Locked V1 audit evidence
 
 A successful first MANUAL Invoice closure writes exactly one audit log in the same transaction as `manual_closed_at` persistence:
 
@@ -51,29 +51,18 @@ T30 introduces no separate rejection/security audit event name.
 
 T30 authorizes no new Outbox event. MANUAL Invoice closure has no approved asynchronous downstream consumer requirement in the current V1 architecture. Audit evidence belongs in `audit_logs`; inventing an Outbox event would expand the contract without a proven consumer.
 
-## Required implementation tests
+## Implementation and verification record
 
-Implementation tests must prove:
+The T29/T30 implementation was squash-merged to `main` as `f4a1ba22f5393173c7e8fda8d73663ddd0544095` on 2026-09-14.
 
-- first valid close writes one `INVOICE_MANUAL_CLOSED` / `INVOICE` audit row;
-- tenant and actor come from authenticated TenantContext;
-- metadata reflects the persisted close instant and financial status;
-- closure and audit are atomic;
-- audit failure rolls back closure;
-- idempotent retry creates no duplicate closure audit;
-- rejected/unauthorized/cross-tenant requests create no closure audit;
-- no Outbox event is created by this command.
+Implementation regression coverage verifies the approved audit boundary together with T29 lifecycle behavior. PR Quality Gate #91 and post-merge `main` Quality Gate #93 completed successfully.
 
-## Non-goals
+No new audit table, Outbox event/consumer, migration, frontend, static OpenAPI, T26 or T27 change was introduced.
 
-T30 does not authorize new audit tables, new Outbox consumers, generic financial-event taxonomy, rejection event names, frontend work, static OpenAPI changes, migrations, T26 changes, T27 changes, or any Invoice mutation beyond approved T29.
+## Homologation record
 
-## Approval record
+Human approval of the T30 contract was explicitly granted on 2026-09-14. After implementation, successful verification and merge to `main`, the user explicitly approved continuation/finalization on 2026-09-14.
 
-Human approval explicitly granted on 2026-09-14.
-
-Approval authorizes the exact V1 audit action `INVOICE_MANUAL_CLOSED`, entity type `INVOICE`, minimal metadata boundary, atomic audit requirement, no duplicate audit on idempotent retry, and no new Outbox event.
-
-This is implementation authorization, not final implementation homologation.
+T30 is therefore **HUMAN HOMOLOGATED / LOCKED**. Future changes to the MANUAL Invoice closure audit contract require a new traceable gate.
 
 > "Quem pede um, pede bis."

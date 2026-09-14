@@ -70,6 +70,8 @@ BCOS-M7-A3-T25 ... HUMAN HOMOLOGATED / LOCKED
 BCOS-M7-A3-T26 ... TECHNICALLY RECONCILED / AWAITING HUMAN HOMOLOGATION
 BCOS-M7-A3-T27 ... PROPOSED / AWAITING HUMAN APPROVAL
 BCOS-M7-A3-T28 ... HUMAN HOMOLOGATED / LOCKED
+BCOS-M7-A3-T29 ... HUMAN HOMOLOGATED / LOCKED
+BCOS-M7-A3-T30 ... HUMAN HOMOLOGATED / LOCKED
 ```
 
 M4/M5 are not retroactively promoted without explicit evidence. M7-A3 remains IN PROGRESS despite locked sub-gates.
@@ -88,7 +90,7 @@ Reception-closing financial authority remains M7-A2-T1: overtime strictly after 
 
 Status: TECHNICALLY RECONCILED / AWAITING HUMAN HOMOLOGATION.
 
-The implementation/regressions are reconciled with M7-A2-T1. This status is intentionally not promoted by T28 homologation.
+The implementation/regressions are reconciled with M7-A2-T1. This status is intentionally not promoted by later Billing gates.
 
 ### T27 — Terminal Outbox Failure Policy
 
@@ -100,22 +102,21 @@ The physical Outbox enum already supports `FAILED`, but the terminal maximum-att
 
 Status: HUMAN HOMOLOGATED / LOCKED.
 
-Contract: `docs/adr/M7-A3-T28-billing-operational-read-boundary-contract.md`.
+T28 provides tenant-scoped, read-only operational Billing endpoints `GET /api/v1/invoices` and `GET /api/v1/invoices/{invoice_id}`, protected by existing `OPERATIONS` permission.
 
-Merged implementation baseline: `c5e7f01bdafefe7b502e6e88f1cb9ee7d7b5ce31`.
+### T29 — Invoice Lifecycle Write Boundary
 
-T28 provides tenant-scoped, read-only operational Billing endpoints:
+Status: HUMAN HOMOLOGATED / LOCKED.
 
-- `GET /api/v1/invoices`;
-- `GET /api/v1/invoices/{invoice_id}`.
+T29 defines and implements the explicit MANUAL accumulated Invoice closure boundary. Only MANUAL accumulated invoices with the approved identity are eligible; first closure is allowed from OPEN/PARTIALLY_PAID, uses tenant-scoped row locking and persists immutable UTC `manual_closed_at`. PAID/CANCELLED, automatic-cycle and PER_USAGE close requests fail closed. Closure does not rewrite InvoiceItems/totals, settle Payment, create successor Invoice, or introduce generic Invoice CRUD.
 
-The boundary requires existing `OPERATIONS` permission, exposes persisted Invoice/InvoiceItem evidence and deterministic confirmed-payment/remaining projections, uses deterministic pagination, and introduces no migration, frontend change or Billing write endpoint.
+### T30 — MANUAL Invoice Closure Audit Contract
 
-Human implementation approval and final human homologation were explicitly granted on 2026-09-14 after technical verification. T28 is locked and must not be silently reopened.
+Status: HUMAN HOMOLOGATED / LOCKED.
 
-## Invoice lifecycle boundary
+T30 locks transactional audit evidence for first successful MANUAL close: `INVOICE_MANUAL_CLOSED` / `INVOICE`, tenant and actor from authenticated TenantContext, minimal metadata with persisted UTC close instant and financial status, no duplicate audit on idempotent retry and no new Outbox event.
 
-T28 deliberately leaves Billing writes unresolved. The schema contains `manual_closed_at`, while T25 does not authorize the worker to close/rotate/reopen MANUAL accumulated invoices. Who may close a MANUAL invoice, under what conditions, what mutations remain legal afterward, and whether automatic-cycle invoices need an explicit close/issue transition require a separate traceable contract before implementation.
+T29/T30 implementation baseline: `f4a1ba22f5393173c7e8fda8d73663ddd0544095`. PR Quality Gate #91 and post-merge main Quality Gate #93 passed on 2026-09-14 before final homologation reconciliation.
 
 ## Banco de dados
 
@@ -133,20 +134,19 @@ Regra permanente: nunca reutilizar, inspecionar ou assumir banco, projeto, branc
 - Worker: Ruff, mypy, pytest;
 - Web: strict lint, typecheck, tests, build.
 
-T28 implementation passed the complete PR gate and the post-merge `main` gate before human homologation.
+T29/T30 implementation passed the complete implementation gate and the post-merge `main` gate before final homologation reconciliation.
 
 ## Débitos controlados
 
 - Frontend product exposure remains narrower than implemented backend/domain capability.
-- Financeiro frontend is not part of T28 and remains a separate product/navigation gate.
-- Invoice lifecycle writes remain unresolved by design.
+- Financeiro frontend remains a separate product/navigation gate; T28-T30 do not authorize it.
 - T26 awaits human homologation.
 - T27 awaits human approval before implementation.
-- Static/frozen API documentation must be reconciled carefully against T28 without silently reopening an independently locked OpenAPI baseline.
+- Static/frozen API documentation must be reconciled carefully against implemented Billing runtime routes without silently reopening the independently locked OpenAPI baseline.
 
 ## Próxima atividade
 
-Continue M7-A3 from the locked T25/T28 baselines without reopening them. Audit the static OpenAPI contract and Invoice lifecycle authority; documentary reconciliation may proceed where factual, while new lifecycle/write semantics require a separate proposed gate. T26/T27 retain their independent pending human decisions.
+Continue M7-A3 from locked T25/T28/T29/T30 baselines without reopening them. Remaining independent decisions are T26 human homologation and T27 terminal Outbox policy approval. Static OpenAPI reconciliation remains a controlled documentary/contract gap, and Financeiro frontend remains a separate product surface gate.
 
 ## Regra de Governança
 
