@@ -21,6 +21,8 @@ O BCOS mantém isolamento técnico próprio. Integrações com outros produtos o
 - OpenAPI V1 — MATERIALIZADO / VALIDADO / LOCKED
 - BCOS-M0.2 Technical Foundation — HUMAN HOMOLOGATED / LOCKED
 
+PRD MASTER v1.0 and Architecture Freeze v1.2 are immutable authorities for implementation. Later reconciliation work must conform code, database, API, tests and documentation to those authorities; it must not reopen or alter them.
+
 ## Stack canônica
 
 - Frontend: Next.js + React + TypeScript
@@ -67,11 +69,12 @@ BCOS-M7-A1 ....... PASS
 BCOS-M7-A2 ....... HUMAN HOMOLOGATED / LOCKED
 BCOS-M7-A3 ....... IN PROGRESS
 BCOS-M7-A3-T25 ... HUMAN HOMOLOGATED / LOCKED
-BCOS-M7-A3-T26 ... TECHNICALLY RECONCILED / AWAITING HUMAN HOMOLOGATION
-BCOS-M7-A3-T27 ... PROPOSED / AWAITING HUMAN APPROVAL
+BCOS-M7-A3-T26 ... HUMAN HOMOLOGATED / LOCKED
+BCOS-M7-A3-T27 ... AUTHORITY GAP / IMPLEMENTATION BLOCKED
 BCOS-M7-A3-T28 ... HUMAN HOMOLOGATED / LOCKED
 BCOS-M7-A3-T29 ... HUMAN HOMOLOGATED / LOCKED
 BCOS-M7-A3-T30 ... HUMAN HOMOLOGATED / LOCKED
+BCOS-M7-A3-T31 ... HUMAN HOMOLOGATED / LOCKED
 ```
 
 M4/M5 are not retroactively promoted without explicit evidence. M7-A3 remains IN PROGRESS despite locked sub-gates.
@@ -88,15 +91,15 @@ Reception-closing financial authority remains M7-A2-T1: overtime strictly after 
 
 ### T26 — Reception Closing Authority Reconciliation
 
-Status: TECHNICALLY RECONCILED / AWAITING HUMAN HOMOLOGATION.
+Status: HUMAN HOMOLOGATED / LOCKED.
 
-The implementation/regressions are reconciled with M7-A2-T1. This status is intentionally not promoted by later Billing gates.
+T26 reconciles the repository to the immutable M7-A2-T1 reception-closing authority. The implementation/regressions already follow that authority: overtime strictly after reception closing is not financially materialized, a closed reception day generates no OVERTIME charge, and the conflicting later T11 wording is superseded only for this financial interpretation.
 
 ### T27 — Terminal Outbox Failure Policy
 
-Status: PROPOSED / AWAITING HUMAN APPROVAL.
+Status: AUTHORITY GAP / IMPLEMENTATION BLOCKED.
 
-The physical Outbox enum already supports `FAILED`, but the terminal maximum-attempt transition remains unimplemented until explicit approval of T27.
+The physical Outbox enum already supports `FAILED`, and the earlier approved Outbox contracts intentionally reserve terminal retry/failure policy for a separate decision. The existing T27 proposal suggests a maximum of five processing attempts, but that threshold is not established by the earlier locked Outbox contracts. Because PRD/Architecture authorities are immutable and must not be invented or modified, no terminal threshold will be implemented until it can be traced to an already-approved authority.
 
 ### T28 — Billing Operational Read Boundary
 
@@ -118,6 +121,12 @@ T30 locks transactional audit evidence for first successful MANUAL close: `INVOI
 
 T29/T30 implementation baseline: `f4a1ba22f5393173c7e8fda8d73663ddd0544095`. PR Quality Gate #91 and post-merge main Quality Gate #93 passed on 2026-09-14 before final homologation reconciliation.
 
+### T31 — Static OpenAPI Billing Reconciliation
+
+Status: HUMAN HOMOLOGATED / LOCKED.
+
+T31 reconciles the independently locked static OpenAPI V1 with the already homologated runtime T28/T29/T30 Billing boundary, including the MANUAL close command and runtime Invoice projections. Implementation was integrated at `7be0ad8281ec583bbd768926b9ac11ac6c9c173b`; final homologation record was integrated at `4dea93f7fdd4d6ecab18cce1ada50636603c5868`, with post-merge Quality Gate #111 successful.
+
 ## Banco de dados
 
 Projeto Neon independente: `hptech-beauty-coworking-os`.
@@ -134,24 +143,22 @@ Regra permanente: nunca reutilizar, inspecionar ou assumir banco, projeto, branc
 - Worker: Ruff, mypy, pytest;
 - Web: strict lint, typecheck, tests, build.
 
-T29/T30 implementation passed the complete implementation gate and the post-merge `main` gate before final homologation reconciliation.
+T31 final homologation record passed post-merge `main` Quality Gate #111 on 2026-09-14.
 
 ## Débitos controlados
 
 - Frontend product exposure remains narrower than implemented backend/domain capability.
-- Financeiro frontend remains a separate product/navigation gate; T28-T30 do not authorize it.
-- T26 awaits human homologation.
-- T27 awaits human approval before implementation.
-- Static/frozen API documentation must be reconciled carefully against implemented Billing runtime routes without silently reopening the independently locked OpenAPI baseline.
+- Financeiro frontend remains a separate product/navigation gap to reconcile against the immutable product authority; T28-T31 do not themselves define a new product surface.
+- T27 terminal Outbox policy remains blocked at the unresolved maximum-attempt authority boundary; no threshold may be invented.
 
 ## Próxima atividade
 
-Continue M7-A3 from locked T25/T28/T29/T30 baselines without reopening them. Remaining independent decisions are T26 human homologation and T27 terminal Outbox policy approval. Static OpenAPI reconciliation remains a controlled documentary/contract gap, and Financeiro frontend remains a separate product surface gate.
+Continue M7-A3 reconciliation from locked T25/T26/T28/T29/T30/T31 baselines. Preserve PRD MASTER v1.0 and Architecture Freeze v1.2 unchanged. Audit remaining implementation/product-surface gaps against those immutable authorities. T27 must remain fail-closed at its unresolved authority boundary rather than receiving an invented terminal threshold.
 
 ## Regra de Governança
 
 Antes de alteração estrutural: revisar, analisar, verificar, investigar, diagnosticar, comparar com as baselines e avaliar impacto.
 
-Nenhuma etapa implementada torna-se `HUMAN HOMOLOGATED / LOCKED` sem homologação humana explícita. Etapa homologada não é reaberta silenciosamente. Qualquer alteração estrutural exige rastreabilidade.
+PRD MASTER v1.0 and Architecture Freeze v1.2 are never reopened or altered. Implementation must conform to them. Etapa homologada não é reaberta silenciosamente. Qualquer alteração estrutural exige rastreabilidade.
 
 > "Quem pede um, pede bis."
