@@ -7,6 +7,7 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from bcos_api.billing.schemas import InvoiceDetail, InvoiceStatus, InvoiceSummary
+from bcos_api.billing.service import InvoiceLifecycleConflict, InvoiceNotFound
 from bcos_api.db.session import get_async_session
 from bcos_api.main import create_app
 from bcos_api.tenancy.context import TenantContext
@@ -15,7 +16,15 @@ from bcos_api.tenancy.membership import MembershipRole
 
 
 class FakeSession:
-    pass
+    def __init__(self) -> None:
+        self.commits = 0
+        self.rollbacks = 0
+
+    async def commit(self) -> None:
+        self.commits += 1
+
+    async def rollback(self) -> None:
+        self.rollbacks += 1
 
 
 def make_context() -> TenantContext:
@@ -25,12 +34,14 @@ def make_context() -> TenantContext:
     )
 
 
-def summary() -> InvoiceSummary:
+def summary(*, manual: bool = False, closed: bool = False) -> InvoiceSummary:
     now = datetime(2026, 9, 14, 15, 0, tzinfo=UTC)
     return InvoiceSummary(
-        id=uuid4(), professional_id=uuid4(), source_usage_id=uuid4(),
-        professional_billing_contract_id=None, billing_cycle_start=None,
-        billing_cycle_end=None, manual_closed_at=None, status=InvoiceStatus.OPEN,
+        id=uuid4(), professional_id=uuid4(),
+        source_usage_id=None if manual else uuid4(),
+        professional_billing_contract_id=uuid4() if manual else None,
+        billing_cycle_start=None, billing_cycle_end=None,
+        manual_closed_at=now if closed else None, status=InvoiceStatus.OPEN,
         currency="BRL", subtotal_amount=Decimal("80.00"),
         discount_amount=Decimal("0.00"), total_amount=Decimal("80.00"),
         created_at=now, updated_at=now,
@@ -93,7 +104,42 @@ def test_detail_route_serializes_financial_projection(monkeypatch) -> None:
     assert response.json()["remaining_amount"] == "50.00"
 
 
-def test_openapi_contains_only_read_billing_routes() -> None:
+def test_close_route_commits_approved_lifecycle_command(monkeypatch) -> None:
+    app, ctx, session = app_with_overrides()
+    item = summary(manual=True, closed=True)
+
+    async def fake_close(received_session, **kwargs):
+        assert received_session is session
+        assert kwargs["context"] is ctx
+        assert kwargs["invoice_id"] == item.id
+        return item
+
+    monkeypatch.setattr("bcos_api.billing.router.close_tenant_manual_invoice", fake_close)
+    response = TestClient(app).post(f"/api/v1/invoices/{item.id}/close")
+    assert response.status_code == 200
+    assert response.json()["manual_closed_at"] is not None
+    assert session.commits == 1
+    assert session.rollbacks == 0
+
+
+def test_close_route_rolls_back_not_found_and_conflict(monkeypatch) -> None:
+    for exc, expected in [
+        (InvoiceNotFound("missing"), 404),
+        (InvoiceLifecycleConflict("invalid"), 409),
+    ]:
+        app, _, session = app_with_overrides()
+
+        async def fake_close(*args, _exc=exc, **kwargs):
+            raise _exc
+
+        monkeypatch.setattr("bcos_api.billing.router.close_tenant_manual_invoice", fake_close)
+        response = TestClient(app).post(f"/api/v1/invoices/{uuid4()}/close")
+        assert response.status_code == expected
+        assert session.commits == 0
+        assert session.rollbacks == 1
+
+
+def test_runtime_openapi_exposes_only_approved_billing_write() -> None:
     schema = create_app().openapi()
     assert "get" in schema["paths"]["/api/v1/invoices"]
     assert "post" not in schema["paths"]["/api/v1/invoices"]
@@ -101,3 +147,4 @@ def test_openapi_contains_only_read_billing_routes() -> None:
     assert "put" not in schema["paths"]["/api/v1/invoices/{invoice_id}"]
     assert "patch" not in schema["paths"]["/api/v1/invoices/{invoice_id}"]
     assert "delete" not in schema["paths"]["/api/v1/invoices/{invoice_id}"]
+    assert "post" in schema["paths"]["/api/v1/invoices/{invoice_id}/close"]
