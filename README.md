@@ -8,9 +8,9 @@ Sistema operacional SaaS B2B multi-tenant para a operação de coworkings de bel
 
 O BCOS está em desenvolvimento funcional avançado. Identity/Tenancy/RBAC, Units/Resources/Professionals, Availability, Booking/Usage, Pricing, Billing materialization, Payments e Transactional Outbox possuem implementação relevante no repositório.
 
-O trabalho ativo está em **BCOS-M7 — Outbox / Billing**. **M7-A3-T25 — Accumulated Invoice Materialization** e **M7-A3-T28 — Billing Operational Read Boundary** estão `HUMAN HOMOLOGATED / LOCKED`.
+O trabalho ativo está em **BCOS-M7 — Outbox / Billing**. **M7-A3-T25 — Accumulated Invoice Materialization**, **T28 — Billing Operational Read Boundary**, **T29 — Invoice Lifecycle Write Boundary** e **T30 — MANUAL Invoice Closure Audit Contract** estão `HUMAN HOMOLOGATED / LOCKED`.
 
-T28 disponibiliza a fronteira Billing operacional somente leitura por `GET /api/v1/invoices` e `GET /api/v1/invoices/{invoice_id}`, tenant-scoped e protegida por `OPERATIONS`. Isso fecha o gap de leitura API de Invoice sem autorizar Financeiro frontend ou novas mutações financeiras.
+T28 disponibiliza leitura Billing operacional tenant-scoped. T29/T30 acrescentam a única mutação de lifecycle autorizada neste recorte: fechamento explícito de Invoice acumulada MANUAL, protegido por `OPERATIONS`, idempotente e auditado transacionalmente. Isso não autoriza Financeiro frontend nem generic Invoice CRUD.
 
 **T26 — Reception Closing Authority Reconciliation** permanece `TECHNICALLY RECONCILED / AWAITING HUMAN HOMOLOGATION`. **T27 — Terminal Outbox Failure Policy** permanece `PROPOSED / AWAITING HUMAN APPROVAL`.
 
@@ -26,6 +26,8 @@ O estado detalhado e rastreável está em `docs/product/PROJECT_STATUS.md`; a au
 - BCOS-M0.2 Technical Foundation — HUMAN HOMOLOGATED / LOCKED
 - M7-A3-T25 — HUMAN HOMOLOGATED / LOCKED
 - M7-A3-T28 — HUMAN HOMOLOGATED / LOCKED
+- M7-A3-T29 — HUMAN HOMOLOGATED / LOCKED
+- M7-A3-T30 — HUMAN HOMOLOGATED / LOCKED
 
 ## Arquitetura central
 
@@ -48,9 +50,11 @@ A interface web ainda não expõe toda a amplitude funcional do backend. A Produ
 
 ## Billing operacional
 
-A baseline T28 homologada permite leitura tenant-scoped de Invoice/InvoiceItems e projeção determinística de pagamentos confirmados/saldo restante. Ela não autoriza fechar/reabrir/cancelar Invoice, definir `manual_closed_at`, editar itens, criar ajustes/descontos, definir vencimento ou contornar o fluxo de Payment.
+A baseline T28 permite leitura tenant-scoped de Invoice/InvoiceItems e projeção determinística de pagamentos confirmados/saldo restante.
 
-O lifecycle de fechamento de Invoice acumulada continua sendo uma fronteira separada que exige contrato rastreável antes de qualquer write API.
+T29/T30 permitem explicitamente fechar somente uma Invoice acumulada MANUAL dentro da identidade e estados financeiros aprovados. O fechamento persiste `manual_closed_at`, não reescreve itens/totais, não liquida Payment e registra uma única auditoria `INVOICE_MANUAL_CLOSED` na primeira mutação. Repetição é idempotente e não duplica auditoria.
+
+Automatic-cycle e PER_USAGE não recebem close explícito. Reopen, cancelamento, ajustes/descontos, vencimento/emissão e generic Invoice CRUD permanecem fora desse contrato.
 
 ## Stack
 
@@ -73,7 +77,7 @@ O lifecycle de fechamento de Invoice acumulada continua sendo uma fronteira sepa
 - Worker: Ruff, mypy e pytest;
 - Web: lint estrito, typecheck, testes e build.
 
-Mudanças funcionais e correções de arquitetura devem permanecer verdes antes de promoção de baseline.
+T29/T30 passaram pelo Quality Gate da implementação e pelo gate pós-merge em `main` antes da homologação final.
 
 ## Estrutura
 
