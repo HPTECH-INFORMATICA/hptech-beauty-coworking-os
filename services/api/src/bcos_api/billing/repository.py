@@ -1,7 +1,8 @@
-"""Tenant-scoped read-only persistence for BCOS Billing."""
+"""Tenant-scoped persistence for BCOS Billing."""
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -65,6 +66,54 @@ async def get_invoice(
         {"tenant_id": tenant_id, "invoice_id": invoice_id},
     )
     return result.mappings().one_or_none()
+
+
+async def lock_invoice(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    invoice_id: UUID,
+) -> Any | None:
+    """Lock one tenant-scoped Invoice for a lifecycle mutation."""
+
+    result = await session.execute(
+        text(
+            f"""
+            SELECT {_INVOICE_COLUMNS}
+            FROM invoices
+            WHERE tenant_id = :tenant_id AND id = :invoice_id
+            FOR UPDATE
+            """
+        ),
+        {"tenant_id": tenant_id, "invoice_id": invoice_id},
+    )
+    return result.mappings().one_or_none()
+
+
+async def close_manual_invoice(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    invoice_id: UUID,
+    closed_at: datetime,
+) -> Any:
+    """Persist the T29 MANUAL materialization boundary on a locked Invoice."""
+
+    result = await session.execute(
+        text(
+            f"""
+            UPDATE invoices
+            SET manual_closed_at = :closed_at,
+                updated_at = now()
+            WHERE tenant_id = :tenant_id
+              AND id = :invoice_id
+              AND manual_closed_at IS NULL
+            RETURNING {_INVOICE_COLUMNS}
+            """
+        ),
+        {"tenant_id": tenant_id, "invoice_id": invoice_id, "closed_at": closed_at},
+    )
+    return result.mappings().one()
 
 
 async def list_invoice_items(

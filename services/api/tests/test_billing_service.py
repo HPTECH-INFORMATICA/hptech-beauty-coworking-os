@@ -7,7 +7,13 @@ from uuid import uuid4
 import pytest
 
 from bcos_api.billing.schemas import InvoiceStatus
-from bcos_api.billing.service import InvoiceNotFound, get_tenant_invoice, list_tenant_invoices
+from bcos_api.billing.service import (
+    InvoiceLifecycleConflict,
+    InvoiceNotFound,
+    close_tenant_manual_invoice,
+    get_tenant_invoice,
+    list_tenant_invoices,
+)
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.membership import MembershipRole
 from bcos_api.tenancy.rbac import PermissionDenied
@@ -22,17 +28,24 @@ def context(role: MembershipRole = MembershipRole.OWNER) -> TenantContext:
     )
 
 
-def invoice_row(ctx: TenantContext, *, total: str = "100.00") -> dict[str, object]:
+def invoice_row(
+    ctx: TenantContext,
+    *,
+    total: str = "100.00",
+    manual: bool = False,
+    status: str = "OPEN",
+    closed_at: datetime | None = None,
+) -> dict[str, object]:
     now = datetime(2026, 9, 14, 15, 0, tzinfo=UTC)
     return {
         "id": uuid4(),
         "professional_id": uuid4(),
-        "source_usage_id": uuid4(),
-        "professional_billing_contract_id": None,
+        "source_usage_id": None if manual else uuid4(),
+        "professional_billing_contract_id": uuid4() if manual else None,
         "billing_cycle_start": None,
         "billing_cycle_end": None,
-        "manual_closed_at": None,
-        "status": "OPEN",
+        "manual_closed_at": closed_at,
+        "status": status,
         "currency": "BRL",
         "subtotal_amount": Decimal(total),
         "discount_amount": Decimal("0.00"),
@@ -139,3 +152,114 @@ async def test_detail_fails_closed_if_confirmed_evidence_exceeds_total(monkeypat
     monkeypatch.setattr("bcos_api.billing.repository.confirmed_amount", fake_paid)
     with pytest.raises(RuntimeError, match="exceeds Invoice total"):
         await get_tenant_invoice(object(), context=ctx, invoice_id=row["id"])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("financial_status", ["OPEN", "PARTIALLY_PAID"])
+async def test_close_manual_invoice_persists_boundary_and_audit(
+    monkeypatch, financial_status: str
+) -> None:
+    ctx = context()
+    row = invoice_row(ctx, manual=True, status=financial_status)
+    closed_at = datetime(2026, 9, 14, 22, 0, tzinfo=UTC)
+    closed = {**row, "manual_closed_at": closed_at, "updated_at": closed_at}
+    audit: dict[str, object] = {}
+
+    async def fake_lock(session, **kwargs):
+        assert kwargs["tenant_id"] == ctx.tenant_id
+        return row
+
+    async def fake_close(session, **kwargs):
+        assert kwargs["tenant_id"] == ctx.tenant_id
+        return closed
+
+    async def fake_audit(session, **kwargs):
+        audit.update(kwargs)
+
+    monkeypatch.setattr("bcos_api.billing.repository.lock_invoice", fake_lock)
+    monkeypatch.setattr("bcos_api.billing.repository.close_manual_invoice", fake_close)
+    monkeypatch.setattr("bcos_api.billing.service.create_audit_log", fake_audit)
+
+    result = await close_tenant_manual_invoice(object(), context=ctx, invoice_id=row["id"])
+    assert result.manual_closed_at == closed_at
+    assert audit["tenant_id"] == ctx.tenant_id
+    assert audit["actor_external_user_id"] == ctx.external_user_id
+    assert audit["action"] == "INVOICE_MANUAL_CLOSED"
+    assert audit["entity_type"] == "INVOICE"
+    assert audit["entity_id"] == row["id"]
+    assert audit["metadata"] == {
+        "manual_closed_at": closed_at.isoformat(),
+        "status": financial_status,
+    }
+
+
+@pytest.mark.asyncio
+async def test_close_is_idempotent_without_duplicate_mutation_or_audit(monkeypatch) -> None:
+    ctx = context()
+    original = datetime(2026, 9, 14, 21, 0, tzinfo=UTC)
+    row = invoice_row(ctx, manual=True, closed_at=original)
+    mutated = False
+    audited = False
+
+    async def fake_lock(session, **kwargs):
+        return row
+
+    async def fake_close(*args, **kwargs):
+        nonlocal mutated
+        mutated = True
+
+    async def fake_audit(*args, **kwargs):
+        nonlocal audited
+        audited = True
+
+    monkeypatch.setattr("bcos_api.billing.repository.lock_invoice", fake_lock)
+    monkeypatch.setattr("bcos_api.billing.repository.close_manual_invoice", fake_close)
+    monkeypatch.setattr("bcos_api.billing.service.create_audit_log", fake_audit)
+
+    result = await close_tenant_manual_invoice(object(), context=ctx, invoice_id=row["id"])
+    assert result.manual_closed_at == original
+    assert mutated is False
+    assert audited is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("financial_status", ["PAID", "CANCELLED"])
+async def test_close_rejects_ineligible_financial_status(monkeypatch, financial_status) -> None:
+    ctx = context()
+    row = invoice_row(ctx, manual=True, status=financial_status)
+
+    async def fake_lock(session, **kwargs):
+        return row
+
+    monkeypatch.setattr("bcos_api.billing.repository.lock_invoice", fake_lock)
+    with pytest.raises(InvoiceLifecycleConflict, match="not eligible"):
+        await close_tenant_manual_invoice(object(), context=ctx, invoice_id=row["id"])
+
+
+@pytest.mark.asyncio
+async def test_close_rejects_per_usage_or_automatic_identity(monkeypatch) -> None:
+    ctx = context()
+    row = invoice_row(ctx)
+
+    async def fake_lock(session, **kwargs):
+        return row
+
+    monkeypatch.setattr("bcos_api.billing.repository.lock_invoice", fake_lock)
+    with pytest.raises(InvoiceLifecycleConflict, match="Only MANUAL"):
+        await close_tenant_manual_invoice(object(), context=ctx, invoice_id=row["id"])
+
+
+@pytest.mark.asyncio
+async def test_professional_cannot_close_before_lock(monkeypatch) -> None:
+    called = False
+
+    async def fake_lock(*args, **kwargs):
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr("bcos_api.billing.repository.lock_invoice", fake_lock)
+    with pytest.raises(PermissionDenied):
+        await close_tenant_manual_invoice(
+            object(), context=context(MembershipRole.PROFESSIONAL), invoice_id=uuid4()
+        )
+    assert called is False
