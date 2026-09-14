@@ -67,161 +67,91 @@ BCOS-M7-A1 ....... PASS
 BCOS-M7-A2 ....... HUMAN HOMOLOGATED / LOCKED
 BCOS-M7-A3 ....... IN PROGRESS
 BCOS-M7-A3-T25 ... HUMAN HOMOLOGATED / LOCKED
+BCOS-M7-A3-T26 ... TECHNICALLY RECONCILED / AWAITING HUMAN HOMOLOGATION
+BCOS-M7-A3-T27 ... PROPOSED / AWAITING HUMAN APPROVAL
+BCOS-M7-A3-T28 ... HUMAN HOMOLOGATED / LOCKED
 ```
 
-Este documento não promove retroativamente M4 ou M5 a `HUMAN HOMOLOGATED / LOCKED` sem evidência explícita de homologação. Ele apenas remove o antigo estado documental que dizia que essas implementações ainda não estavam autorizadas, pois o repositório já avançou além delas.
+M4/M5 are not retroactively promoted without explicit evidence. M7-A3 remains IN PROGRESS despite locked sub-gates.
 
-## Marcos homologados relevantes
+## M7-A3 — current financial baseline
 
-### BCOS-M0.1 — Repository Foundation
-
-Status: HUMAN HOMOLOGATED / LOCKED.
-
-Fundação independente do repositório estabelecida e homologada.
-
-### BCOS-M0.2 — Technical Foundation
+### T25 — Accumulated Invoice Materialization
 
 Status: HUMAN HOMOLOGATED / LOCKED.
 
-Inclui toolchain Node/pnpm/Turbo, ambiente Python, qualidade backend/frontend, skeleton das aplicações, database executable baseline, PostgreSQL real e OpenAPI V1.
+Covers `ACCUMULATED_OPEN_INVOICE`, WEEKLY / BIWEEKLY / MONTHLY / MANUAL cycles, accumulated identity by historical professional billing contract/cycle, `USAGE_COMPLETION`, deterministic supported `FIXED_CUTOFF_SPLIT`, immutable persisted InvoiceItem evidence, and atomic financial writes + Outbox `PROCESSED`.
 
-Marcos Git relevantes:
+Reception-closing financial authority remains M7-A2-T1: overtime strictly after reception closing is auditable temporal evidence but is not materialized as financial OVERTIME.
 
-- `52ba61a` — database executable baseline
-- `f022133` — real PostgreSQL baseline
-- `cc1bf4a` — OpenAPI v1 contract
+### T26 — Reception Closing Authority Reconciliation
 
-### BCOS-M1 — Identity / Tenancy / RBAC
+Status: TECHNICALLY RECONCILED / AWAITING HUMAN HOMOLOGATION.
 
-Status: HUMAN HOMOLOGATED / LOCKED.
+The implementation/regressions are reconciled with M7-A2-T1. This status is intentionally not promoted by T28 homologation.
 
-Marco Git: `19e0c28`.
+### T27 — Terminal Outbox Failure Policy
 
-Baseline inclui tenant context server-side, memberships tenant-scoped, RBAC OWNER / ADMIN / RECEPTION / PROFESSIONAL e own-scope de Professional.
+Status: PROPOSED / AWAITING HUMAN APPROVAL.
 
-### BCOS-M2 — Units / Resources / Professionals
+The physical Outbox enum already supports `FAILED`, but the terminal maximum-attempt transition remains unimplemented until explicit approval of T27.
 
-Status: HUMAN HOMOLOGATED / LOCKED.
-
-Marcos Git:
-
-- `800b16e`
-- `f160a47`
-
-Baseline inclui Units, Reception Hours, Resource Categories, Resources, Professionals, serviços tenant-scoped e alinhamento HTTP/OpenAPI.
-
-### BCOS-M3 — ResourceOccupancy / Availability
+### T28 — Billing Operational Read Boundary
 
 Status: HUMAN HOMOLOGATED / LOCKED.
 
-Marco Git: `96bdfe5`.
+Contract: `docs/adr/M7-A3-T28-billing-operational-read-boundary-contract.md`.
 
-`ResourceOccupancy` permanece a autoridade física definitiva; intervalo canônico `[)`; PostgreSQL `EXCLUDE USING gist` permanece a autoridade final contra overlap; Availability é consulta preventiva e não reserva recurso.
+Merged implementation baseline: `c5e7f01bdafefe7b502e6e88f1cb9ee7d7b5ce31`.
 
-### BCOS-M4 — Booking / Pricing Contracts
+T28 provides tenant-scoped, read-only operational Billing endpoints:
 
-Estado documental reconciliado: implementação existente no repositório; não está mais em fase de “implementação não autorizada”.
+- `GET /api/v1/invoices`;
+- `GET /api/v1/invoices/{invoice_id}`.
 
-Gates registrados incluem M4-A1 a M4-A6 PASS/LOCKED. Booking não recebe Pricing Snapshot do cliente; snapshot é obrigatório e imutável; Pricing permanece domínio distinto; `ResourceOccupancy` continua autoridade contra overlap.
+The boundary requires existing `OPERATIONS` permission, exposes persisted Invoice/InvoiceItem evidence and deterministic confirmed-payment/remaining projections, uses deterministic pagination, and introduces no migration, frontend change or Billing write endpoint.
 
-### BCOS-M6
+Human implementation approval and final human homologation were explicitly granted on 2026-09-14 after technical verification. T28 is locked and must not be silently reopened.
 
-Status: HUMAN HOMOLOGATED / LOCKED.
+## Invoice lifecycle boundary
 
-Marco Git homologado: `527acda53f5dc0f9fcf7b23aa8e4f2d9c444cb86`.
-
-### BCOS-M7 — Outbox / Billing
-
-Status geral: IN PROGRESS.
-
-M7-A1 Physical Billing Baseline — PASS.
-
-M7-A2 Frozen Contract / Billing Boundary — HUMAN HOMOLOGATED / LOCKED. Marco registrado: `3a65ba4`.
-
-M7-A3 estabelece o consumidor Outbox e a materialização Billing. O contrato aprovado mantém claim curto e transacional, `FOR UPDATE SKIP LOCKED`, processamento de no máximo um evento por iteração, recuperação por `processing_started_at`, e processamento financeiro + `PROCESSED` atômicos na mesma transação.
-
-## M7-A3-T25 — Accumulated Invoice Materialization
-
-Status: HUMAN HOMOLOGATED / LOCKED.
-
-Contrato: `docs/adr/M7-A3-T25-accumulated-invoice-materialization-contract.md`.
-
-A implementação cobre `ACCUMULATED_OPEN_INVOICE`, ciclos WEEKLY / BIWEEKLY / MONTHLY / MANUAL, identidade acumulada por contrato/ciclo, `USAGE_COMPLETION`, e materialização determinística de `FIXED_CUTOFF_SPLIT` para efeitos temporais suportados.
-
-Regras preservadas:
-
-- Unit IANA timezone define fronteiras locais; persistência é UTC.
-- Instante exatamente no cutoff pertence ao novo ciclo.
-- MONTHLY faz clamp para o último dia do mês quando necessário.
-- MANUAL não é fechado/rotacionado automaticamente pelo worker.
-- `BASE_LEASE` não é automaticamente dividido ou rateado por cruzar cutoff.
-- OVERTIME pode ser segmentado somente quando a evidência temporal e monetária aprovada permite segmentação determinística.
-- Segmentação incompatível ou não determinística falha fechada.
-- Mais de um cutoff por efeito temporal permanece fora do V1 T25.
-- InvoiceItems segmentados preservam identidade temporal e idempotência.
-- Totais são derivados dos InvoiceItems persistidos.
-- Escritas financeiras e Outbox `PROCESSED` permanecem atômicos.
-
-Quality Gate de implementação T25 verificado no run `34766462286`, commit `644b8b7fe0d9fa6e17be1460dce06d5abb63cf7a`:
-
-- API — PASS
-- Worker — PASS
-- Web — PASS
-- Ruff — PASS
-- mypy — PASS
-- pytest — PASS
-- Alembic single-head — PASS
-- frontend lint/typecheck/tests/build — PASS
-
-A reconciliação subsequente do repositório também passou integralmente no Quality Gate `34766615865`, commit `32829af83e47473ebf288cabcf895c56110727e3`.
-
-Homologação humana explícita registrada em 2026-09-13. T25 está LOCKED e não deve ser reaberto silenciosamente.
+T28 deliberately leaves Billing writes unresolved. The schema contains `manual_closed_at`, while T25 does not authorize the worker to close/rotate/reopen MANUAL accumulated invoices. Who may close a MANUAL invoice, under what conditions, what mutations remain legal afterward, and whether automatic-cycle invoices need an explicit close/issue transition require a separate traceable contract before implementation.
 
 ## Banco de dados
 
 Projeto Neon independente: `hptech-beauty-coworking-os`.
 
-Baseline conhecida:
-
-- Branch Neon: production
-- Database: neondb
-- Role: neondb_owner
-- PostgreSQL real validado
-- migrations aplicadas conforme baseline do projeto
-- integridade física validada
+Baseline conhecida: production branch, `neondb`, role `neondb_owner`, PostgreSQL real validated, migrations/integrity according to the project baseline.
 
 Regra permanente: nunca reutilizar, inspecionar ou assumir banco, projeto, branch, credencial ou connection string de outro produto como se pertencesse ao BCOS.
 
-## Quality Gate do repositório
+## Quality Gate
 
-`.github/workflows/quality-gate.yml` protege os três eixos do monorepo:
+`.github/workflows/quality-gate.yml` protects:
 
-- API: Ruff, mypy, pytest e Alembic single-head;
-- Worker: Ruff, mypy e pytest;
-- Web: lint estrito, typecheck, testes e build.
+- API: Ruff, mypy, pytest, Alembic single-head;
+- Worker: Ruff, mypy, pytest;
+- Web: strict lint, typecheck, tests, build.
 
-Correções de arquitetura e Billing devem permanecer cobertas por esse gate antes de promoção de baseline.
+T28 implementation passed the complete PR gate and the post-merge `main` gate before human homologation.
 
 ## Débitos controlados
 
-- A exposição funcional do frontend ainda é menor do que a arquitetura/domínio já implementados no backend; isso deve ser tratado como reconciliação de produto, sem inventar módulos fora do PRD/Architecture Freeze.
-- README e demais documentos antigos podem conter estado histórico defasado e devem ser reconciliados contra implementação real, ADRs e homologações antes de serem tratados como autoridade de estado.
-- Integrações externas futuras continuam fora da baseline até contrato explícito.
+- Frontend product exposure remains narrower than implemented backend/domain capability.
+- Financeiro frontend is not part of T28 and remains a separate product/navigation gate.
+- Invoice lifecycle writes remain unresolved by design.
+- T26 awaits human homologation.
+- T27 awaits human approval before implementation.
+- Static/frozen API documentation must be reconciled carefully against T28 without silently reopening an independently locked OpenAPI baseline.
 
 ## Próxima atividade
 
-Continuar BCOS-M7-A3 a partir da baseline T25 agora HUMAN HOMOLOGATED / LOCKED, preservando todos os contratos já congelados. Antes de qualquer nova alteração estrutural, identificar no repositório o próximo gap real do fluxo Outbox/Billing e abrir um gate rastreável sem reabrir T25.
-
-Em paralelo, continuar a Product Reconciliation Gate para localizar e corrigir deriva documental/técnica sem reabrir silenciosamente baselines homologadas.
+Continue M7-A3 from the locked T25/T28 baselines without reopening them. Audit the static OpenAPI contract and Invoice lifecycle authority; documentary reconciliation may proceed where factual, while new lifecycle/write semantics require a separate proposed gate. T26/T27 retain their independent pending human decisions.
 
 ## Regra de Governança
 
 Antes de alteração estrutural: revisar, analisar, verificar, investigar, diagnosticar, comparar com as baselines e avaliar impacto.
 
-Nenhuma etapa implementada torna-se baseline `HUMAN HOMOLOGATED / LOCKED` sem homologação humana explícita.
-
-Etapa homologada não é reaberta silenciosamente.
-
-Qualquer alteração estrutural exige rastreabilidade e atualização das baselines afetadas.
+Nenhuma etapa implementada torna-se `HUMAN HOMOLOGATED / LOCKED` sem homologação humana explícita. Etapa homologada não é reaberta silenciosamente. Qualquer alteração estrutural exige rastreabilidade.
 
 > "Quem pede um, pede bis."
