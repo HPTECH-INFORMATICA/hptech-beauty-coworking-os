@@ -2,7 +2,7 @@
 
 > "Quem pede um, pede bis."
 
-**Status:** PROPOSED / AWAITING HUMAN APPROVAL
+**Status:** HUMAN APPROVED / IMPLEMENTATION AUTHORIZED
 
 ## Purpose
 
@@ -24,9 +24,9 @@ However, the current runtime Billing API exposes additional homologated contract
 
 Targeted inspection of the static V1 document found no `manual_closed_at`, `professional_billing_contract_id` or `billing_cycle_start` representation for the homologated runtime boundary, and no MANUAL close action.
 
-## Proposed reconciliation boundary
+## Approved reconciliation boundary
 
-If approved, T31 authorizes a documentation-only update to `docs/api/openapi.yaml` limited to the already implemented and homologated Billing behavior.
+T31 authorizes a documentation-only update to `docs/api/openapi.yaml` limited to the already implemented and homologated Billing behavior.
 
 The reconciliation must:
 
@@ -45,7 +45,7 @@ The reconciliation must:
 
 T31 is reconciliation only. It may describe behavior already locked by T28/T29/T30, but it cannot expand or reinterpret those gates.
 
-The existing OpenAPI V1 baseline remains locked until this additive reconciliation is explicitly approved, implemented, validated and separately homologated.
+The existing OpenAPI V1 baseline remains locked until this additive reconciliation is implemented, validated and separately homologated.
 
 ## Validation requirements
 
@@ -63,10 +63,10 @@ Implementation must prove:
 
 T31 does not authorize runtime API changes, migrations, frontend work, Financeiro UI, T26 homologation, T27 implementation, new Invoice lifecycle semantics, new Payment behavior, new Outbox events or a wholesale rewrite/regeneration of the static OpenAPI document.
 
-## Decision required
+## Approval record
 
-Human approval is required before modifying the locked static `docs/api/openapi.yaml` baseline.
+Human approval was explicitly granted on 2026-09-14. T31 is therefore **HUMAN APPROVED / IMPLEMENTATION AUTHORIZED** for the exact narrow reconciliation above.
 
-Approval of T31 would authorize only the narrow additive reconciliation described above. Final homologation would remain separate after implementation and green verification.
+Final implementation homologation remains separate after implementation and green verification.
 
 > "Quem pede um, pede bis."
