@@ -1,6 +1,6 @@
 # ADR — M7-A3-T26 Reception Closing Authority Reconciliation
 
-**Status:** TECHNICALLY RECONCILED / AWAITING HUMAN HOMOLOGATION
+**Status:** HUMAN HOMOLOGATED / LOCKED
 
 > Quem pede um, pede bis.
 
@@ -97,6 +97,12 @@ M7-A2-T1 remains the authoritative V1 reception-closing financial rule.
 
 T25 remains HUMAN HOMOLOGATED / LOCKED and is not reopened by this reconciliation.
 
-Final HUMAN HOMOLOGATION of T26 remains a separate governance action.
+## Homologation record
+
+The human authority confirmed on 2026-09-14 that the PRD and Architecture Freeze are immutable authorities containing the already taken and approved product decisions, and explicitly directed continuation from those authorities without reopening their decisions.
+
+T26 introduces no new product decision: it reconciles the repository to the already locked M7-A2-T1 authority and the implementation/regression evidence already aligned with it. T26 is therefore **HUMAN HOMOLOGATED / LOCKED** for this exact reconciliation boundary.
+
+This homologation does not approve or implement T27; T27 remains a separate unresolved terminal Outbox policy because its maximum-attempt threshold is not defined by the earlier locked Outbox contracts.
 
 > Quem pede um, pede bis.
