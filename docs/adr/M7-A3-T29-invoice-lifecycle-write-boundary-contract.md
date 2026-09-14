@@ -2,7 +2,7 @@
 
 > "Quem pede um, pede bis."
 
-**Status:** HUMAN APPROVED / IMPLEMENTATION AUTHORIZED
+**Status:** HUMAN HOMOLOGATED / LOCKED
 
 ## Purpose
 
@@ -46,24 +46,26 @@ T29 does not authorize reopening, cancellation, manual InvoiceItem creation, adj
 
 ## API implementation boundary
 
-One tenant-scoped MANUAL Invoice closure command is authorized after the audit-event boundary below is separately approved. Generic Invoice CRUD is forbidden.
+One tenant-scoped MANUAL Invoice closure command is authorized and implemented under the separately approved and homologated T30 audit boundary. Generic Invoice CRUD remains forbidden.
 
-## Audit requirement — implementation blocker identified
+## Audit requirement
 
-Repository audit after human approval confirmed an existing generic transactional `audit_logs` writer and an established API precedent where `BOOKING_CANCELLED` is persisted in the same caller-owned transaction as its operational mutation.
+The repository provides the existing transactional `audit_logs` writer. T30 defines the exact closure audit action/entity/metadata contract used by the implementation. No new Outbox event is introduced for this lifecycle command.
 
-No previously approved audit action/entity/metadata contract for MANUAL Invoice closure was found. T29 therefore does **not** authorize inventing an Invoice closure event name during implementation. T30 is the separate traceable decision gate for that audit boundary.
+## Implementation and verification record
 
-Production implementation of the T29 lifecycle command is authorized in principle but remains blocked from promotion until T30 is human-approved. This is the exact stop condition required by the original T29 audit requirement.
+The T29/T30 implementation was squash-merged to `main` as `f4a1ba22f5393173c7e8fda8d73663ddd0544095` on 2026-09-14.
 
-## Required implementation tests
+The implementation includes tenant-scoped MANUAL Invoice closure, row locking, `OPERATIONS` authorization, OPEN/PARTIALLY_PAID eligibility, PAID/CANCELLED rejection, automatic/PER_USAGE rejection, immutable idempotent `manual_closed_at`, transactional T30 audit evidence and HTTP/service regression coverage.
 
-After the audit boundary is approved, tests must cover tenant isolation; OPERATIONS/Professional authorization; MANUAL identity; OPEN and PARTIALLY_PAID closure; PAID/CANCELLED rejection; already-closed idempotency; immutable close instant; automatic/PER_USAGE rejection; no InvoiceItem/total/Payment side effect; worker non-rematerialization into closed MANUAL Invoice; successor identity under T25/database uniqueness; concurrency; and approved audit behavior.
+PR implementation Quality Gate #91 completed successfully. Post-merge `main` Quality Gate #93 also completed successfully against commit `f4a1ba22f5393173c7e8fda8d73663ddd0544095`.
 
-## Approval record
+No migration, frontend change, T26/T27 change or static OpenAPI change was introduced by T29/T30.
 
-Human approval explicitly granted on 2026-09-14. This approval authorizes the V1 business/lifecycle choices above; it is not final implementation homologation.
+## Homologation record
 
-Final state at this gate: **HUMAN APPROVED / IMPLEMENTATION AUTHORIZED**.
+Human implementation authorization was granted on 2026-09-14. After implementation, green PR verification, squash merge to `main` and green post-merge verification, the user explicitly approved continuation/finalization on 2026-09-14.
+
+T29 is therefore **HUMAN HOMOLOGATED / LOCKED**. Future lifecycle expansion requires a new traceable gate and must not silently reopen T29.
 
 > "Quem pede um, pede bis."
