@@ -58,7 +58,7 @@ describe("Professional Portal", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Minha operação" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Minhas reservas" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Minhas faturas" })).toBeInTheDocument();
-    expect(screen.getByText("R$ 120,00")).toBeInTheDocument();
+    expect(screen.getAllByText(/R\$\s*120,00/)).toHaveLength(2);
     expect(screen.getByRole("link", { name: "Voltar para a central" })).toHaveAttribute("href", "/");
   });
 });
