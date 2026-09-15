@@ -4,6 +4,9 @@ import {
   getBookings,
   getProfessionals,
   getResources,
+  type Booking,
+  type Professional,
+  type Resource,
 } from "../../lib/bcos-api";
 import { checkInAction } from "../operations/actions";
 
@@ -19,9 +22,9 @@ function formatDateTime(value: string): string {
 
 export default async function CheckInPage() {
   let error: string | null = null;
-  let bookings = [];
-  let professionals = [];
-  let resources = [];
+  let bookings: Booking[] = [];
+  let professionals: Professional[] = [];
+  let resources: Resource[] = [];
 
   try {
     [bookings, professionals, resources] = await Promise.all([
