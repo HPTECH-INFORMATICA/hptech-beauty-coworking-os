@@ -3,23 +3,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import HomePage from "../app/page";
 import {
-  getBookings,
   getProfessionals,
-  getResources,
+  getReceptionAgenda,
+  getReceptionNow,
   getUnits,
 } from "../lib/bcos-api";
 
 vi.mock("../lib/bcos-api", () => ({
-  getBookings: vi.fn(),
   getProfessionals: vi.fn(),
-  getResources: vi.fn(),
+  getReceptionAgenda: vi.fn(),
+  getReceptionNow: vi.fn(),
   getUnits: vi.fn(),
 }));
 
 const mockedGetUnits = vi.mocked(getUnits);
-const mockedGetResources = vi.mocked(getResources);
 const mockedGetProfessionals = vi.mocked(getProfessionals);
-const mockedGetBookings = vi.mocked(getBookings);
+const mockedGetReceptionAgenda = vi.mocked(getReceptionAgenda);
+const mockedGetReceptionNow = vi.mocked(getReceptionNow);
 
 describe("HomePage", () => {
   beforeEach(() => {
@@ -34,18 +34,25 @@ describe("HomePage", () => {
       },
     ]);
 
-    mockedGetResources.mockResolvedValue([
-      {
-        id: "resource-1",
-        unit_id: "unit-1",
-        category_id: "category-1",
-        name: "Sala 01",
-        operational_status: "AVAILABLE",
-        buffer_before_minutes: 0,
-        buffer_after_minutes: 0,
-        active: true,
-      },
-    ]);
+    mockedGetReceptionNow.mockResolvedValue({
+      unit_id: "unit-1",
+      generated_at: "2026-09-15T12:00:00Z",
+      resources: [
+        {
+          resource_id: "resource-1",
+          resource_name: "Sala 01",
+          operational_status: "AVAILABLE",
+          booking_id: null,
+          professional_id: null,
+          starts_at: null,
+          ends_at: null,
+          usage_id: null,
+          usage_status: null,
+          checked_in_at: null,
+          checked_out_at: null,
+        },
+      ],
+    });
 
     mockedGetProfessionals.mockResolvedValue([
       {
@@ -58,13 +65,11 @@ describe("HomePage", () => {
       },
     ]);
 
-    mockedGetBookings.mockResolvedValue([]);
+    mockedGetReceptionAgenda.mockResolvedValue([]);
   });
 
-  it("renders the operational experience with real tenant data", async () => {
-    const page = await HomePage();
-
-    render(page);
+  it("renders the operational experience with canonical Reception data", async () => {
+    render(await HomePage());
 
     expect(
       screen.getByRole("heading", {
