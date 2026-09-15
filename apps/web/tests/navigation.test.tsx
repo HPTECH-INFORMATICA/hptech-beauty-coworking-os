@@ -2,10 +2,12 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import AgendaPage from "../app/agenda/page";
+import CheckInPage from "../app/check-in/page";
 import AvailabilityPage from "../app/disponibilidade/page";
 import HomePage from "../app/page";
 import {
   getAvailability,
+  getBookings,
   getProfessionals,
   getReceptionAgenda,
   getReceptionNow,
@@ -21,6 +23,7 @@ vi.mock("../lib/bcos-api", () => ({
   confirmPixPayment: vi.fn(),
   createBooking: vi.fn(),
   getAvailability: vi.fn(),
+  getBookings: vi.fn(),
   getProfessionals: vi.fn(),
   getReceptionAgenda: vi.fn(),
   getReceptionNow: vi.fn(),
@@ -34,9 +37,11 @@ const mockedGetProfessionals = vi.mocked(getProfessionals);
 const mockedGetReceptionAgenda = vi.mocked(getReceptionAgenda);
 const mockedGetReceptionNow = vi.mocked(getReceptionNow);
 const mockedGetAvailability = vi.mocked(getAvailability);
+const mockedGetBookings = vi.mocked(getBookings);
 
 const activeResource = { id: "resource-1", unit_id: "unit-1", category_id: "category-1", name: "Sala 01", operational_status: "AVAILABLE", buffer_before_minutes: 0, buffer_after_minutes: 0, active: true };
 const activeProfessional = { id: "professional-1", external_user_id: null, name: "Profissional Homologação", email: null, phone: null, status: "ACTIVE" };
+const confirmedBooking = { id: "booking-1", unit_id: "unit-1", resource_id: "resource-1", professional_id: "professional-1", series_id: null, status: "CONFIRMED", starts_at: "2026-09-15T16:00:00Z", ends_at: "2026-09-15T17:00:00Z", buffer_before_minutes: 0, buffer_after_minutes: 0, pricing_snapshot: {} };
 
 beforeEach(() => {
   mockedGetUnits.mockResolvedValue([
@@ -51,6 +56,7 @@ beforeEach(() => {
   ]);
   mockedGetResources.mockResolvedValue([]);
   mockedGetProfessionals.mockResolvedValue([]);
+  mockedGetBookings.mockResolvedValue([]);
   mockedGetReceptionAgenda.mockResolvedValue([]);
   mockedGetReceptionNow.mockResolvedValue({
     unit_id: "unit-1",
@@ -114,12 +120,31 @@ describe("operational navigation", () => {
   it("exposes confirmation for a pending reservation", async () => {
     mockedGetReceptionAgenda.mockResolvedValue([
       {
-        booking: { id: "booking-1", unit_id: "unit-1", resource_id: "resource-1", professional_id: "professional-1", series_id: null, status: "PENDING", starts_at: "2026-09-15T16:00:00Z", ends_at: "2026-09-15T17:00:00Z", buffer_before_minutes: 0, buffer_after_minutes: 0, pricing_snapshot: {} },
+        booking: { ...confirmedBooking, status: "PENDING" },
         usage: null,
       },
     ]);
 
     render(await AgendaPage());
     expect(screen.getByRole("button", { name: "Confirmar reserva" })).toBeInTheDocument();
+  });
+
+  it("links a confirmed reservation directly to its check-in", async () => {
+    mockedGetReceptionAgenda.mockResolvedValue([{ booking: confirmedBooking, usage: null }]);
+    render(await AgendaPage());
+    expect(screen.getByRole("link", { name: "Ir para check-in" })).toHaveAttribute("href", "/check-in?booking=booking-1");
+  });
+
+  it("prioritizes the reservation selected by the agenda on check-in", async () => {
+    mockedGetBookings.mockResolvedValue([
+      { ...confirmedBooking, id: "booking-older", starts_at: "2026-09-15T15:00:00Z", ends_at: "2026-09-15T16:00:00Z" },
+      confirmedBooking,
+    ]);
+    mockedGetResources.mockResolvedValue([activeResource]);
+    mockedGetProfessionals.mockResolvedValue([activeProfessional]);
+
+    render(await CheckInPage({ searchParams: Promise.resolve({ booking: "booking-1" }) }));
+    const cards = screen.getAllByText(/RESERVA (SELECIONADA|CONFIRMADA)/);
+    expect(cards[0]).toHaveTextContent("RESERVA SELECIONADA");
   });
 });
