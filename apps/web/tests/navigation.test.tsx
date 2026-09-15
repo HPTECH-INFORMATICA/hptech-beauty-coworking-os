@@ -4,10 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import AgendaPage from "../app/agenda/page";
 import CheckInPage from "../app/check-in/page";
 import AvailabilityPage from "../app/disponibilidade/page";
+import FinancePage from "../app/financeiro/page";
 import HomePage from "../app/page";
 import {
   getAvailability,
   getBookings,
+  getInvoice,
+  getInvoices,
   getProfessionals,
   getReceptionAgenda,
   getReceptionNow,
@@ -24,6 +27,8 @@ vi.mock("../lib/bcos-api", () => ({
   createBooking: vi.fn(),
   getAvailability: vi.fn(),
   getBookings: vi.fn(),
+  getInvoice: vi.fn(),
+  getInvoices: vi.fn(),
   getProfessionals: vi.fn(),
   getReceptionAgenda: vi.fn(),
   getReceptionNow: vi.fn(),
@@ -38,10 +43,13 @@ const mockedGetReceptionAgenda = vi.mocked(getReceptionAgenda);
 const mockedGetReceptionNow = vi.mocked(getReceptionNow);
 const mockedGetAvailability = vi.mocked(getAvailability);
 const mockedGetBookings = vi.mocked(getBookings);
+const mockedGetInvoices = vi.mocked(getInvoices);
+const mockedGetInvoice = vi.mocked(getInvoice);
 
 const activeResource = { id: "resource-1", unit_id: "unit-1", category_id: "category-1", name: "Sala 01", operational_status: "AVAILABLE", buffer_before_minutes: 0, buffer_after_minutes: 0, active: true };
 const activeProfessional = { id: "professional-1", external_user_id: null, name: "Profissional Homologação", email: null, phone: null, status: "ACTIVE" };
 const confirmedBooking = { id: "booking-1", unit_id: "unit-1", resource_id: "resource-1", professional_id: "professional-1", series_id: null, status: "CONFIRMED", starts_at: "2026-09-15T16:00:00Z", ends_at: "2026-09-15T17:00:00Z", buffer_before_minutes: 0, buffer_after_minutes: 0, pricing_snapshot: {} };
+const usageInvoice = { id: "invoice-1", professional_id: "professional-1", source_usage_id: "usage-1", professional_billing_contract_id: null, billing_cycle_start: null, billing_cycle_end: null, manual_closed_at: null, status: "OPEN", currency: "BRL", subtotal_amount: "100.00", discount_amount: "0.00", total_amount: "100.00", created_at: "2026-09-15T17:00:00Z", updated_at: "2026-09-15T17:00:00Z" };
 
 beforeEach(() => {
   mockedGetUnits.mockResolvedValue([
@@ -57,6 +65,8 @@ beforeEach(() => {
   mockedGetResources.mockResolvedValue([]);
   mockedGetProfessionals.mockResolvedValue([]);
   mockedGetBookings.mockResolvedValue([]);
+  mockedGetInvoices.mockResolvedValue([]);
+  mockedGetInvoice.mockImplementation(async (invoiceId) => ({ ...usageInvoice, id: invoiceId, items: [], confirmed_amount: "0.00", remaining_amount: "100.00" }));
   mockedGetReceptionAgenda.mockResolvedValue([]);
   mockedGetReceptionNow.mockResolvedValue({
     unit_id: "unit-1",
@@ -146,5 +156,17 @@ describe("operational navigation", () => {
     render(await CheckInPage({ searchParams: Promise.resolve({ booking: "booking-1" }) }));
     const cards = screen.getAllByText(/RESERVA (SELECIONADA|CONFIRMADA)/);
     expect(cards[0]).toHaveTextContent("RESERVA SELECIONADA");
+  });
+
+  it("prioritizes the invoice generated from the completed usage", async () => {
+    mockedGetProfessionals.mockResolvedValue([activeProfessional]);
+    mockedGetInvoices.mockResolvedValue([
+      { ...usageInvoice, id: "invoice-other", source_usage_id: "usage-other", created_at: "2026-09-15T18:00:00Z" },
+      usageInvoice,
+    ]);
+
+    render(await FinancePage({ searchParams: Promise.resolve({ usage: "usage-1" }) }));
+    const labels = screen.getAllByText(/COBRANÇA DO USO FINALIZADO|FATURA/);
+    expect(labels[0]).toHaveTextContent("COBRANÇA DO USO FINALIZADO");
   });
 });
