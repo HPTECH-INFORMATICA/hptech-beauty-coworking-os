@@ -105,9 +105,11 @@ export async function checkInAction(formData: FormData) {
 }
 
 export async function checkOutAction(formData: FormData) {
-  await checkOutUsage(required(formData, "usage_id"));
+  const usageId = required(formData, "usage_id");
+  await checkOutUsage(usageId);
   revalidatePath("/");
-  redirect("/financeiro");
+  revalidatePath("/financeiro");
+  redirect(`/financeiro?usage=${encodeURIComponent(usageId)}`);
 }
 
 export async function closeInvoiceAction(formData: FormData) {
