@@ -1,0 +1,108 @@
+import Link from "next/link";
+
+import {
+  getBookings,
+  getProfessionals,
+  getResources,
+} from "../../lib/bcos-api";
+import { checkInAction } from "../operations/actions";
+
+export const dynamic = "force-dynamic";
+
+function formatDateTime(value: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "America/Sao_Paulo",
+  }).format(new Date(value));
+}
+
+export default async function CheckInPage() {
+  let error: string | null = null;
+  let bookings = [];
+  let professionals = [];
+  let resources = [];
+
+  try {
+    [bookings, professionals, resources] = await Promise.all([
+      getBookings(),
+      getProfessionals(),
+      getResources(),
+    ]);
+  } catch (caught) {
+    console.error("BCOS check-in workspace load failed:", caught);
+    error = "Não foi possível carregar as reservas neste momento.";
+  }
+
+  const professionalById = new Map(
+    professionals.map((professional) => [professional.id, professional]),
+  );
+  const resourceById = new Map(resources.map((resource) => [resource.id, resource]));
+  const eligibleBookings = bookings
+    .filter((booking) => booking.status.toUpperCase() === "CONFIRMED")
+    .sort(
+      (left, right) =>
+        new Date(left.starts_at).getTime() - new Date(right.starts_at).getTime(),
+    );
+
+  return (
+    <main className="finance-shell">
+      <header className="finance-header">
+        <div>
+          <span className="section-eyebrow">RECEPÇÃO</span>
+          <h1>Check-in de reservas</h1>
+          <p>Inicie o uso real do espaço a partir de uma reserva confirmada.</p>
+        </div>
+        <Link className="text-action" href="/">
+          Voltar para a central
+        </Link>
+      </header>
+
+      {error ? (
+        <section className="operational-empty">
+          <strong>{error}</strong>
+        </section>
+      ) : eligibleBookings.length === 0 ? (
+        <section className="quiet-state">
+          <div>
+            <strong>Nenhuma reserva confirmada disponível</strong>
+            <span>Quando houver uma reserva elegível, o check-in aparecerá aqui.</span>
+          </div>
+        </section>
+      ) : (
+        <section className="finance-list">
+          {eligibleBookings.map((booking) => (
+            <article className="finance-card" key={booking.id}>
+              <div className="finance-card-heading">
+                <div>
+                  <span className="section-eyebrow">RESERVA CONFIRMADA</span>
+                  <strong>
+                    {professionalById.get(booking.professional_id)?.name ??
+                      "Profissional"}
+                  </strong>
+                </div>
+                <span className="status-pill status-positive">Confirmada</span>
+              </div>
+
+              <div className="finance-meta">
+                <span>
+                  Espaço: {resourceById.get(booking.resource_id)?.name ?? "Espaço"}
+                </span>
+                <span>
+                  {formatDateTime(booking.starts_at)} — {formatDateTime(booking.ends_at)}
+                </span>
+              </div>
+
+              <form action={checkInAction}>
+                <input name="booking_id" type="hidden" value={booking.id} />
+                <button className="primary-action" type="submit">
+                  Fazer check-in
+                </button>
+              </form>
+            </article>
+          ))}
+        </section>
+      )}
+    </main>
+  );
+}
