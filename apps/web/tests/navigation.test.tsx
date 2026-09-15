@@ -4,8 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import AgendaPage from "../app/agenda/page";
 import HomePage from "../app/page";
 import {
-  getBookings,
   getProfessionals,
+  getReceptionAgenda,
+  getReceptionNow,
   getResources,
   getUnits,
 } from "../lib/bcos-api";
@@ -18,8 +19,9 @@ vi.mock("../lib/bcos-api", () => ({
   confirmPixPayment: vi.fn(),
   createBooking: vi.fn(),
   getAvailability: vi.fn(),
-  getBookings: vi.fn(),
   getProfessionals: vi.fn(),
+  getReceptionAgenda: vi.fn(),
+  getReceptionNow: vi.fn(),
   getResources: vi.fn(),
   getUnits: vi.fn(),
 }));
@@ -27,7 +29,8 @@ vi.mock("../lib/bcos-api", () => ({
 const mockedGetUnits = vi.mocked(getUnits);
 const mockedGetResources = vi.mocked(getResources);
 const mockedGetProfessionals = vi.mocked(getProfessionals);
-const mockedGetBookings = vi.mocked(getBookings);
+const mockedGetReceptionAgenda = vi.mocked(getReceptionAgenda);
+const mockedGetReceptionNow = vi.mocked(getReceptionNow);
 
 beforeEach(() => {
   mockedGetUnits.mockResolvedValue([
@@ -42,7 +45,12 @@ beforeEach(() => {
   ]);
   mockedGetResources.mockResolvedValue([]);
   mockedGetProfessionals.mockResolvedValue([]);
-  mockedGetBookings.mockResolvedValue([]);
+  mockedGetReceptionAgenda.mockResolvedValue([]);
+  mockedGetReceptionNow.mockResolvedValue({
+    unit_id: "unit-1",
+    generated_at: "2026-09-15T12:00:00Z",
+    resources: [],
+  });
 });
 
 describe("operational navigation", () => {
@@ -75,8 +83,11 @@ describe("operational navigation", () => {
   });
 
   it("exposes confirmation for a pending reservation", async () => {
-    mockedGetBookings.mockResolvedValue([
-      { id: "booking-1", unit_id: "unit-1", resource_id: "resource-1", professional_id: "professional-1", series_id: null, status: "PENDING", starts_at: "2026-09-15T16:00:00Z", ends_at: "2026-09-15T17:00:00Z", buffer_before_minutes: 0, buffer_after_minutes: 0, pricing_snapshot: {} },
+    mockedGetReceptionAgenda.mockResolvedValue([
+      {
+        booking: { id: "booking-1", unit_id: "unit-1", resource_id: "resource-1", professional_id: "professional-1", series_id: null, status: "PENDING", starts_at: "2026-09-15T16:00:00Z", ends_at: "2026-09-15T17:00:00Z", buffer_before_minutes: 0, buffer_after_minutes: 0, pricing_snapshot: {} },
+        usage: null,
+      },
     ]);
 
     render(await AgendaPage());
