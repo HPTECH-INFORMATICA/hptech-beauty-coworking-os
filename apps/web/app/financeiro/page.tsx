@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getInvoices } from "../../lib/bcos-api";
+import { getInvoices, type Invoice } from "../../lib/bcos-api";
 import { closeInvoiceAction, confirmPixAction } from "../operations/actions";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ function statusLabel(status: string): string {
 }
 
 export default async function FinancePage() {
-  let invoices = [];
+  let invoices: Invoice[] = [];
   let error: string | null = null;
 
   try {
@@ -93,7 +93,10 @@ export default async function FinancePage() {
           {invoices.map((invoice) => {
             const canReceive =
               invoice.status === "OPEN" || invoice.status === "PARTIALLY_PAID";
-            const canClose = canReceive && invoice.source_usage_id === null && !invoice.manual_closed_at;
+            const canClose =
+              canReceive &&
+              invoice.source_usage_id === null &&
+              !invoice.manual_closed_at;
 
             return (
               <article className="finance-card" key={invoice.id}>
@@ -102,7 +105,9 @@ export default async function FinancePage() {
                     <span className="section-eyebrow">FATURA</span>
                     <strong>{invoice.id.slice(0, 8).toUpperCase()}</strong>
                   </div>
-                  <span className={`status-pill status-${invoice.status === "PAID" ? "positive" : "attention"}`}>
+                  <span
+                    className={`status-pill status-${invoice.status === "PAID" ? "positive" : "attention"}`}
+                  >
                     {statusLabel(invoice.status)}
                   </span>
                 </div>
@@ -114,7 +119,12 @@ export default async function FinancePage() {
 
                 <div className="finance-meta">
                   <span>Profissional: {invoice.professional_id.slice(0, 8)}</span>
-                  <span>Criada em {new Intl.DateTimeFormat("pt-BR").format(new Date(invoice.created_at))}</span>
+                  <span>
+                    Criada em{" "}
+                    {new Intl.DateTimeFormat("pt-BR").format(
+                      new Date(invoice.created_at),
+                    )}
+                  </span>
                 </div>
 
                 {canReceive ? (
