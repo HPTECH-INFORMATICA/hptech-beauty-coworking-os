@@ -5,6 +5,12 @@ import { closeInvoiceAction, confirmPixAction } from "../operations/actions";
 
 export const dynamic = "force-dynamic";
 
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+function first(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 function money(value: string, currency: string): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(Number(value));
 }
@@ -14,7 +20,9 @@ function statusLabel(status: string): string {
   return labels[status] ?? status.replaceAll("_", " ");
 }
 
-export default async function FinancePage() {
+export default async function FinancePage({ searchParams }: { searchParams?: SearchParams }) {
+  const query = searchParams ? await searchParams : {};
+  const requestedUsageId = first(query.usage);
   let invoices: Invoice[] = [];
   let professionals: Professional[] = [];
   let details = new Map<string, InvoiceDetail>();
@@ -32,6 +40,12 @@ export default async function FinancePage() {
   const professionalById = new Map(professionals.map((professional) => [professional.id, professional]));
   const openInvoices = invoices.filter((invoice) => invoice.status === "OPEN" || invoice.status === "PARTIALLY_PAID");
   const receivable = openInvoices.reduce((total, invoice) => total + Number(details.get(invoice.id)?.remaining_amount ?? invoice.total_amount), 0);
+  const sortedInvoices = [...invoices].sort((left, right) => {
+    const leftSelected = requestedUsageId !== undefined && left.source_usage_id === requestedUsageId;
+    const rightSelected = requestedUsageId !== undefined && right.source_usage_id === requestedUsageId;
+    if (leftSelected !== rightSelected) return leftSelected ? -1 : 1;
+    return 0;
+  });
 
   return (
     <main className="finance-shell">
@@ -50,14 +64,15 @@ export default async function FinancePage() {
         <section className="quiet-state"><div><strong>Nenhuma fatura encontrada</strong><span>As cobranças geradas pela operação aparecerão aqui.</span></div></section>
       ) : (
         <section className="finance-list">
-          {invoices.map((invoice) => {
+          {sortedInvoices.map((invoice) => {
             const detail = details.get(invoice.id);
             const canReceive = invoice.status === "OPEN" || invoice.status === "PARTIALLY_PAID";
             const canClose = canReceive && invoice.source_usage_id === null && !invoice.manual_closed_at;
             const professionalName = professionalById.get(invoice.professional_id)?.name ?? "Profissional";
+            const selected = requestedUsageId !== undefined && invoice.source_usage_id === requestedUsageId;
             return (
-              <article className="finance-card" key={invoice.id}>
-                <div className="finance-card-heading"><div><span className="section-eyebrow">FATURA</span><strong>{professionalName}</strong></div><span className={`status-pill status-${invoice.status === "PAID" ? "positive" : "attention"}`}>{statusLabel(invoice.status)}</span></div>
+              <article className="finance-card" data-selected={selected || undefined} key={invoice.id}>
+                <div className="finance-card-heading"><div><span className="section-eyebrow">{selected ? "COBRANÇA DO USO FINALIZADO" : "FATURA"}</span><strong>{professionalName}</strong></div><span className={`status-pill status-${invoice.status === "PAID" ? "positive" : "attention"}`}>{statusLabel(invoice.status)}</span></div>
                 <div className="finance-amount"><span>Total</span><strong>{money(invoice.total_amount, invoice.currency)}</strong></div>
                 <div className="finance-meta">
                   <span>Recebido: {money(detail?.confirmed_amount ?? "0", invoice.currency)}</span>
