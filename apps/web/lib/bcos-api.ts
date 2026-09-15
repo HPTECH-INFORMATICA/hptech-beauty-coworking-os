@@ -64,3 +64,5 @@ export async function getInvoices(params?: { professionalId?: string; status?: s
 export async function getInvoice(invoiceId: string): Promise<InvoiceDetail> { return apiGet<InvoiceDetail>(`/api/v1/invoices/${encodeURIComponent(invoiceId)}`); }
 export async function closeManualInvoice(invoiceId: string): Promise<Invoice> { return apiPost<Invoice>(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/close`); }
 export async function confirmPixPayment(input: { invoiceId: string; idempotencyKey: string; amount: string; reference?: string; paidAt?: string }): Promise<PaymentResult> { return apiPost<PaymentResult>("/api/v1/payments/pix/confirm", { invoice_id: input.invoiceId, idempotency_key: input.idempotencyKey, amount: input.amount, ...(input.reference ? { reference: input.reference } : {}), ...(input.paidAt ? { paid_at: input.paidAt } : {}) }); }
+export async function getMyBookings(): Promise<Booking[]> { return apiGet<Booking[]>("/api/v1/professional/me/bookings"); }
+export async function getMyInvoices(): Promise<Invoice[]> { return apiGet<Invoice[]>("/api/v1/professional/me/invoices"); }
