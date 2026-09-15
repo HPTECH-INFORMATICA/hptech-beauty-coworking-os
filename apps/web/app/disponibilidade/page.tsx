@@ -42,6 +42,11 @@ function localDateTimeInZoneToIso(value: string, timeZone: string): string {
   return new Date(instant).toISOString();
 }
 
+function bookingHref(resourceId: string, startsAt: string, endsAt: string): string {
+  const params = new URLSearchParams({ resource_id: resourceId, starts_at: startsAt, ends_at: endsAt });
+  return `/agenda?${params.toString()}`;
+}
+
 export default async function AvailabilityPage({ searchParams }: { searchParams: SearchParams }) {
   const query = await searchParams;
   const startsAtLocal = first(query.starts_at);
@@ -106,7 +111,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
                 <span className={`status-pill status-${item.available ? "positive" : "critical"}`}>{item.available ? "Disponível" : "Indisponível"}</span>
               </div>
               {!item.available && item.reason ? <div className="finance-meta"><span>{item.reason}</span></div> : null}
-              {item.available ? <Link className="primary-action" href="/agenda">Ir para nova reserva</Link> : null}
+              {item.available ? <Link className="primary-action" href={bookingHref(item.resource_id, startsAtLocal, endsAtLocal)}>Reservar este espaço</Link> : null}
             </article>
           ))}
         </section>

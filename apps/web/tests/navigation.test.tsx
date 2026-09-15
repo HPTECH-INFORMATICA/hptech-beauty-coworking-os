@@ -35,6 +35,9 @@ const mockedGetReceptionAgenda = vi.mocked(getReceptionAgenda);
 const mockedGetReceptionNow = vi.mocked(getReceptionNow);
 const mockedGetAvailability = vi.mocked(getAvailability);
 
+const activeResource = { id: "resource-1", unit_id: "unit-1", category_id: "category-1", name: "Sala 01", operational_status: "AVAILABLE", buffer_before_minutes: 0, buffer_after_minutes: 0, active: true };
+const activeProfessional = { id: "professional-1", external_user_id: null, name: "Profissional Homologação", email: null, phone: null, status: "ACTIVE" };
+
 beforeEach(() => {
   mockedGetUnits.mockResolvedValue([
     {
@@ -75,22 +78,32 @@ describe("operational navigation", () => {
   });
 
   it("materializes canonical availability as a visible route", async () => {
-    mockedGetResources.mockResolvedValue([
-      { id: "resource-1", unit_id: "unit-1", category_id: "category-1", name: "Sala 01", operational_status: "AVAILABLE", buffer_before_minutes: 0, buffer_after_minutes: 0, active: true },
-    ]);
+    mockedGetResources.mockResolvedValue([activeResource]);
     render(await AvailabilityPage({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { level: 1, name: "Disponibilidade de espaços" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Consultar disponibilidade" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Sala 01" })).toBeInTheDocument();
   });
 
+  it("carries an available resource and period into reservation creation", async () => {
+    mockedGetResources.mockResolvedValue([activeResource]);
+    mockedGetAvailability.mockResolvedValue({ starts_at: "2026-09-15T16:00:00Z", ends_at: "2026-09-15T17:00:00Z", resources: [{ resource_id: "resource-1", available: true, reason: null }] });
+    render(await AvailabilityPage({ searchParams: Promise.resolve({ starts_at: "2026-09-15T13:00", ends_at: "2026-09-15T14:00" }) }));
+    expect(screen.getByRole("link", { name: "Reservar este espaço" })).toHaveAttribute("href", "/agenda?resource_id=resource-1&starts_at=2026-09-15T13%3A00&ends_at=2026-09-15T14%3A00");
+  });
+
+  it("prefills reservation fields received from availability", async () => {
+    mockedGetResources.mockResolvedValue([activeResource]);
+    mockedGetProfessionals.mockResolvedValue([activeProfessional]);
+    render(await AgendaPage({ searchParams: Promise.resolve({ resource_id: "resource-1", starts_at: "2026-09-15T13:00", ends_at: "2026-09-15T14:00" }) }));
+    expect(screen.getByRole("combobox", { name: "Espaço" })).toHaveValue("resource-1");
+    expect(screen.getByLabelText("Início")).toHaveValue("2026-09-15T13:00");
+    expect(screen.getByLabelText("Fim")).toHaveValue("2026-09-15T14:00");
+  });
+
   it("exposes reservation creation from existing active resources and professionals", async () => {
-    mockedGetResources.mockResolvedValue([
-      { id: "resource-1", unit_id: "unit-1", category_id: "category-1", name: "Sala 01", operational_status: "AVAILABLE", buffer_before_minutes: 0, buffer_after_minutes: 0, active: true },
-    ]);
-    mockedGetProfessionals.mockResolvedValue([
-      { id: "professional-1", external_user_id: null, name: "Profissional Homologação", email: null, phone: null, status: "ACTIVE" },
-    ]);
+    mockedGetResources.mockResolvedValue([activeResource]);
+    mockedGetProfessionals.mockResolvedValue([activeProfessional]);
 
     render(await AgendaPage());
     expect(screen.getByRole("button", { name: "Criar reserva" })).toBeInTheDocument();
