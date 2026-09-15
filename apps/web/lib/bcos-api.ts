@@ -51,7 +51,77 @@ export type Booking = {
   pricing_snapshot: Record<string, unknown>;
 };
 
-const API_BASE_URL = "http://127.0.0.1:8010";
+export type Usage = {
+  id: string;
+  booking_id: string;
+  resource_id: string;
+  professional_id: string;
+  status: string;
+  checked_in_at: string | null;
+  checked_out_at: string | null;
+};
+
+export type Invoice = {
+  id: string;
+  professional_id: string;
+  source_usage_id: string | null;
+  professional_billing_contract_id: string | null;
+  billing_cycle_start: string | null;
+  billing_cycle_end: string | null;
+  manual_closed_at: string | null;
+  status: string;
+  currency: string;
+  subtotal_amount: string;
+  discount_amount: string;
+  total_amount: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InvoiceItem = {
+  id: string;
+  usage_id: string | null;
+  item_type: string;
+  description: string;
+  quantity: string;
+  unit_amount: string;
+  total_amount: string;
+  billing_period_start: string | null;
+  billing_period_end: string | null;
+  related_invoice_item_id: string | null;
+  created_at: string;
+};
+
+export type InvoiceDetail = Invoice & {
+  items: InvoiceItem[];
+  confirmed_amount: string;
+  remaining_amount: string;
+};
+
+export type Payment = {
+  id: string;
+  invoice_id: string;
+  idempotency_key: string;
+  method: string;
+  status: string;
+  currency: string;
+  amount: string;
+  reference: string | null;
+  metadata: Record<string, unknown>;
+  paid_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PaymentResult = {
+  payment: Payment;
+  invoice_status: string;
+  invoice_total_amount: string;
+  confirmed_amount: string;
+  remaining_amount: string;
+};
+
+const API_BASE_URL = process.env.BCOS_API_BASE_URL ?? "http://127.0.0.1:8010";
 
 function getRequiredEnvironment() {
   const token = process.env.BCOS_HOMOLOGATION_BEARER_TOKEN;
@@ -69,54 +139,63 @@ function getRequiredEnvironment() {
     );
   }
 
-  return {
-    token,
-    tenantId,
-  };
+  return { token, tenantId };
 }
 
-async function apiGet<T>(pathName: string): Promise<T> {
+async function apiRequest<T>(
+  pathName: string,
+  init: RequestInit = {},
+): Promise<T> {
   const { token, tenantId } = getRequiredEnvironment();
+  const headers = new Headers(init.headers);
+
+  headers.set("Authorization", `Bearer ${token}`);
+  headers.set("X-Tenant-Id", tenantId);
+  headers.set("Accept", "application/json");
+
+  if (init.body !== undefined) {
+    headers.set("Content-Type", "application/json");
+  }
 
   const response = await fetch(`${API_BASE_URL}${pathName}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "X-Tenant-Id": tenantId,
-      Accept: "application/json",
-    },
+    ...init,
+    headers,
     cache: "no-store",
   });
 
   if (!response.ok) {
     const body = await response.text();
-
     throw new Error(
-      `BCOS API GET ${pathName} falhou com HTTP ${response.status}: ${body}`,
+      `BCOS API ${init.method ?? "GET"} ${pathName} falhou com HTTP ${response.status}: ${body}`,
     );
   }
 
   return (await response.json()) as T;
 }
 
+async function apiGet<T>(pathName: string): Promise<T> {
+  return apiRequest<T>(pathName, { method: "GET" });
+}
+
+async function apiPost<T>(
+  pathName: string,
+  body?: Record<string, unknown>,
+): Promise<T> {
+  return apiRequest<T>(pathName, {
+    method: "POST",
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
 export async function getUnits(): Promise<Unit[]> {
   return apiGet<Unit[]>("/api/v1/units");
 }
 
-export async function getResources(
-  unitId?: string,
-): Promise<Resource[]> {
+export async function getResources(unitId?: string): Promise<Resource[]> {
   const search = new URLSearchParams();
-
-  if (unitId) {
-    search.set("unit_id", unitId);
-  }
-
+  if (unitId) search.set("unit_id", unitId);
   const query = search.toString();
-
-  return apiGet<Resource[]>(
-    `/api/v1/resources${query ? `?${query}` : ""}`,
-  );
+  return apiGet<Resource[]>(`/api/v1/resources${query ? `?${query}` : ""}`);
 }
 
 export async function getProfessionals(): Promise<Professional[]> {
@@ -131,30 +210,70 @@ export async function getBookings(params?: {
   status?: string;
 }): Promise<Booking[]> {
   const search = new URLSearchParams();
-
-  if (params?.startsFrom) {
-    search.set("starts_from", params.startsFrom);
-  }
-
-  if (params?.startsUntil) {
-    search.set("starts_until", params.startsUntil);
-  }
-
-  if (params?.professionalId) {
-    search.set("professional_id", params.professionalId);
-  }
-
-  if (params?.resourceId) {
-    search.set("resource_id", params.resourceId);
-  }
-
-  if (params?.status) {
-    search.set("status", params.status);
-  }
-
+  if (params?.startsFrom) search.set("starts_from", params.startsFrom);
+  if (params?.startsUntil) search.set("starts_until", params.startsUntil);
+  if (params?.professionalId) search.set("professional_id", params.professionalId);
+  if (params?.resourceId) search.set("resource_id", params.resourceId);
+  if (params?.status) search.set("status", params.status);
   const query = search.toString();
+  return apiGet<Booking[]>(`/api/v1/bookings${query ? `?${query}` : ""}`);
+}
 
-  return apiGet<Booking[]>(
-    `/api/v1/bookings${query ? `?${query}` : ""}`,
+export async function checkInBooking(
+  bookingId: string,
+  checkedInAt?: string,
+): Promise<Usage> {
+  return apiPost<Usage>("/api/v1/usages/check-in", {
+    booking_id: bookingId,
+    ...(checkedInAt ? { checked_in_at: checkedInAt } : {}),
+  });
+}
+
+export async function checkOutUsage(
+  usageId: string,
+  checkedOutAt?: string,
+): Promise<Usage> {
+  return apiPost<Usage>(
+    `/api/v1/usages/${encodeURIComponent(usageId)}/check-out`,
+    checkedOutAt ? { checked_out_at: checkedOutAt } : {},
   );
+}
+
+export async function getInvoices(params?: {
+  professionalId?: string;
+  status?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<Invoice[]> {
+  const search = new URLSearchParams();
+  if (params?.professionalId) search.set("professional_id", params.professionalId);
+  if (params?.status) search.set("status", params.status);
+  if (params?.limit !== undefined) search.set("limit", String(params.limit));
+  if (params?.offset !== undefined) search.set("offset", String(params.offset));
+  const query = search.toString();
+  return apiGet<Invoice[]>(`/api/v1/invoices${query ? `?${query}` : ""}`);
+}
+
+export async function getInvoice(invoiceId: string): Promise<InvoiceDetail> {
+  return apiGet<InvoiceDetail>(`/api/v1/invoices/${encodeURIComponent(invoiceId)}`);
+}
+
+export async function closeManualInvoice(invoiceId: string): Promise<Invoice> {
+  return apiPost<Invoice>(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/close`);
+}
+
+export async function confirmPixPayment(input: {
+  invoiceId: string;
+  idempotencyKey: string;
+  amount: string;
+  reference?: string;
+  paidAt?: string;
+}): Promise<PaymentResult> {
+  return apiPost<PaymentResult>("/api/v1/payments/pix/confirm", {
+    invoice_id: input.invoiceId,
+    idempotency_key: input.idempotencyKey,
+    amount: input.amount,
+    ...(input.reference ? { reference: input.reference } : {}),
+    ...(input.paidAt ? { paid_at: input.paidAt } : {}),
+  });
 }
