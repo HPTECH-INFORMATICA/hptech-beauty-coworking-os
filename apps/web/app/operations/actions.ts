@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import {
   checkInBooking,
@@ -18,18 +19,20 @@ function required(formData: FormData, name: string): string {
 }
 
 export async function checkInAction(formData: FormData) {
-  await checkInBooking(required(formData, "booking_id"));
+  const usage = await checkInBooking(required(formData, "booking_id"));
   revalidatePath("/");
+  redirect(`/operacao?usage=${encodeURIComponent(usage.id)}`);
 }
 
 export async function checkOutAction(formData: FormData) {
   await checkOutUsage(required(formData, "usage_id"));
   revalidatePath("/");
+  redirect("/financeiro");
 }
 
 export async function closeInvoiceAction(formData: FormData) {
   await closeManualInvoice(required(formData, "invoice_id"));
-  revalidatePath("/");
+  revalidatePath("/financeiro");
 }
 
 export async function confirmPixAction(formData: FormData) {
@@ -46,5 +49,5 @@ export async function confirmPixAction(formData: FormData) {
         ? reference.trim()
         : undefined,
   });
-  revalidatePath("/");
+  revalidatePath("/financeiro");
 }
