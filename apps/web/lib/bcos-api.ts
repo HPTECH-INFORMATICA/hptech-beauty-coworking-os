@@ -13,6 +13,9 @@ export type Resource = { id: string; unit_id: string; category_id: string; name:
 export type Professional = { id: string; external_user_id: string | null; name: string; email: string | null; phone: string | null; status: string };
 export type Booking = { id: string; unit_id: string; resource_id: string; professional_id: string; series_id: string | null; status: string; starts_at: string; ends_at: string; buffer_before_minutes: number; buffer_after_minutes: number; pricing_snapshot: Record<string, unknown> };
 export type Usage = { id: string; booking_id: string; resource_id: string; professional_id: string; status: string; checked_in_at: string | null; checked_out_at: string | null };
+export type ReceptionResourceState = { resource_id: string; resource_name: string; operational_status: string; occupancy_source_type: string | null; occupancy_source_id: string | null };
+export type ReceptionNow = { unit_id: string; generated_at: string; resources: ReceptionResourceState[] };
+export type AgendaEntry = { booking: Booking; usage: Usage | null };
 export type AvailabilityItem = { resource_id: string; available: boolean; reason: string | null };
 export type AvailabilityResponse = { starts_at: string; ends_at: string; resources: AvailabilityItem[] };
 export type Invoice = { id: string; professional_id: string; source_usage_id: string | null; professional_billing_contract_id: string | null; billing_cycle_start: string | null; billing_cycle_end: string | null; manual_closed_at: string | null; status: string; currency: string; subtotal_amount: string; discount_amount: string; total_amount: string; created_at: string; updated_at: string };
@@ -59,6 +62,16 @@ export async function getResources(unitId?: string): Promise<Resource[]> {
   return apiGet<Resource[]>(`/api/v1/resources${query ? `?${query}` : ""}`);
 }
 export async function getProfessionals(): Promise<Professional[]> { return apiGet<Professional[]>("/api/v1/professionals"); }
+
+export async function getReceptionNow(unitId: string): Promise<ReceptionNow> {
+  const search = new URLSearchParams({ unit_id: unitId });
+  return apiGet<ReceptionNow>(`/api/v1/reception/now?${search.toString()}`);
+}
+
+export async function getReceptionAgenda(input: { unitId: string; startsAt: string; endsAt: string }): Promise<AgendaEntry[]> {
+  const search = new URLSearchParams({ unit_id: input.unitId, starts_at: input.startsAt, ends_at: input.endsAt });
+  return apiGet<AgendaEntry[]>(`/api/v1/reception/agenda?${search.toString()}`);
+}
 
 export async function getBookings(params?: { startsFrom?: string; startsUntil?: string; professionalId?: string; resourceId?: string; status?: string }): Promise<Booking[]> {
   const search = new URLSearchParams();
