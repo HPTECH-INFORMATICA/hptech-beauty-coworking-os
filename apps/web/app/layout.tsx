@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import "./globals.css";
+import { ProductNav } from "./product-nav";
 
 export const metadata: Metadata = {
   title: "HPTECH Beauty Coworking OS",
@@ -16,7 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body>{children}</body>
+      <body>
+        <ProductNav />
+        {children}
+      </body>
     </html>
   );
 }
