@@ -137,6 +137,14 @@ Availability uses the canonical backend authority and hands the selected resourc
 
 This reconciliation is an implementation/product-surface record, not a new homologation of M7-A3 and not a change to PRD/Architecture authority.
 
+## Identity / Tenancy / RBAC boundary
+
+The repository already enforces authentication and authorization server-side. Bearer authentication resolves an `AuthenticatedIdentity`; active tenant membership resolves `TenantContext`; RBAC derives permissions from the persisted membership role. The default production-facing verifier boundary fails closed when no trusted verifier is configured.
+
+The current Next.js adapter uses environment-gated homologation credentials (`BCOS_HOMOLOGATION_BEARER_TOKEN` and `BCOS_HUMAN_TENANT_ID`). This mechanism is development/human-homologation plumbing, not a production login/session contract and not evidence of a role-aware authenticated product shell.
+
+`docs/adr/ADR-identity-authority-boundary.md` records this existing boundary without introducing new authority. Production login UX, token issuer/verification semantics, browser session lifecycle, multi-membership tenant selection and the HPTECH Identity web-session contract remain explicitly unresolved and must not be invented from the homologation adapter.
+
 ## Banco de dados
 
 Projeto Neon independente: `hptech-beauty-coworking-os`.
@@ -153,11 +161,11 @@ Regra permanente: nunca reutilizar, inspecionar ou assumir banco, projeto, branc
 - Worker: Ruff, mypy, pytest;
 - Web: strict lint, typecheck, tests, build.
 
-The visible checkout/Billing auto-refresh handoff was integrated at `fbaa255ad8a2196f4e379a389316fbfcea4985e1` after PR Quality Gate #271 passed on 2026-09-16. Earlier T31 final homologation record passed post-merge `main` Quality Gate #111 on 2026-09-14.
+The visible checkout/Billing auto-refresh handoff was integrated at `fbaa255ad8a2196f4e379a389316fbfcea4985e1` after PR Quality Gate #271 passed on 2026-09-16. The visible product reconciliation was integrated at `e9fc5f2b701ea876329251295f06571a69b65bc5` after PR Quality Gate #276 passed on 2026-09-16. Earlier T31 final homologation record passed post-merge `main` Quality Gate #111 on 2026-09-14.
 
 ## Débitos controlados
 
-- Identity / role-aware product shell remains incomplete despite server-side RBAC authority.
+- Identity / role-aware product shell remains blocked at the missing trusted production identity/session contract; server-side authentication, tenant membership and RBAC authority already exist and remain fail-closed.
 - Pricing administration remains unexposed; no administration semantics may be invented from the engine alone.
 - Owner Dashboard remains unimplemented; period/aggregation semantics require explicit authority.
 - Payments static/runtime reconciliation remains controlled separately from the visible PIX operation.
@@ -166,7 +174,7 @@ The visible checkout/Billing auto-refresh handoff was integrated at `fbaa255ad8a
 
 ## Próxima atividade
 
-Continue M7-A3 reconciliation from locked T25/T26/T28/T29/T30/T31 baselines and the now-reconciled visible operational journey. Preserve PRD MASTER v1.0 and Architecture Freeze v1.2 unchanged. Audit the remaining authority-backed gaps, prioritizing Identity / role-aware product shell and production delivery evidence without inventing Owner Dashboard, Pricing administration or T27 semantics.
+Continue M7-A3 reconciliation from locked T25/T26/T28/T29/T30/T31 baselines and the now-reconciled visible operational journey. Preserve PRD MASTER v1.0 and Architecture Freeze v1.2 unchanged. Treat Identity / role-aware product shell as authority-blocked until a trusted production identity/session contract exists; continue auditing production delivery evidence and other authority-backed gaps without inventing Owner Dashboard, Pricing administration or T27 semantics.
 
 ## Regra de Governança
 
