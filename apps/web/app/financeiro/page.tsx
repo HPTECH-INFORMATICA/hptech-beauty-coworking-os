@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { getInvoice, getInvoices, getProfessionals, type Invoice, type InvoiceDetail, type Professional } from "../../lib/bcos-api";
 import { closeInvoiceAction, confirmPixAction } from "../operations/actions";
+import { BillingProcessingRefresh } from "./billing-processing-refresh";
 
 export const dynamic = "force-dynamic";
 
@@ -71,8 +72,9 @@ export default async function FinancePage({ searchParams }: { searchParams?: Sea
 
       {billingPending ? (
         <section className="quiet-state" aria-live="polite">
-          <div><strong>Uso finalizado. Cobrança em processamento.</strong><span>O financeiro será atualizado após o processamento do evento de conclusão do uso.</span></div>
-          <Link className="text-action" href={`/financeiro?usage=${encodeURIComponent(requestedUsageId)}`}>Atualizar financeiro</Link>
+          <BillingProcessingRefresh />
+          <div><strong>Uso finalizado. Cobrança em processamento.</strong><span>O financeiro será atualizado automaticamente após o processamento do evento de conclusão do uso.</span></div>
+          <Link className="text-action" href={`/financeiro?usage=${encodeURIComponent(requestedUsageId)}`}>Atualizar agora</Link>
         </section>
       ) : null}
 
