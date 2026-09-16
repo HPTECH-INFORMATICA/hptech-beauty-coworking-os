@@ -20,6 +20,11 @@ function statusLabel(status: string): string {
   return labels[status] ?? status.replaceAll("_", " ");
 }
 
+function invoiceContainsUsage(invoice: Invoice, detail: InvoiceDetail | undefined, usageId: string | undefined): boolean {
+  if (!usageId) return false;
+  return invoice.source_usage_id === usageId || detail?.items.some((item) => item.usage_id === usageId) === true;
+}
+
 export default async function FinancePage({ searchParams }: { searchParams?: SearchParams }) {
   const query = searchParams ? await searchParams : {};
   const requestedUsageId = first(query.usage);
@@ -40,9 +45,13 @@ export default async function FinancePage({ searchParams }: { searchParams?: Sea
   const professionalById = new Map(professionals.map((professional) => [professional.id, professional]));
   const openInvoices = invoices.filter((invoice) => invoice.status === "OPEN" || invoice.status === "PARTIALLY_PAID");
   const receivable = openInvoices.reduce((total, invoice) => total + Number(details.get(invoice.id)?.remaining_amount ?? invoice.total_amount), 0);
+  const selectedInvoice = requestedUsageId
+    ? invoices.find((invoice) => invoiceContainsUsage(invoice, details.get(invoice.id), requestedUsageId))
+    : undefined;
+  const billingPending = requestedUsageId !== undefined && selectedInvoice === undefined && error === null;
   const sortedInvoices = [...invoices].sort((left, right) => {
-    const leftSelected = requestedUsageId !== undefined && left.source_usage_id === requestedUsageId;
-    const rightSelected = requestedUsageId !== undefined && right.source_usage_id === requestedUsageId;
+    const leftSelected = invoiceContainsUsage(left, details.get(left.id), requestedUsageId);
+    const rightSelected = invoiceContainsUsage(right, details.get(right.id), requestedUsageId);
     if (leftSelected !== rightSelected) return leftSelected ? -1 : 1;
     return 0;
   });
@@ -60,16 +69,23 @@ export default async function FinancePage({ searchParams }: { searchParams?: Sea
         <article className="pulse-card"><span className="section-eyebrow">TOTAL</span><div className="pulse-number"><strong>{invoices.length}</strong><span>faturas</span></div></article>
       </section>
 
-      {error ? <section className="operational-empty"><strong>{error}</strong></section> : invoices.length === 0 ? (
+      {billingPending ? (
+        <section className="quiet-state" aria-live="polite">
+          <div><strong>Uso finalizado. Cobrança em processamento.</strong><span>O financeiro será atualizado após o processamento do evento de conclusão do uso.</span></div>
+          <Link className="text-action" href={`/financeiro?usage=${encodeURIComponent(requestedUsageId)}`}>Atualizar financeiro</Link>
+        </section>
+      ) : null}
+
+      {error ? <section className="operational-empty"><strong>{error}</strong></section> : invoices.length === 0 && !billingPending ? (
         <section className="quiet-state"><div><strong>Nenhuma fatura encontrada</strong><span>As cobranças geradas pela operação aparecerão aqui.</span></div></section>
-      ) : (
+      ) : invoices.length > 0 ? (
         <section className="finance-list">
           {sortedInvoices.map((invoice) => {
             const detail = details.get(invoice.id);
             const canReceive = invoice.status === "OPEN" || invoice.status === "PARTIALLY_PAID";
             const canClose = canReceive && invoice.source_usage_id === null && !invoice.manual_closed_at;
             const professionalName = professionalById.get(invoice.professional_id)?.name ?? "Profissional";
-            const selected = requestedUsageId !== undefined && invoice.source_usage_id === requestedUsageId;
+            const selected = invoiceContainsUsage(invoice, detail, requestedUsageId);
             return (
               <article className="finance-card" data-selected={selected || undefined} key={invoice.id}>
                 <div className="finance-card-heading"><div><span className="section-eyebrow">{selected ? "COBRANÇA DO USO FINALIZADO" : "FATURA"}</span><strong>{professionalName}</strong></div><span className={`status-pill status-${invoice.status === "PAID" ? "positive" : "attention"}`}>{statusLabel(invoice.status)}</span></div>
@@ -86,7 +102,7 @@ export default async function FinancePage({ searchParams }: { searchParams?: Sea
             );
           })}
         </section>
-      )}
+      ) : null}
     </main>
   );
 }
