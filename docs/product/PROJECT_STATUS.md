@@ -127,6 +127,16 @@ Status: HUMAN HOMOLOGATED / LOCKED.
 
 T31 reconciles the independently locked static OpenAPI V1 with the already homologated runtime T28/T29/T30 Billing boundary, including the MANUAL close command and runtime Invoice projections. Implementation was integrated at `7be0ad8281ec583bbd768926b9ac11ac6c9c173b`; final homologation record was integrated at `4dea93f7fdd4d6ecab18cce1ada50636603c5868`, with post-merge Quality Gate #111 successful.
 
+## Visible product reconciliation
+
+The repository now materially exposes the operational path:
+
+`Central da Recepção → Disponibilidade → Agenda/Reserva → Confirmação → Check-in → Uso real → Check-out → processamento assíncrono do Billing → Financeiro → PIX`.
+
+Availability uses the canonical backend authority and hands the selected resource/time window into Booking without merging Booking and Usage. Check-out preserves the transactional `USAGE_COMPLETED` Outbox boundary. Finance represents Billing materialization truthfully: while the requested completed Usage has no corresponding Billing effect, the page presents a processing state and refreshes; once a PER_USAGE invoice or accumulated InvoiceItem correlated to that Usage is visible, the financial surface renders it. The frontend does not create invoices, invoke Worker/Outbox internals or force synchronous Billing.
+
+This reconciliation is an implementation/product-surface record, not a new homologation of M7-A3 and not a change to PRD/Architecture authority.
+
 ## Banco de dados
 
 Projeto Neon independente: `hptech-beauty-coworking-os`.
@@ -143,17 +153,20 @@ Regra permanente: nunca reutilizar, inspecionar ou assumir banco, projeto, branc
 - Worker: Ruff, mypy, pytest;
 - Web: strict lint, typecheck, tests, build.
 
-T31 final homologation record passed post-merge `main` Quality Gate #111 on 2026-09-14.
+The visible checkout/Billing auto-refresh handoff was integrated at `fbaa255ad8a2196f4e379a389316fbfcea4985e1` after PR Quality Gate #271 passed on 2026-09-16. Earlier T31 final homologation record passed post-merge `main` Quality Gate #111 on 2026-09-14.
 
 ## Débitos controlados
 
-- Frontend product exposure remains narrower than implemented backend/domain capability.
-- Financeiro frontend remains a separate product/navigation gap to reconcile against the immutable product authority; T28-T31 do not themselves define a new product surface.
+- Identity / role-aware product shell remains incomplete despite server-side RBAC authority.
+- Pricing administration remains unexposed; no administration semantics may be invented from the engine alone.
+- Owner Dashboard remains unimplemented; period/aggregation semantics require explicit authority.
+- Payments static/runtime reconciliation remains controlled separately from the visible PIX operation.
+- Production delivery remains open and must respect the monorepo/deployment architecture.
 - T27 terminal Outbox policy remains blocked at the unresolved maximum-attempt authority boundary; no threshold may be invented.
 
 ## Próxima atividade
 
-Continue M7-A3 reconciliation from locked T25/T26/T28/T29/T30/T31 baselines. Preserve PRD MASTER v1.0 and Architecture Freeze v1.2 unchanged. Audit remaining implementation/product-surface gaps against those immutable authorities. T27 must remain fail-closed at its unresolved authority boundary rather than receiving an invented terminal threshold.
+Continue M7-A3 reconciliation from locked T25/T26/T28/T29/T30/T31 baselines and the now-reconciled visible operational journey. Preserve PRD MASTER v1.0 and Architecture Freeze v1.2 unchanged. Audit the remaining authority-backed gaps, prioritizing Identity / role-aware product shell and production delivery evidence without inventing Owner Dashboard, Pricing administration or T27 semantics.
 
 ## Regra de Governança
 
