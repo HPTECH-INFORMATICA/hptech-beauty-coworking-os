@@ -145,6 +145,16 @@ The current Next.js adapter uses environment-gated homologation credentials (`BC
 
 `docs/adr/ADR-identity-authority-boundary.md` records this existing boundary without introducing new authority. Production login UX, token issuer/verification semantics, browser session lifecycle, multi-membership tenant selection and the HPTECH Identity web-session contract remain explicitly unresolved and must not be invented from the homologation adapter.
 
+## Production Delivery boundary
+
+`docs/product/PRODUCTION_DELIVERY_AUDIT.md` records the repository-level delivery audit. `docs/product/PRODUCTION_STARTUP_CONTRACTS.md` materializes provider-neutral startup contracts for the three independently runnable surfaces: Next.js Web, FastAPI API and Python Worker.
+
+The API production command must externally bind the ASGI app (`bcos_api.main:app`) to the provider port; the repository-local `python -m bcos_api` remains development-oriented because it binds `127.0.0.1:8010`. The Worker remains a separate long-running `bcos-worker` process. API and Worker share only the independent BCOS PostgreSQL authority through `DATABASE_URL`.
+
+Alembic remains schema authority, but production migration execution ownership is not yet locked. Migrations must therefore not be attached independently to both API and Worker startup. Production Delivery remains open until actual Vercel/Render environment evidence and the end-to-end Web → API → PostgreSQL → Worker/Outbox → Billing smoke path exist. The unresolved trusted production Identity/session contract also prevents representing homologation bearer plumbing as public production authentication.
+
+This delivery materialization does not alter runtime behavior, provider credentials, PRD/Architecture authority, T27, Pricing administration, Owner Dashboard or Identity semantics.
+
 ## Banco de dados
 
 Projeto Neon independente: `hptech-beauty-coworking-os`.
@@ -161,7 +171,7 @@ Regra permanente: nunca reutilizar, inspecionar ou assumir banco, projeto, branc
 - Worker: Ruff, mypy, pytest;
 - Web: strict lint, typecheck, tests, build.
 
-The visible checkout/Billing auto-refresh handoff was integrated at `fbaa255ad8a2196f4e379a389316fbfcea4985e1` after PR Quality Gate #271 passed on 2026-09-16. The visible product reconciliation was integrated at `e9fc5f2b701ea876329251295f06571a69b65bc5` after PR Quality Gate #276 passed on 2026-09-16. Earlier T31 final homologation record passed post-merge `main` Quality Gate #111 on 2026-09-14.
+The visible checkout/Billing auto-refresh handoff was integrated at `fbaa255ad8a2196f4e379a389316fbfcea4985e1` after PR Quality Gate #271 passed on 2026-09-16. The visible product reconciliation was integrated at `e9fc5f2b701ea876329251295f06571a69b65bc5` after PR Quality Gate #276 passed on 2026-09-16. The trusted Identity authority boundary was integrated at `d6d4a4d498c0b5806af2693b43f19bb26fd8067f` after PR Quality Gate #281 passed on 2026-09-16. Earlier T31 final homologation record passed post-merge `main` Quality Gate #111 on 2026-09-14.
 
 ## Débitos controlados
 
@@ -169,12 +179,12 @@ The visible checkout/Billing auto-refresh handoff was integrated at `fbaa255ad8a
 - Pricing administration remains unexposed; no administration semantics may be invented from the engine alone.
 - Owner Dashboard remains unimplemented; period/aggregation semantics require explicit authority.
 - Payments static/runtime reconciliation remains controlled separately from the visible PIX operation.
-- Production delivery remains open and must respect the monorepo/deployment architecture.
+- Production delivery startup contracts are materialized, but actual Vercel/Render configuration, migration release ownership and end-to-end deployed smoke evidence remain open.
 - T27 terminal Outbox policy remains blocked at the unresolved maximum-attempt authority boundary; no threshold may be invented.
 
 ## Próxima atividade
 
-Continue M7-A3 reconciliation from locked T25/T26/T28/T29/T30/T31 baselines and the now-reconciled visible operational journey. Preserve PRD MASTER v1.0 and Architecture Freeze v1.2 unchanged. Treat Identity / role-aware product shell as authority-blocked until a trusted production identity/session contract exists; continue auditing production delivery evidence and other authority-backed gaps without inventing Owner Dashboard, Pricing administration or T27 semantics.
+Continue M7-A3 reconciliation from locked T25/T26/T28/T29/T30/T31 baselines and the reconciled visible operational journey. Preserve PRD MASTER v1.0 and Architecture Freeze v1.2 unchanged. Treat Identity / role-aware product shell and T27 as authority-blocked. For Production Delivery, verify actual Vercel/Render target configuration before materializing provider-specific infrastructure; separately audit Payments static/runtime reconciliation because runtime PIX confirmation already exists and its static contract remains a controlled gap.
 
 ## Regra de Governança
 
