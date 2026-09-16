@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import FinancePage from "../app/financeiro/page";
 import { getInvoice, getInvoices, getProfessionals } from "../lib/bcos-api";
 
+const refresh = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh }),
+}));
+
 vi.mock("../lib/bcos-api", () => ({
   closeManualInvoice: vi.fn(),
   confirmPixPayment: vi.fn(),
@@ -37,6 +43,8 @@ beforeEach(() => {
   mockedGetInvoices.mockResolvedValue([]);
   mockedGetProfessionals.mockResolvedValue([]);
   mockedGetInvoice.mockReset();
+  refresh.mockReset();
+  vi.useRealTimers();
 });
 
 describe("checkout billing handoff", () => {
@@ -44,8 +52,18 @@ describe("checkout billing handoff", () => {
     render(await FinancePage({ searchParams: Promise.resolve({ usage: "usage-1" }) }));
 
     expect(screen.getByText("Uso finalizado. Cobrança em processamento.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Atualizar financeiro" })).toHaveAttribute("href", "/financeiro?usage=usage-1");
+    expect(screen.getByText("O financeiro será atualizado automaticamente após o processamento do evento de conclusão do uso.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Atualizar agora" })).toHaveAttribute("href", "/financeiro?usage=usage-1");
     expect(screen.queryByText("Nenhuma fatura encontrada")).not.toBeInTheDocument();
+  });
+
+  it("refreshes the pending handoff without forcing synchronous billing", async () => {
+    vi.useFakeTimers();
+    render(await FinancePage({ searchParams: Promise.resolve({ usage: "usage-1" }) }));
+
+    expect(refresh).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(2_000);
+    expect(refresh).toHaveBeenCalledTimes(1);
   });
 
   it("recognizes a completed usage inside an accumulated invoice item", async () => {
