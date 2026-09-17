@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import "./globals.css";
+import "./product-polish.css";
 
 export const metadata: Metadata = {
   title: "HPTECH Beauty Coworking OS",
