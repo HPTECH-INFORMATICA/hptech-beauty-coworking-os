@@ -1,0 +1,50 @@
+name: BCOS Production Schema Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type APPLY_BCOS_PRODUCTION_MIGRATIONS"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcos-production-schema-release
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Migrate production schema
+    if: ${{ inputs.confirmation == 'APPLY_BCOS_PRODUCTION_MIGRATIONS' }}
+    runs-on: ubuntu-latest
+    environment: bcos-production
+    defaults:
+      run:
+        working-directory: services/api
+    env:
+      DATABASE_URL: ${{ secrets.BCOS_PRODUCTION_DATABASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: services/api/pyproject.toml
+      - name: Install API
+        run: python -m pip install .
+      - name: Require production database secret
+        shell: bash
+        run: test -n "$DATABASE_URL"
+      - name: Show migration target
+        run: python -m alembic heads
+      - name: Show current production revision
+        run: python -m alembic current
+      - name: Apply migrations once
+        run: python -m alembic upgrade head
+      - name: Verify production revision
+        run: python -m alembic current
