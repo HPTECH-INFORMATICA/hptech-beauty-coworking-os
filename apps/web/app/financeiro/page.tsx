@@ -97,14 +97,37 @@ export default async function FinancePage({ searchParams }: { searchParams?: Sea
                   <span>Saldo: {money(detail?.remaining_amount ?? invoice.total_amount, invoice.currency)}</span>
                   <span>Criada em {new Intl.DateTimeFormat("pt-BR").format(new Date(invoice.created_at))}</span>
                 </div>
-                {detail && detail.items.length > 0 ? <div className="finance-items" aria-label={`Composição da fatura de ${professionalName}`}>{detail.items.map((item) => <div className="finance-item" key={item.id}><span>{item.description}</span><strong>{money(item.total_amount, invoice.currency)}</strong></div>)}</div> : null}\n                <div className="finance-actions">
-                {canReceive ? <form action={confirmPixAction} className="finance-payment-form"><input name="invoice_id" type="hidden" value={invoice.id} /><label><span>Valor recebido via PIX</span><input inputMode="decimal" name="amount" placeholder="0,00" required type="number" min="0.01" step="0.01" /></label><label><span>Referência</span><input name="reference" placeholder="Comprovante ou observação" /></label><button className="primary-action" type="submit">Confirmar PIX</button></form> : null}
-                {canClose ? <form action={closeInvoiceAction}><input name="invoice_id" type="hidden" value={invoice.id} /><button className="text-action" type="submit">Encerrar fatura manual</button></form> : null}
+                {detail && detail.items.length > 0 ? (
+                  <div className="finance-items" aria-label={`Composição da fatura de ${professionalName}`}>
+                    {detail.items.map((item) => (
+                      <div className="finance-item" key={item.id}>
+                        <span>{item.description}</span>
+                        <strong>{money(item.total_amount, invoice.currency)}</strong>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="finance-actions">
+                  {canReceive ? (
+                    <form action={confirmPixAction} className="finance-payment-form">
+                      <input name="invoice_id" type="hidden" value={invoice.id} />
+                      <label><span>Valor recebido via PIX</span><input inputMode="decimal" name="amount" placeholder="0,00" required type="number" min="0.01" step="0.01" /></label>
+                      <label><span>Referência</span><input name="reference" placeholder="Comprovante ou observação" /></label>
+                      <button className="primary-action" type="submit">Confirmar PIX</button>
+                    </form>
+                  ) : null}
+                  {canClose ? (
+                    <form action={closeInvoiceAction} className="finance-close-form">
+                      <input name="invoice_id" type="hidden" value={invoice.id} />
+                      <button className="text-action" type="submit">Encerrar fatura manual</button>
+                    </form>
+                  ) : null}
+                </div>
               </article>
             );
           })}
         </section>
       ) : null}
-    </main>
+      </div>\n    </main>
   );
 }
