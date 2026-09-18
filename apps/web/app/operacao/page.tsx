@@ -69,64 +69,118 @@ export default async function OperationPage({ searchParams }: OperationPageProps
   const activeUsage = entry?.usage?.status.toUpperCase() === "CHECKED_IN" ? entry.usage : null;
 
   return (
-    <main className="finance-shell">
-      <header className="finance-header">
-        <div>
-          <span className="section-eyebrow">OPERAÇÃO EM CURSO</span>
-          <h1>Uso real do espaço</h1>
-          <p>Acompanhe o atendimento iniciado e finalize o uso quando o espaço for liberado.</p>
+    <main className="agenda-shell">
+      <header className="agenda-topbar">
+        <div className="agenda-brand">
+          <span className="agenda-brand-mark">H</span>
+          <div>
+            <strong>HPTECH Beauty Coworking OS</strong>
+            <span>Central da Recepção</span>
+          </div>
         </div>
-        <Link className="text-action" href="/">
-          Voltar para a central
-        </Link>
+        <nav className="agenda-nav">
+          <Link href="/">Agora</Link>
+          <Link href="/agenda">Agenda</Link>
+          <Link href="/check-in">Check-in</Link>
+          <Link href="/financeiro">Financeiro</Link>
+        </nav>
       </header>
 
-      {error ? (
-        <section className="operational-empty"><strong>{error}</strong></section>
-      ) : activeUsage && entry ? (
-        <section className="now-card">
-          <div className="section-heading">
-            <div>
-              <span className="section-eyebrow">ATENDIMENTO ATUAL</span>
-              <h2>{professional?.name ?? "Profissional"}</h2>
-            </div>
-            <span className="section-live-badge">AO VIVO</span>
+      <div className="agenda-canvas operation-canvas">
+        <section className="agenda-hero">
+          <div>
+            <span className="section-eyebrow">OPERAÇÃO • USO REAL</span>
+            <h1>Atendimento em curso</h1>
+            <p>Acompanhe a ocupação iniciada e finalize o uso quando o espaço for liberado.</p>
           </div>
-
-          <div className="current-operation">
-            <div className="current-copy">
-              <span className="current-label">Espaço</span>
-              <strong>{resource?.name ?? "Espaço"}</strong>
-              <div className="current-meta">
-                <span>Reserva: {formatDateTime(entry.booking.starts_at, timezone)} — {formatDateTime(entry.booking.ends_at, timezone)}</span>
-                <span>Check-in: {activeUsage.checked_in_at ? formatDateTime(activeUsage.checked_in_at, timezone) : "Registrado"}</span>
-              </div>
-            </div>
-
-            <form action={checkOutAction} className="current-action">
-              <input name="usage_id" type="hidden" value={activeUsage.id} />
-              <span className="status-pill status-live">Em atendimento</span>
-              <button className="primary-action" type="submit">
-                Finalizar uso / Check-out
-              </button>
-            </form>
+          <div className="agenda-hero-actions">
+            <Link className="text-action" href="/agenda">Ver agenda</Link>
+            <Link className="primary-action" href="/">Voltar para a central</Link>
           </div>
         </section>
-      ) : usage ? (
-        <section className="operational-empty">
-          <div>
+
+        {error ? (
+          <section className="operational-empty operation-empty"><strong>{error}</strong></section>
+        ) : activeUsage && entry ? (
+          <>
+            <section className="operation-kpis">
+              <div className="agenda-kpi">
+                <span>STATUS</span>
+                <strong className="operation-live-text">Em atendimento</strong>
+              </div>
+              <div className="agenda-kpi">
+                <span>ESPAÇO</span>
+                <strong>{resource?.name ?? "Espaço"}</strong>
+              </div>
+              <div className="operation-guidance">
+                <span className="section-eyebrow">FLUXO OPERACIONAL</span>
+                <strong>Check-in → Uso real → Check-out → Billing</strong>
+                <p>O check-out encerra o uso operacional e mantém o processamento financeiro sob autoridade do domínio.</p>
+              </div>
+            </section>
+
+            <section className="operation-board">
+              <header className="operation-board-head">
+                <div>
+                  <span className="section-eyebrow">ATENDIMENTO ATUAL</span>
+                  <h2>{professional?.name ?? "Profissional"}</h2>
+                </div>
+                <span className="section-live-badge">AO VIVO</span>
+              </header>
+
+              <div className="operation-body">
+                <div className="operation-resource">
+                  <span className="section-eyebrow">OCUPAÇÃO</span>
+                  <strong>{resource?.name ?? "Espaço"}</strong>
+                  <span>{professional?.name ?? "Profissional"}</span>
+                </div>
+
+                <div className="operation-timeline">
+                  <div>
+                    <span>RESERVA</span>
+                    <strong>{formatDateTime(entry.booking.starts_at, timezone)}</strong>
+                    <small>até {formatDateTime(entry.booking.ends_at, timezone)}</small>
+                  </div>
+                  <div>
+                    <span>CHECK-IN</span>
+                    <strong>
+                      {activeUsage.checked_in_at
+                        ? formatDateTime(activeUsage.checked_in_at, timezone)
+                        : "Registrado"}
+                    </strong>
+                    <small>uso real iniciado</small>
+                  </div>
+                </div>
+
+                <form action={checkOutAction} className="operation-checkout">
+                  <input name="usage_id" type="hidden" value={activeUsage.id} />
+                  <div>
+                    <span className="status-pill status-live">Em atendimento</span>
+                    <p>Finalize somente quando o profissional liberar o espaço.</p>
+                  </div>
+                  <button className="primary-action" type="submit">
+                    Finalizar uso / Check-out
+                  </button>
+                </form>
+              </div>
+            </section>
+          </>
+        ) : usage ? (
+          <section className="operation-empty">
+            <span className="section-eyebrow">SEM USO ATIVO</span>
             <strong>Atendimento em curso não encontrado.</strong>
             <p>Volte para a Central da Recepção e abra uma ocupação que esteja com check-in ativo.</p>
-          </div>
-        </section>
-      ) : (
-        <section className="operational-empty">
-          <div>
+            <Link className="primary-action" href="/">Voltar para a central</Link>
+          </section>
+        ) : (
+          <section className="operation-empty">
+            <span className="section-eyebrow">AGUARDANDO ATENDIMENTO</span>
             <strong>Nenhum uso foi informado.</strong>
             <p>Inicie o atendimento a partir de uma reserva confirmada.</p>
-          </div>
-        </section>
-      )}
+            <Link className="primary-action" href="/check-in">Ir para check-in</Link>
+          </section>
+        )}
+      </div>
     </main>
   );
 }
