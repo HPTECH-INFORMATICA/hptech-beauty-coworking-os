@@ -40,7 +40,8 @@ export default async function FinancePage({ searchParams }: { searchParams?: Sea
     details = new Map(loadedDetails.map((detail) => [detail.id, detail]));
   } catch (caught) {
     console.error("BCOS finance load failed:", caught);
-    error = "Não foi possível carregar o financeiro neste momento.";
+    const diagnostic = caught instanceof Error ? caught.message : String(caught);
+    error = `Não foi possível carregar o financeiro neste momento. Diagnóstico: ${diagnostic}`;
   }
 
   const professionalById = new Map(professionals.map((professional) => [professional.id, professional]));
