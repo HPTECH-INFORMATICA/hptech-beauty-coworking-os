@@ -58,10 +58,10 @@ export default async function FinancePage({ searchParams }: { searchParams?: Sea
   });
 
   return (
-    <main className="finance-shell">
-      <header className="finance-header">
+    <main className="finance-workspace">\n      <header className="agenda-topbar"><div className="agenda-brand"><span className="agenda-brand-mark">H</span><div><strong>HPTECH Beauty Coworking OS</strong><span>Central da Recepção</span></div></div><nav className="agenda-nav"><Link href="/">Agora</Link><Link href="/agenda">Agenda</Link><Link href="/check-in">Check-in</Link><Link className="active" href="/financeiro">Financeiro</Link></nav></header>\n      <div className="agenda-canvas finance-canvas">
+      <header className="agenda-hero">
         <div><span className="section-eyebrow">FINANCEIRO</span><h1>Faturas e recebimentos</h1><p>Acompanhe cobranças geradas pela operação, saldo em aberto e recebimentos PIX.</p></div>
-        <Link className="primary-action" href="/">Voltar para a operação</Link>
+        <div className="agenda-hero-actions"><Link className="text-action" href="/agenda">Ver agenda</Link><Link className="primary-action" href="/">Voltar para a operação</Link></div>
       </header>
 
       <section className="finance-summary" aria-label="Resumo financeiro">
@@ -71,17 +71,17 @@ export default async function FinancePage({ searchParams }: { searchParams?: Sea
       </section>
 
       {billingPending ? (
-        <section className="quiet-state" aria-live="polite">
+        <section className="finance-processing" aria-live="polite">
           <BillingProcessingRefresh />
           <div><strong>Uso finalizado. Cobrança em processamento.</strong><span>O financeiro será atualizado automaticamente após o processamento do evento de conclusão do uso.</span></div>
           <Link className="text-action" href={`/financeiro?usage=${encodeURIComponent(requestedUsageId)}`}>Atualizar agora</Link>
         </section>
       ) : null}
 
-      {error ? <section className="operational-empty"><strong>{error}</strong></section> : invoices.length === 0 && !billingPending ? (
-        <section className="quiet-state"><div><strong>Nenhuma fatura encontrada</strong><span>As cobranças geradas pela operação aparecerão aqui.</span></div></section>
+      {error ? <section className="finance-empty"><strong>{error}</strong></section> : invoices.length === 0 && !billingPending ? (
+        <section className="finance-empty"><strong>Nenhuma fatura encontrada</strong><span>As cobranças geradas pela operação aparecerão aqui.</span></section>
       ) : invoices.length > 0 ? (
-        <section className="finance-list">
+        <section className="finance-invoices">
           {sortedInvoices.map((invoice) => {
             const detail = details.get(invoice.id);
             const canReceive = invoice.status === "OPEN" || invoice.status === "PARTIALLY_PAID";
@@ -89,15 +89,15 @@ export default async function FinancePage({ searchParams }: { searchParams?: Sea
             const professionalName = professionalById.get(invoice.professional_id)?.name ?? "Profissional";
             const selected = invoiceContainsUsage(invoice, detail, requestedUsageId);
             return (
-              <article className="finance-card" data-selected={selected || undefined} key={invoice.id}>
-                <div className="finance-card-heading"><div><span className="section-eyebrow">{selected ? "COBRANÇA DO USO FINALIZADO" : "FATURA"}</span><strong>{professionalName}</strong></div><span className={`status-pill status-${invoice.status === "PAID" ? "positive" : "attention"}`}>{statusLabel(invoice.status)}</span></div>
+              <article className="finance-invoice" data-selected={selected || undefined} key={invoice.id}>
+                <div className="finance-invoice-head"><div><span className="section-eyebrow">{selected ? "COBRANÇA DO USO FINALIZADO" : "FATURA"}</span><strong>{professionalName}</strong></div><span className={`status-pill status-${invoice.status === "PAID" ? "positive" : "attention"}`}>{statusLabel(invoice.status)}</span></div>
                 <div className="finance-amount"><span>Total</span><strong>{money(invoice.total_amount, invoice.currency)}</strong></div>
                 <div className="finance-meta">
                   <span>Recebido: {money(detail?.confirmed_amount ?? "0", invoice.currency)}</span>
                   <span>Saldo: {money(detail?.remaining_amount ?? invoice.total_amount, invoice.currency)}</span>
                   <span>Criada em {new Intl.DateTimeFormat("pt-BR").format(new Date(invoice.created_at))}</span>
                 </div>
-                {detail && detail.items.length > 0 ? <div className="finance-list" aria-label={`Composição da fatura de ${professionalName}`}>{detail.items.map((item) => <div className="finance-meta" key={item.id}><span>{item.description}</span><strong>{money(item.total_amount, invoice.currency)}</strong></div>)}</div> : null}
+                {detail && detail.items.length > 0 ? <div className="finance-items" aria-label={`Composição da fatura de ${professionalName}`}>{detail.items.map((item) => <div className="finance-item" key={item.id}><span>{item.description}</span><strong>{money(item.total_amount, invoice.currency)}</strong></div>)}</div> : null}\n                <div className="finance-actions">
                 {canReceive ? <form action={confirmPixAction} className="finance-payment-form"><input name="invoice_id" type="hidden" value={invoice.id} /><label><span>Valor recebido via PIX</span><input inputMode="decimal" name="amount" placeholder="0,00" required type="number" min="0.01" step="0.01" /></label><label><span>Referência</span><input name="reference" placeholder="Comprovante ou observação" /></label><button className="primary-action" type="submit">Confirmar PIX</button></form> : null}
                 {canClose ? <form action={closeInvoiceAction}><input name="invoice_id" type="hidden" value={invoice.id} /><button className="text-action" type="submit">Encerrar fatura manual</button></form> : null}
               </article>
