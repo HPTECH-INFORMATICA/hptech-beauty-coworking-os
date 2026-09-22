@@ -11,11 +11,23 @@ from bcos_api.audit.repository import create_audit_log
 from bcos_api.auth.dependencies import get_authenticated_identity
 from bcos_api.auth.identity import AuthenticatedIdentity
 from bcos_api.db.session import get_async_session
-from bcos_api.invitation.repository import accept_invited_membership
+from bcos_api.invitation.repository import accept_invited_membership, list_pending_invitations
 
 router = APIRouter(prefix="/api/v1/invitations", tags=["Invitations"])
 SessionDependency = Annotated[AsyncSession, Depends(get_async_session)]
 IdentityDependency = Annotated[AuthenticatedIdentity, Depends(get_authenticated_identity)]
+
+
+@router.get("", response_model=list[MembershipResponse])
+async def list_pending_invitations_endpoint(
+    session: SessionDependency,
+    identity: IdentityDependency,
+) -> list[MembershipResponse]:
+    memberships = await list_pending_invitations(
+        session,
+        external_user_id=identity.external_user_id,
+    )
+    return [MembershipResponse.model_validate(item) for item in memberships]
 
 
 @router.post("/{membership_id}/accept", response_model=MembershipResponse)
