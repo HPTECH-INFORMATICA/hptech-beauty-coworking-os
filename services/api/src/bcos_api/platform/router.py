@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bcos_api.db.session import get_async_session
+from bcos_api.platform.audit import create_platform_audit_log
 from bcos_api.platform.dependencies import get_platform_context
 from bcos_api.platform.domain import PlatformContext
 from bcos_api.platform.onboarding.domain import InvalidTenantOnboarding
@@ -51,6 +52,15 @@ async def create_tenant_endpoint(
             session,
             context=context,
             **payload.model_dump(),
+        )
+        await create_platform_audit_log(
+            session,
+            actor_external_user_id=context.external_user_id,
+            action="TENANT_CREATED",
+            entity_type="tenant",
+            entity_id=tenant.id,
+            tenant_id=tenant.id,
+            metadata={"status": tenant.status.value, "owner_external_user_id": tenant.owner_external_user_id},
         )
         await session.commit()
     except InvalidTenantOnboarding as exc:
@@ -96,7 +106,6 @@ async def update_tenant_status_endpoint(
     session: SessionDependency,
     context: PlatformContextDependency,
 ) -> ContractingTenantResponse:
-    del context
     tenant = await update_contracting_tenant_status(
         session,
         tenant_id=tenant_id,
@@ -105,6 +114,15 @@ async def update_tenant_status_endpoint(
     if tenant is None:
         await session.rollback()
         raise HTTPException(status_code=404, detail="Contracting tenant not found.")
+    await create_platform_audit_log(
+        session,
+        actor_external_user_id=context.external_user_id,
+        action="TENANT_STATUS_CHANGED",
+        entity_type="tenant",
+        entity_id=tenant.id,
+        tenant_id=tenant.id,
+        metadata={"status": tenant.status.value},
+    )
     await session.commit()
     return ContractingTenantResponse.model_validate(tenant, from_attributes=True)
 
@@ -132,6 +150,15 @@ async def create_owner_invitation_endpoint(
         if membership_id is None:
             await session.rollback()
             raise HTTPException(status_code=404, detail="Contracting tenant not found.")
+        await create_platform_audit_log(
+            session,
+            actor_external_user_id=context.external_user_id,
+            action="TENANT_OWNER_INVITED",
+            entity_type="tenant_membership",
+            entity_id=membership_id,
+            tenant_id=tenant_id,
+            metadata={"external_user_id": external_user_id, "role": "OWNER", "status": "INVITED"},
+        )
         await session.commit()
     except IntegrityError as exc:
         await session.rollback()
