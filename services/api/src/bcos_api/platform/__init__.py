@@ -1,0 +1,1 @@
+"""HPTECH platform administration boundary."""
