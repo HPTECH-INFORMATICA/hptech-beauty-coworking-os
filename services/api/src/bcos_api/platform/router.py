@@ -14,6 +14,8 @@ from bcos_api.platform.domain import PlatformContext
 from bcos_api.platform.onboarding.domain import InvalidTenantOnboarding
 from bcos_api.platform.onboarding.schemas import (
     ContractingTenant as ContractingTenantResponse,
+)
+from bcos_api.platform.onboarding.schemas import (
     ContractingTenantCreate,
 )
 from bcos_api.platform.onboarding.service import onboard_contracting_tenant
