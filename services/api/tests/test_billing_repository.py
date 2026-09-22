@@ -44,4 +44,7 @@ async def test_list_invoices_types_nullable_professional_filter_for_postgresql()
     sql = str(session.statement)
     assert "CAST(:professional_id AS UUID) IS NULL" in sql
     assert "professional_id = CAST(:professional_id AS UUID)" in sql
+    assert "CAST(:status AS invoice_status) IS NULL" in sql
+    assert "status = CAST(:status AS invoice_status)" in sql
     assert session.parameters["professional_id"] is None
+    assert session.parameters["status"] is None

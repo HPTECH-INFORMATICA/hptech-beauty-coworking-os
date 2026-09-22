@@ -33,7 +33,7 @@ async def list_invoices(
             FROM invoices
             WHERE tenant_id = :tenant_id
               AND (CAST(:professional_id AS UUID) IS NULL OR professional_id = CAST(:professional_id AS UUID))
-              AND (:status IS NULL OR status = CAST(:status AS invoice_status))
+              AND (CAST(:status AS invoice_status) IS NULL OR status = CAST(:status AS invoice_status))
             ORDER BY created_at DESC, id DESC
             LIMIT :limit OFFSET :offset
             """
