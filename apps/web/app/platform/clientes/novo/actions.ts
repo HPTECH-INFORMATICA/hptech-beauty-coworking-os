@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { createContractingTenant } from "../../../lib/bcos-api";
+import { createContractingTenant } from "../../../../lib/bcos-api";
 
 function required(formData: FormData, key: string): string {
   const value = String(formData.get(key) ?? "").trim();
