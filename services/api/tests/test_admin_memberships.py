@@ -1,10 +1,12 @@
 """Tests for tenant membership administration rules."""
 
-from uuid import uuid4
-
 import pytest
 
-from bcos_api.admin.domain import InvalidMembershipAdministration, validate_invited_role, validate_membership_status
+from bcos_api.admin.domain import (
+    InvalidMembershipAdministration,
+    validate_invited_role,
+    validate_membership_status,
+)
 from bcos_api.tenancy.membership import MembershipRole, MembershipStatus
 
 
