@@ -21,6 +21,8 @@ export type InvoiceDetail = Invoice & { items: InvoiceItem[]; confirmed_amount: 
 export type Payment = { id: string; invoice_id: string; idempotency_key: string; method: string; status: string; currency: string; amount: string; reference: string | null; metadata: Record<string, unknown>; paid_at: string | null; created_at: string; updated_at: string };
 export type ContractingTenant = { id: string; name: string; slug: string; status: "PENDING_ACTIVATION" | "ACTIVE" | "SUSPENDED" | "INACTIVE"; legal_name: string; trade_name: string; tax_id: string | null; email: string; phone: string | null; owner_external_user_id: string; created_at: string };
 export type ContractingTenantCreate = { name: string; slug: string; legalName: string; tradeName: string; taxId?: string; email: string; phone?: string; ownerExternalUserId: string };
+export type TenantMembership = { id: string; tenant_id: string; external_user_id: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; status: "INVITED" | "ACTIVE" | "INACTIVE" };
+export type TenantMembershipInvite = { externalUserId: string; role: "ADMIN" | "RECEPTION" | "PROFESSIONAL" };
 export type PaymentResult = { payment: Payment; invoice_status: string; invoice_total_amount: string; confirmed_amount: string; remaining_amount: string };
 
 const API_BASE_URL = process.env.BCOS_API_BASE_URL ?? "http://127.0.0.1:8010";
@@ -114,6 +116,28 @@ export async function updateContractingTenantStatus(
 ): Promise<ContractingTenant> {
   return platformApiRequest<ContractingTenant>(
     `/api/v1/platform/tenants/${encodeURIComponent(tenantId)}/status`,
+    { method: "PATCH", body: JSON.stringify({ status }) },
+  );
+}
+
+
+export async function getTenantMemberships(): Promise<TenantMembership[]> {
+  return apiGet<TenantMembership[]>("/api/v1/admin/memberships");
+}
+
+export async function inviteTenantMembership(input: TenantMembershipInvite): Promise<TenantMembership> {
+  return apiPost<TenantMembership>("/api/v1/admin/memberships/invitations", {
+    external_user_id: input.externalUserId,
+    role: input.role,
+  });
+}
+
+export async function updateTenantMembershipStatus(
+  membershipId: string,
+  status: "ACTIVE" | "INACTIVE",
+): Promise<TenantMembership> {
+  return apiRequest<TenantMembership>(
+    `/api/v1/admin/memberships/${encodeURIComponent(membershipId)}/status`,
     { method: "PATCH", body: JSON.stringify({ status }) },
   );
 }
