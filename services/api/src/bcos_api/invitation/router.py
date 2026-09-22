@@ -6,13 +6,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from bcos_api.admin.schemas import MembershipResponse
 from bcos_api.audit.repository import create_audit_log
 from bcos_api.auth.dependencies import get_authenticated_identity
 from bcos_api.auth.identity import AuthenticatedIdentity
 from bcos_api.db.session import get_async_session
 from bcos_api.invitation.repository import accept_invited_membership
-from bcos_api.tenancy.membership import TenantMembership
-from bcos_api.admin.schemas import MembershipResponse
 
 router = APIRouter(prefix="/api/v1/invitations", tags=["Invitations"])
 SessionDependency = Annotated[AsyncSession, Depends(get_async_session)]
