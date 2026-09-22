@@ -13,17 +13,17 @@ from bcos_api.db.session import get_async_session
 from bcos_api.platform.dependencies import get_platform_context
 from bcos_api.platform.domain import PlatformContext
 from bcos_api.platform.onboarding.domain import InvalidTenantOnboarding
+from bcos_api.platform.onboarding.repository import (
+    get_contracting_tenant,
+    list_contracting_tenants,
+    update_contracting_tenant_status,
+)
 from bcos_api.platform.onboarding.schemas import (
     ContractingTenant as ContractingTenantResponse,
 )
 from bcos_api.platform.onboarding.schemas import (
     ContractingTenantCreate,
     ContractingTenantStatusUpdate,
-)
-from bcos_api.platform.onboarding.repository import (
-    get_contracting_tenant,
-    list_contracting_tenants,
-    update_contracting_tenant_status,
 )
 from bcos_api.platform.onboarding.service import onboard_contracting_tenant
 
