@@ -60,7 +60,10 @@ async def create_tenant_endpoint(
             entity_type="tenant",
             entity_id=tenant.id,
             tenant_id=tenant.id,
-            metadata={"status": tenant.status.value, "owner_external_user_id": tenant.owner_external_user_id},
+            metadata={
+                "status": tenant.status.value,
+                "owner_external_user_id": tenant.owner_external_user_id,
+            },
         )
         await session.commit()
     except InvalidTenantOnboarding as exc:
@@ -157,7 +160,11 @@ async def create_owner_invitation_endpoint(
             entity_type="tenant_membership",
             entity_id=membership_id,
             tenant_id=tenant_id,
-            metadata={"external_user_id": external_user_id, "role": "OWNER", "status": "INVITED"},
+            metadata={
+                "external_user_id": external_user_id,
+                "role": "OWNER",
+                "status": "INVITED",
+            },
         )
         await session.commit()
     except IntegrityError as exc:
