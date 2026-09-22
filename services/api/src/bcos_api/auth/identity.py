@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import hmac
 from dataclasses import dataclass
+from typing import Protocol
 
 import jwt
 from jwt import PyJWKClient
 from jwt.exceptions import InvalidTokenError
-from typing import Protocol
 
 
 class AuthenticationFailed(Exception):
