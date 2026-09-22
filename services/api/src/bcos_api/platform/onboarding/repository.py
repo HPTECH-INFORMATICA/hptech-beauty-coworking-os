@@ -194,3 +194,31 @@ async def update_contracting_tenant_status(
     if updated.scalar_one_or_none() is None:
         return None
     return await get_contracting_tenant(session, tenant_id=tenant_id)
+
+
+async def create_owner_invitation(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    external_user_id: str,
+) -> UUID | None:
+    tenant_exists = await session.execute(
+        text("SELECT id FROM tenants WHERE id = :tenant_id"),
+        {"tenant_id": tenant_id},
+    )
+    if tenant_exists.scalar_one_or_none() is None:
+        return None
+
+    result = await session.execute(
+        text(
+            """
+            INSERT INTO tenant_memberships (
+                tenant_id, external_user_id, role, status
+            )
+            VALUES (:tenant_id, :external_user_id, 'OWNER', 'INVITED')
+            RETURNING id
+            """
+        ),
+        {"tenant_id": tenant_id, "external_user_id": external_user_id},
+    )
+    return result.scalar_one()
