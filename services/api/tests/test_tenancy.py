@@ -27,6 +27,16 @@ async def test_active_membership_resolves_tenant_context(
     membership_id = uuid4()
     external_user_id = "identity-active"
 
+    async def fake_tenant_is_active(session: object, *, tenant_id: UUID) -> bool:
+        del session
+        del tenant_id
+        return True
+
+    monkeypatch.setattr(
+        "bcos_api.tenancy.context.tenant_is_active",
+        fake_tenant_is_active,
+    )
+
     async def fake_get_membership(
         session: object,
         *,
@@ -74,6 +84,20 @@ async def test_non_active_membership_is_denied(
 ) -> None:
     tenant_id = uuid4()
 
+    async def fake_tenant_is_active(
+        session: object,
+        *,
+        tenant_id: UUID,
+    ) -> bool:
+        del session
+        del tenant_id
+        return True
+
+    monkeypatch.setattr(
+        "bcos_api.tenancy.context.tenant_is_active",
+        fake_tenant_is_active,
+    )
+
     async def fake_get_membership(
         session: object,
         *,
@@ -109,6 +133,20 @@ async def test_missing_membership_is_denied(
 ) -> None:
     tenant_id = uuid4()
 
+    async def fake_tenant_is_active(
+        session: object,
+        *,
+        tenant_id: UUID,
+    ) -> bool:
+        del session
+        del tenant_id
+        return True
+
+    monkeypatch.setattr(
+        "bcos_api.tenancy.context.tenant_is_active",
+        fake_tenant_is_active,
+    )
+
     async def fake_get_membership(
         session: object,
         *,
@@ -142,6 +180,20 @@ async def test_cross_tenant_membership_is_denied(
     authorized_tenant_id = uuid4()
     external_user_id = "identity-cross-tenant"
 
+    async def fake_tenant_is_active(
+        session: object,
+        *,
+        tenant_id: UUID,
+    ) -> bool:
+        del session
+        del tenant_id
+        return True
+
+    monkeypatch.setattr(
+        "bcos_api.tenancy.context.tenant_is_active",
+        fake_tenant_is_active,
+    )
+
     async def fake_get_membership(
         session: object,
         *,
@@ -174,4 +226,43 @@ async def test_cross_tenant_membership_is_denied(
             cast(AsyncSession, object()),
             tenant_id=requested_tenant_id,
             external_user_id=external_user_id,
+        )
+
+
+@pytest.mark.asyncio
+async def test_inactive_commercial_tenant_is_denied_before_membership(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tenant_id = uuid4()
+
+    async def fake_tenant_is_active(session: object, *, tenant_id: UUID) -> bool:
+        del session
+        del tenant_id
+        return False
+
+    async def unexpected_get_membership(
+        session: object,
+        *,
+        tenant_id: UUID,
+        external_user_id: str,
+    ) -> None:
+        del session
+        del tenant_id
+        del external_user_id
+        pytest.fail("membership must not authorize an inactive tenant")
+
+    monkeypatch.setattr(
+        "bcos_api.tenancy.context.tenant_is_active",
+        fake_tenant_is_active,
+    )
+    monkeypatch.setattr(
+        "bcos_api.tenancy.context.get_membership",
+        unexpected_get_membership,
+    )
+
+    with pytest.raises(TenantAccessDenied, match="not active"):
+        await resolve_tenant_context(
+            cast(AsyncSession, object()),
+            tenant_id=tenant_id,
+            external_user_id="identity-active-membership",
         )
