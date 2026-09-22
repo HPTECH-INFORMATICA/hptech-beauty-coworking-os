@@ -2,8 +2,6 @@
 
 from uuid import uuid4
 
-import pytest
-
 from bcos_api.auth.identity import AuthenticatedIdentity
 
 
