@@ -34,3 +34,7 @@ class ContractingTenant(BaseModel):
     phone: str | None
     owner_external_user_id: str
     created_at: datetime
+
+class ContractingTenantStatusUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    status: TenantCommercialStatus
