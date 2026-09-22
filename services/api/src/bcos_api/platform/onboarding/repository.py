@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import RowMapping, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bcos_api.platform.onboarding.domain import ContractingTenant, TenantCommercialStatus
@@ -85,8 +85,7 @@ async def create_contracting_tenant(
     )
 
 
-def _contracting_tenant_from_row(row: object) -> ContractingTenant:
-    mapping = row
+def _contracting_tenant_from_row(mapping: RowMapping) -> ContractingTenant:
     return ContractingTenant(
         id=mapping["id"],
         name=mapping["name"],
