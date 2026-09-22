@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import UUID
 
 from bcos_api.platform.onboarding.domain import ContractingTenant, TenantCommercialStatus
 
@@ -81,3 +82,115 @@ async def create_contracting_tenant(
         owner_external_user_id=owner_external_user_id,
         created_at=tenant["created_at"],
     )
+
+
+def _contracting_tenant_from_row(row: object) -> ContractingTenant:
+    mapping = row
+    return ContractingTenant(
+        id=mapping["id"],
+        name=mapping["name"],
+        slug=mapping["slug"],
+        status=TenantCommercialStatus(mapping["status"]),
+        legal_name=mapping["legal_name"],
+        trade_name=mapping["trade_name"],
+        tax_id=mapping["tax_id"],
+        email=mapping["email"],
+        phone=mapping["phone"],
+        owner_external_user_id=mapping["owner_external_user_id"],
+        created_at=mapping["created_at"],
+    )
+
+
+async def list_contracting_tenants(session: AsyncSession) -> list[ContractingTenant]:
+    result = await session.execute(
+        text(
+            """
+            SELECT
+                t.id,
+                t.name,
+                t.slug,
+                t.status::text AS status,
+                p.legal_name,
+                p.trade_name,
+                p.tax_id,
+                p.email,
+                p.phone,
+                owner.external_user_id AS owner_external_user_id,
+                t.created_at
+            FROM tenants AS t
+            JOIN tenant_profiles AS p ON p.tenant_id = t.id
+            JOIN LATERAL (
+                SELECT tm.external_user_id
+                FROM tenant_memberships AS tm
+                WHERE tm.tenant_id = t.id
+                  AND tm.role = 'OWNER'
+                ORDER BY tm.created_at ASC
+                LIMIT 1
+            ) AS owner ON TRUE
+            ORDER BY t.created_at DESC, t.id DESC
+            """
+        )
+    )
+    return [_contracting_tenant_from_row(row) for row in result.mappings().all()]
+
+
+async def get_contracting_tenant(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+) -> ContractingTenant | None:
+    result = await session.execute(
+        text(
+            """
+            SELECT
+                t.id,
+                t.name,
+                t.slug,
+                t.status::text AS status,
+                p.legal_name,
+                p.trade_name,
+                p.tax_id,
+                p.email,
+                p.phone,
+                owner.external_user_id AS owner_external_user_id,
+                t.created_at
+            FROM tenants AS t
+            JOIN tenant_profiles AS p ON p.tenant_id = t.id
+            JOIN LATERAL (
+                SELECT tm.external_user_id
+                FROM tenant_memberships AS tm
+                WHERE tm.tenant_id = t.id
+                  AND tm.role = 'OWNER'
+                ORDER BY tm.created_at ASC
+                LIMIT 1
+            ) AS owner ON TRUE
+            WHERE t.id = :tenant_id
+            """
+        ),
+        {"tenant_id": tenant_id},
+    )
+    row = result.mappings().one_or_none()
+    return None if row is None else _contracting_tenant_from_row(row)
+
+
+async def update_contracting_tenant_status(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    status: TenantCommercialStatus,
+) -> ContractingTenant | None:
+    updated = await session.execute(
+        text(
+            """
+            UPDATE tenants
+            SET status = CAST(:status AS tenant_status),
+                updated_at = now()
+            WHERE id = :tenant_id
+            RETURNING id
+            """
+        ),
+        {"tenant_id": tenant_id, "status": status.value},
+    )
+    if updated.scalar_one_or_none() is None:
+        return None
+    return await get_contracting_tenant(session, tenant_id=tenant_id)
