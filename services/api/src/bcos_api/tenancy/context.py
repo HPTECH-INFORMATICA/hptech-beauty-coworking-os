@@ -8,7 +8,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bcos_api.tenancy.membership import MembershipRole
-from bcos_api.tenancy.repository import get_membership
+from bcos_api.tenancy.repository import get_membership, tenant_is_active
 
 
 class TenantAccessDenied(Exception):
@@ -32,6 +32,9 @@ async def resolve_tenant_context(
     external_user_id: str,
 ) -> TenantContext:
     """Resolve and authorize an identity within one BCOS tenant."""
+
+    if not await tenant_is_active(session, tenant_id=tenant_id):
+        raise TenantAccessDenied("Requested tenant is not active.")
 
     membership = await get_membership(
         session,
