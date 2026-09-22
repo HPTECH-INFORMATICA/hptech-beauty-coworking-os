@@ -14,6 +14,27 @@ from bcos_api.tenancy.membership import (
 )
 
 
+async def tenant_is_active(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+) -> bool:
+    """Return whether the commercial tenant is ACTIVE."""
+
+    result = await session.execute(
+        text(
+            """
+            SELECT status::text
+            FROM tenants
+            WHERE id = :tenant_id
+            LIMIT 1
+            """
+        ),
+        {"tenant_id": tenant_id},
+    )
+    return result.scalar_one_or_none() == "ACTIVE"
+
+
 async def get_membership(
     session: AsyncSession,
     *,
