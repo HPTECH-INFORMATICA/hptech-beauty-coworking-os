@@ -32,7 +32,7 @@ async def list_invoices(
             SELECT {_INVOICE_COLUMNS}
             FROM invoices
             WHERE tenant_id = :tenant_id
-              AND (:professional_id IS NULL OR professional_id = :professional_id)
+              AND (CAST(:professional_id AS UUID) IS NULL OR professional_id = CAST(:professional_id AS UUID))
               AND (:status IS NULL OR status = CAST(:status AS invoice_status))
             ORDER BY created_at DESC, id DESC
             LIMIT :limit OFFSET :offset
