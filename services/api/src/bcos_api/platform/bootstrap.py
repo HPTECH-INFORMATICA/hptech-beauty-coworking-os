@@ -8,7 +8,7 @@ import os
 
 from sqlalchemy import text
 
-from bcos_api.db.session import async_session_factory
+from bcos_api.db.session import get_async_session
 
 
 async def bootstrap(external_user_id: str) -> None:
@@ -16,7 +16,9 @@ async def bootstrap(external_user_id: str) -> None:
     if not identity:
         raise SystemExit("external_user_id must not be blank")
 
-    async with async_session_factory() as session:
+    sessions = get_async_session()
+    try:
+        session = await anext(sessions)
         count = await session.scalar(text("SELECT count(*) FROM platform_operators"))
         if count != 0:
             raise SystemExit("Bootstrap refused: platform operator already exists.")
@@ -46,6 +48,8 @@ async def bootstrap(external_user_id: str) -> None:
             },
         )
         await session.commit()
+    finally:
+        await sessions.aclose()
 
 
 def main() -> None:
