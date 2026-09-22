@@ -94,6 +94,19 @@ jobs:
           test "$(python -m alembic heads | grep -c '(head)')" -eq 1
           python -m alembic heads
 
+      - name: Alembic full-chain SQL compilation
+        shell: bash
+        env:
+          DATABASE_URL: postgresql+psycopg://bcos_ci:bcos_ci@localhost/bcos_ci
+        run: |
+          python -m alembic upgrade head --sql > /tmp/bcos-schema.sql
+          test -s /tmp/bcos-schema.sql
+          grep -q "0007_invoice_cycle_identity" /tmp/bcos-schema.sql
+          grep -q "professional_billing_contract_id" /tmp/bcos-schema.sql
+          grep -q "billing_cycle_start" /tmp/bcos-schema.sql
+          grep -q "billing_cycle_end" /tmp/bcos-schema.sql
+          grep -q "manual_closed_at" /tmp/bcos-schema.sql
+
   worker:
     name: Worker
     runs-on: ubuntu-latest
