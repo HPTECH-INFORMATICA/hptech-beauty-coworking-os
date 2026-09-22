@@ -84,6 +84,20 @@ async def test_non_active_membership_is_denied(
 ) -> None:
     tenant_id = uuid4()
 
+    async def fake_tenant_is_active(
+        session: object,
+        *,
+        tenant_id: UUID,
+    ) -> bool:
+        del session
+        del tenant_id
+        return True
+
+    monkeypatch.setattr(
+        "bcos_api.tenancy.context.tenant_is_active",
+        fake_tenant_is_active,
+    )
+
     async def fake_get_membership(
         session: object,
         *,
@@ -119,6 +133,20 @@ async def test_missing_membership_is_denied(
 ) -> None:
     tenant_id = uuid4()
 
+    async def fake_tenant_is_active(
+        session: object,
+        *,
+        tenant_id: UUID,
+    ) -> bool:
+        del session
+        del tenant_id
+        return True
+
+    monkeypatch.setattr(
+        "bcos_api.tenancy.context.tenant_is_active",
+        fake_tenant_is_active,
+    )
+
     async def fake_get_membership(
         session: object,
         *,
@@ -151,6 +179,20 @@ async def test_cross_tenant_membership_is_denied(
     requested_tenant_id = uuid4()
     authorized_tenant_id = uuid4()
     external_user_id = "identity-cross-tenant"
+
+    async def fake_tenant_is_active(
+        session: object,
+        *,
+        tenant_id: UUID,
+    ) -> bool:
+        del session
+        del tenant_id
+        return True
+
+    monkeypatch.setattr(
+        "bcos_api.tenancy.context.tenant_is_active",
+        fake_tenant_is_active,
+    )
 
     async def fake_get_membership(
         session: object,
