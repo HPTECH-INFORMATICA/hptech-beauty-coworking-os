@@ -14,6 +14,7 @@ from bcos_api.platform.dependencies import get_platform_context
 from bcos_api.platform.domain import PlatformContext
 from bcos_api.platform.onboarding.domain import InvalidTenantOnboarding
 from bcos_api.platform.onboarding.repository import (
+    create_owner_invitation,
     get_contracting_tenant,
     list_contracting_tenants,
     update_contracting_tenant_status,
@@ -24,6 +25,8 @@ from bcos_api.platform.onboarding.schemas import (
 from bcos_api.platform.onboarding.schemas import (
     ContractingTenantCreate,
     ContractingTenantStatusUpdate,
+    OwnerInvitation,
+    OwnerInvitationCreate,
 )
 from bcos_api.platform.onboarding.service import onboard_contracting_tenant
 
@@ -104,3 +107,40 @@ async def update_tenant_status_endpoint(
         raise HTTPException(status_code=404, detail="Contracting tenant not found.")
     await session.commit()
     return ContractingTenantResponse.model_validate(tenant, from_attributes=True)
+
+
+@router.post(
+    "/tenants/{tenant_id}/owner-invitations",
+    response_model=OwnerInvitation,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_owner_invitation_endpoint(
+    tenant_id: UUID,
+    payload: OwnerInvitationCreate,
+    session: SessionDependency,
+    context: PlatformContextDependency,
+) -> OwnerInvitation:
+    external_user_id = payload.external_user_id.strip()
+    if not external_user_id:
+        raise HTTPException(status_code=422, detail="external_user_id must not be blank.")
+    try:
+        membership_id = await create_owner_invitation(
+            session,
+            tenant_id=tenant_id,
+            external_user_id=external_user_id,
+        )
+        if membership_id is None:
+            await session.rollback()
+            raise HTTPException(status_code=404, detail="Contracting tenant not found.")
+        await session.commit()
+    except IntegrityError as exc:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Identity already has a membership in this tenant.",
+        ) from exc
+    return OwnerInvitation(
+        membership_id=membership_id,
+        tenant_id=tenant_id,
+        external_user_id=external_user_id,
+    )
