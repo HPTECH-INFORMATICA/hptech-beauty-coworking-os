@@ -99,3 +99,21 @@ export async function createContractingTenant(input: ContractingTenantCreate): P
     }),
   });
 }
+
+export async function getContractingTenants(): Promise<ContractingTenant[]> {
+  return platformApiRequest<ContractingTenant[]>("/api/v1/platform/tenants");
+}
+
+export async function getContractingTenant(tenantId: string): Promise<ContractingTenant> {
+  return platformApiRequest<ContractingTenant>(`/api/v1/platform/tenants/${encodeURIComponent(tenantId)}`);
+}
+
+export async function updateContractingTenantStatus(
+  tenantId: string,
+  status: ContractingTenant["status"],
+): Promise<ContractingTenant> {
+  return platformApiRequest<ContractingTenant>(
+    `/api/v1/platform/tenants/${encodeURIComponent(tenantId)}/status`,
+    { method: "PATCH", body: JSON.stringify({ status }) },
+  );
+}
