@@ -38,3 +38,16 @@ class ContractingTenant(BaseModel):
 class ContractingTenantStatusUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     status: TenantCommercialStatus
+
+
+class OwnerInvitationCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    external_user_id: str = Field(min_length=1, max_length=255)
+
+
+class OwnerInvitation(BaseModel):
+    membership_id: UUID
+    tenant_id: UUID
+    external_user_id: str
+    role: str = "OWNER"
+    status: str = "INVITED"
