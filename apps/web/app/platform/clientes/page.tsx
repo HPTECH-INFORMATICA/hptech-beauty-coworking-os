@@ -1,0 +1,8 @@
+import Link from "next/link";
+
+export const dynamic = "force-dynamic";
+
+export default async function PlatformClientsPage({searchParams}:{searchParams:Promise<{created?:string}>}) {
+  const {created}=await searchParams;
+  return <main className="platform-shell"><aside className="platform-rail"><div><div className="platform-brand"><span>H</span><div><strong>HPTECH</strong><small>Administração BCOS</small></div></div><nav><Link className="active" href="/platform/clientes">Clientes</Link><Link href="/platform/clientes/novo">Novo cliente</Link></nav></div><div className="platform-rail-foot"><small>CONSOLE DA CONTRATADA</small><strong>HPTECH PLATFORM</strong></div></aside><section className="platform-workspace"><header className="platform-header"><div><span>HPTECH / PLATAFORMA</span><strong>Empresas contratantes</strong></div><Link className="platform-primary" href="/platform/clientes/novo">Cadastrar cliente</Link></header><div className="platform-canvas">{created?<div className="platform-success"><strong>{created}</strong><span>Contratante cadastrado. Primeiro OWNER permanece pendente de ativação.</span></div>:null}<div className="platform-title"><span>CLIENTES BCOS</span><h1>Administração dos contratantes.</h1><p>Este é o console HPTECH. Os dados operacionais de cada coworking permanecem isolados por tenant.</p></div><section className="platform-empty"><strong>Cadastro comercial habilitado</strong><p>Use “Cadastrar cliente” para criar uma empresa contratante e vincular seu primeiro proprietário. A listagem persistida entra no próximo slice C1.</p><Link className="platform-primary" href="/platform/clientes/novo">Cadastrar primeiro cliente</Link></section></div></section></main>
+}

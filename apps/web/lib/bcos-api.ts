@@ -19,6 +19,8 @@ export type Invoice = { id: string; professional_id: string; source_usage_id: st
 export type InvoiceItem = { id: string; usage_id: string | null; item_type: string; description: string; quantity: string; unit_amount: string; total_amount: string; billing_period_start: string | null; billing_period_end: string | null; related_invoice_item_id: string | null; created_at: string };
 export type InvoiceDetail = Invoice & { items: InvoiceItem[]; confirmed_amount: string; remaining_amount: string };
 export type Payment = { id: string; invoice_id: string; idempotency_key: string; method: string; status: string; currency: string; amount: string; reference: string | null; metadata: Record<string, unknown>; paid_at: string | null; created_at: string; updated_at: string };
+export type ContractingTenant = { id: string; name: string; slug: string; status: "PENDING_ACTIVATION" | "ACTIVE" | "SUSPENDED" | "INACTIVE"; legal_name: string; trade_name: string; tax_id: string | null; email: string; phone: string | null; owner_external_user_id: string; created_at: string };
+export type ContractingTenantCreate = { name: string; slug: string; legalName: string; tradeName: string; taxId?: string; email: string; phone?: string; ownerExternalUserId: string };
 export type PaymentResult = { payment: Payment; invoice_status: string; invoice_total_amount: string; confirmed_amount: string; remaining_amount: string };
 
 const API_BASE_URL = process.env.BCOS_API_BASE_URL ?? "http://127.0.0.1:8010";
@@ -46,6 +48,21 @@ async function apiRequest<T>(pathName: string, init: RequestInit = {}): Promise<
   return (await response.json()) as T;
 }
 
+async function platformApiRequest<T>(pathName: string, init: RequestInit = {}): Promise<T> {
+  const token = process.env.BCOS_HOMOLOGATION_BEARER_TOKEN;
+  if (!token) throw new Error("BCOS_HOMOLOGATION_BEARER_TOKEN não está disponível no servidor Next.js.");
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${token}`);
+  headers.set("Accept", "application/json");
+  if (init.body !== undefined) headers.set("Content-Type", "application/json");
+  const response = await fetch(`${API_BASE_URL}${pathName}`, { ...init, headers, cache: "no-store" });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`BCOS Platform API ${init.method ?? "GET"} ${pathName} falhou com HTTP ${response.status}: ${body}`);
+  }
+  return (await response.json()) as T;
+}
+
 async function apiGet<T>(pathName: string): Promise<T> { return apiRequest<T>(pathName, { method: "GET" }); }
 async function apiPost<T>(pathName: string, body?: Record<string, unknown>): Promise<T> { return apiRequest<T>(pathName, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) }); }
 
@@ -66,3 +83,19 @@ export async function closeManualInvoice(invoiceId: string): Promise<Invoice> { 
 export async function confirmPixPayment(input: { invoiceId: string; idempotencyKey: string; amount: string; reference?: string; paidAt?: string }): Promise<PaymentResult> { return apiPost<PaymentResult>("/api/v1/payments/pix/confirm", { invoice_id: input.invoiceId, idempotency_key: input.idempotencyKey, amount: input.amount, ...(input.reference ? { reference: input.reference } : {}), ...(input.paidAt ? { paid_at: input.paidAt } : {}) }); }
 export async function getMyBookings(): Promise<Booking[]> { return apiGet<Booking[]>("/api/v1/professional/me/bookings"); }
 export async function getMyInvoices(): Promise<Invoice[]> { return apiGet<Invoice[]>("/api/v1/professional/me/invoices"); }
+
+export async function createContractingTenant(input: ContractingTenantCreate): Promise<ContractingTenant> {
+  return platformApiRequest<ContractingTenant>("/api/v1/platform/tenants", {
+    method: "POST",
+    body: JSON.stringify({
+      name: input.name,
+      slug: input.slug,
+      legal_name: input.legalName,
+      trade_name: input.tradeName,
+      tax_id: input.taxId || null,
+      email: input.email,
+      phone: input.phone || null,
+      owner_external_user_id: input.ownerExternalUserId,
+    }),
+  });
+}
