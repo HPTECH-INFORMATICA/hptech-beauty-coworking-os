@@ -13,6 +13,7 @@ from bcos_api.auth.identity import (
     AuthenticationFailed,
     HomologationIdentityVerifier,
     IdentityVerifier,
+    NeonAuthIdentityVerifier,
     UnconfiguredIdentityVerifier,
 )
 
@@ -24,6 +25,14 @@ bearer_scheme = HTTPBearer(
 
 def get_identity_verifier() -> IdentityVerifier:
     """Return the configured trusted identity verifier."""
+
+    provider = os.getenv("BCOS_IDENTITY_PROVIDER", "").strip().lower()
+    if provider == "neon":
+        issuer = os.getenv("BCOS_NEON_AUTH_ISSUER", "").strip()
+        jwks_url = os.getenv("BCOS_NEON_AUTH_JWKS_URL", "").strip()
+        if issuer and jwks_url:
+            return NeonAuthIdentityVerifier(issuer=issuer, jwks_url=jwks_url)
+        return UnconfiguredIdentityVerifier()
 
     homologation_token = os.getenv(
         "BCOS_HOMOLOGATION_BEARER_TOKEN",
