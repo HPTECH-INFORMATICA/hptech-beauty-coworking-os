@@ -16,6 +16,7 @@ from bcos_api.errors import (
     permission_denied_handler,
     validation_exception_handler,
 )
+from bcos_api.invitation.router import router as invitation_router
 from bcos_api.openapi import normalize_openapi_schema
 from bcos_api.payments.router import router as payments_router
 from bcos_api.platform.router import router as platform_router
@@ -63,6 +64,7 @@ def create_app() -> FastAPI:
     app.include_router(billing_router)
     app.include_router(payments_router)
     app.include_router(platform_router)
+    app.include_router(invitation_router)
     app.include_router(professional_portal_router)
 
     return app
