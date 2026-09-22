@@ -101,7 +101,7 @@ jobs:
         run: |
           python -m alembic upgrade head --sql > /tmp/bcos-schema.sql
           test -s /tmp/bcos-schema.sql
-          grep -q "0007_accumulated_invoice_cycle_identity" /tmp/bcos-schema.sql
+          grep -q "0007_invoice_cycle_identity" /tmp/bcos-schema.sql
           grep -q "professional_billing_contract_id" /tmp/bcos-schema.sql
           grep -q "billing_cycle_start" /tmp/bcos-schema.sql
           grep -q "billing_cycle_end" /tmp/bcos-schema.sql
