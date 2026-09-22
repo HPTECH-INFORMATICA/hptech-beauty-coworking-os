@@ -59,7 +59,9 @@ export default async function FinancePage({ searchParams }: { searchParams?: Sea
   });
 
   return (
-    <main className="finance-workspace">\n      <header className="agenda-topbar"><div className="agenda-brand"><span className="agenda-brand-mark">H</span><div><strong>HPTECH Beauty Coworking OS</strong><span>Central da Recepção</span></div></div><nav className="agenda-nav"><Link href="/">Agora</Link><Link href="/agenda">Agenda</Link><Link href="/check-in">Check-in</Link><Link className="active" href="/financeiro">Financeiro</Link></nav></header>\n      <div className="agenda-canvas finance-canvas">
+    <main className="finance-workspace">
+      <header className="agenda-topbar"><div className="agenda-brand"><span className="agenda-brand-mark">H</span><div><strong>HPTECH Beauty Coworking OS</strong><span>Central da Recepção</span></div></div><nav className="agenda-nav"><Link href="/">Agora</Link><Link href="/agenda">Agenda</Link><Link href="/check-in">Check-in</Link><Link className="active" href="/financeiro">Financeiro</Link></nav></header>
+      <div className="agenda-canvas finance-canvas">
       <header className="agenda-hero">
         <div><span className="section-eyebrow">FINANCEIRO</span><h1>Faturas e recebimentos</h1><p>Acompanhe cobranças geradas pela operação, saldo em aberto e recebimentos PIX.</p></div>
         <div className="agenda-hero-actions"><Link className="text-action" href="/agenda">Ver agenda</Link><Link className="primary-action" href="/">Voltar para a operação</Link></div>
@@ -129,6 +131,7 @@ export default async function FinancePage({ searchParams }: { searchParams?: Sea
           })}
         </section>
       ) : null}
-      </div>\n    </main>
+      </div>
+    </main>
   );
 }
