@@ -85,7 +85,7 @@ class NeonAuthIdentityVerifier:
             claims = jwt.decode(
                 token,
                 signing_key.key,
-                algorithms=["RS256", "ES256"],
+                algorithms=["EdDSA", "RS256", "ES256"],
                 issuer=self.issuer,
                 options={"require": ["exp", "sub", "iss"]},
             )
