@@ -38,7 +38,8 @@ async function getBearerToken(): Promise<string> {
     return data.token;
   }
 
-  const token = await getBearerToken();
+  const token = process.env.BCOS_HOMOLOGATION_BEARER_TOKEN;
+  if (!token) throw new Error("BCOS_HOMOLOGATION_BEARER_TOKEN não está disponível no servidor Next.js.");
   return token;
 }
 
@@ -65,8 +66,7 @@ async function apiRequest<T>(pathName: string, init: RequestInit = {}): Promise<
 }
 
 async function platformApiRequest<T>(pathName: string, init: RequestInit = {}): Promise<T> {
-  const token = process.env.BCOS_HOMOLOGATION_BEARER_TOKEN;
-  if (!token) throw new Error("BCOS_HOMOLOGATION_BEARER_TOKEN não está disponível no servidor Next.js.");
+  const token = await getBearerToken();
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${token}`);
   headers.set("Accept", "application/json");
