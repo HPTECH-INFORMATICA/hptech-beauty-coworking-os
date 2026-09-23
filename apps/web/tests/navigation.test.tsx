@@ -18,6 +18,8 @@ import {
   getUnits,
 } from "../lib/bcos-api";
 
+vi.mock("../lib/auth/server", () => ({ auth: { getSession: vi.fn().mockResolvedValue({ data: { session: {}, user: { id: "test-user" } } }) } }));
+
 vi.mock("../lib/bcos-api", () => ({
   checkInBooking: vi.fn(),
   checkOutUsage: vi.fn(),
