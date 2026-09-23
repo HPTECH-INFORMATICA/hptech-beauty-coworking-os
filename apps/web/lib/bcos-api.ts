@@ -25,6 +25,10 @@ export type ContractingTenant = { id: string; name: string; slug: string; status
 export type ContractingTenantCreate = { name: string; slug: string; legalName: string; tradeName: string; taxId?: string; email: string; phone?: string; ownerExternalUserId: string };
 export type TenantMembership = { id: string; tenant_id: string; external_user_id: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; status: "INVITED" | "ACTIVE" | "INACTIVE" };
 export type TenantMembershipInvite = { externalUserId: string; role: "ADMIN" | "RECEPTION" | "PROFESSIONAL" };
+export type AccessTenant = { tenant_id: string; tenant_name: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; destination: "/administracao" | "/" | "/profissional" };
+export type AccessResolution = { platform_destination: "/platform" | null; tenants: AccessTenant[] };
+export type PendingInvitation = TenantMembership;
+
 export type PaymentResult = { payment: Payment; invoice_status: string; invoice_total_amount: string; confirmed_amount: string; remaining_amount: string };
 
 const API_BASE_URL = process.env.BCOS_API_BASE_URL ?? "http://127.0.0.1:8010";
@@ -63,6 +67,32 @@ async function apiRequest<T>(pathName: string, init: RequestInit = {}): Promise<
     throw new Error(`BCOS API ${init.method ?? "GET"} ${pathName} falhou com HTTP ${response.status}: ${body}`);
   }
   return (await response.json()) as T;
+}
+
+async function identityApiRequest<T>(pathName: string, init: RequestInit = {}): Promise<T> {
+  const token = await getBearerToken();
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${token}`);
+  headers.set("Accept", "application/json");
+  if (init.body !== undefined) headers.set("Content-Type", "application/json");
+  const response = await fetch(`${API_BASE_URL}${pathName}`, { ...init, headers, cache: "no-store" });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`BCOS Identity API ${init.method ?? "GET"} ${pathName} falhou com HTTP ${response.status}: ${body}`);
+  }
+  return (await response.json()) as T;
+}
+
+export async function getAccessResolution(): Promise<AccessResolution> {
+  return identityApiRequest<AccessResolution>("/api/v1/access");
+}
+
+export async function getPendingInvitations(): Promise<PendingInvitation[]> {
+  return identityApiRequest<PendingInvitation[]>("/api/v1/invitations");
+}
+
+export async function acceptInvitation(membershipId: string): Promise<TenantMembership> {
+  return identityApiRequest<TenantMembership>(`/api/v1/invitations/${encodeURIComponent(membershipId)}/accept`, { method: "POST" });
 }
 
 async function platformApiRequest<T>(pathName: string, init: RequestInit = {}): Promise<T> {
