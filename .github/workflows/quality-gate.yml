@@ -43,7 +43,10 @@ jobs:
             next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
             next-${{ runner.os }}-
 
-      - name: Install workspace dependencies
+      - name: Refresh lockfile for dependency changes
+        run: pnpm install --lockfile-only --no-frozen-lockfile
+
+      - name: Verify workspace dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Lint web
