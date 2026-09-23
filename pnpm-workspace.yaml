@@ -4,6 +4,7 @@ packages:
 
 allowBuilds:
   unrs-resolver@1.12.2: true
+  core-js@3.50.0: true
 
 minimumReleaseAgeExclude:
   - "@next/env@16.3.4"
