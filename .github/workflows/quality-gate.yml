@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NEXT_TELEMETRY_DISABLED: "1"
+      NEON_AUTH_BASE_URL: "https://auth-ci.invalid"
+      NEON_AUTH_COOKIE_SECRET: "bcos-ci-only-cookie-secret-32-chars-minimum"
     steps:
       - name: Checkout
         uses: actions/checkout@v7
