@@ -1328,3 +1328,47 @@ svg {
     grid-template-columns: 1fr;
   }
 }
+
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(420px, 1.1fr);
+  background: var(--surface);
+}
+.auth-brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(48px, 8vw, 120px);
+  background: var(--surface-deep);
+  color: white;
+}
+.auth-brand span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+.auth-brand h1 {
+  max-width: 520px;
+  margin: 18px 0 0;
+  font-size: clamp(42px, 6vw, 76px);
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+}
+.auth-brand p {
+  max-width: 460px;
+  margin: 24px 0 0;
+  color: rgba(255,255,255,.58);
+  line-height: 1.7;
+}
+.auth-card {
+  display: grid;
+  place-items: center;
+  padding: 40px;
+}
+@media (max-width: 820px) {
+  .auth-shell { grid-template-columns: 1fr; }
+  .auth-brand { min-height: 34vh; padding: 42px 28px; }
+  .auth-brand h1 { font-size: 42px; }
+  .auth-card { padding: 28px 18px 48px; }
+}
