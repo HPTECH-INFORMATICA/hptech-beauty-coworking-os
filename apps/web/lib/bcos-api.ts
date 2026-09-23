@@ -3,6 +3,8 @@ import "server-only";
 import { config as loadEnv } from "dotenv";
 import path from "node:path";
 
+import { auth } from "./auth/server";
+
 loadEnv({ path: path.resolve(process.cwd(), "..", "..", ".env.local"), override: false });
 
 export type Unit = { id: string; name: string; timezone: string; active: boolean; created_at: string; updated_at: string };
@@ -27,16 +29,28 @@ export type PaymentResult = { payment: Payment; invoice_status: string; invoice_
 
 const API_BASE_URL = process.env.BCOS_API_BASE_URL ?? "http://127.0.0.1:8010";
 
-function getRequiredEnvironment() {
-  const token = process.env.BCOS_HOMOLOGATION_BEARER_TOKEN;
+async function getBearerToken(): Promise<string> {
+  if (process.env.BCOS_IDENTITY_PROVIDER === "neon") {
+    const { data, error } = await auth.token();
+    if (error || !data?.token) {
+      throw new Error("Sessão Neon Auth autenticada é obrigatória para acessar a BCOS API.");
+    }
+    return data.token;
+  }
+
+  const token = await getBearerToken();
+  return token;
+}
+
+function getTenantId(): string {
   const tenantId = process.env.BCOS_HUMAN_TENANT_ID;
-  if (!token) throw new Error("BCOS_HOMOLOGATION_BEARER_TOKEN não está disponível no servidor Next.js.");
   if (!tenantId) throw new Error("BCOS_HUMAN_TENANT_ID não está disponível no servidor Next.js.");
-  return { token, tenantId };
+  return tenantId;
 }
 
 async function apiRequest<T>(pathName: string, init: RequestInit = {}): Promise<T> {
-  const { token, tenantId } = getRequiredEnvironment();
+  const token = await getBearerToken();
+  const tenantId = getTenantId();
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${token}`);
   headers.set("X-Tenant-Id", tenantId);
