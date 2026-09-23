@@ -13,7 +13,7 @@ export default function AuthPage() {
         <p>Acesso seguro para administração, recepção e profissionais.</p>
       </section>
       <section className="auth-card">
-        <AuthView path={params.path} />
+        <AuthView path={params.path} redirectTo="/acesso" />
       </section>
     </main>
   );
