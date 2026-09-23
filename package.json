@@ -14,10 +14,5 @@
     "turbo": "2.10.7",
     "typescript": "6.0.3",
     "vitest": "4.1.11"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "core-js"
-    ]
   }
 }
