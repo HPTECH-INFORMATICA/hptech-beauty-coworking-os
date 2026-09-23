@@ -77,7 +77,7 @@ async def resolve_access(
         )
         for row in result.mappings().all()
     ]
-    platform_destination = (
+    platform_destination: Literal["/platform"] | None = (
         "/platform"
         if operator is not None and operator.status is PlatformOperatorStatus.ACTIVE
         else None
