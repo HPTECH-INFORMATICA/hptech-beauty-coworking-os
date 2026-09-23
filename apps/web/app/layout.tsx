@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import "@neondatabase/auth-ui/css";
+
 import "./globals.css";
 import "./product-polish.css";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "HPTECH Beauty Coworking OS",
@@ -17,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body>{children}</body>
+      <body><Providers>{children}</Providers></body>
     </html>
   );
 }
