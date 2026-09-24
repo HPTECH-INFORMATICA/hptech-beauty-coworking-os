@@ -11,6 +11,7 @@ import {
   getBookings,
   getInvoice,
   getInvoices,
+  getAccessResolution,
   getProfessionals,
   getReceptionAgenda,
   getReceptionNow,
@@ -21,6 +22,7 @@ import {
 vi.mock("../lib/auth/server", () => ({ auth: { getSession: vi.fn().mockResolvedValue({ data: { session: {}, user: { id: "test-user" } } }) } }));
 
 vi.mock("../lib/bcos-api", () => ({
+  getAccessResolution: vi.fn(),
   checkInBooking: vi.fn(),
   checkOutUsage: vi.fn(),
   closeManualInvoice: vi.fn(),
@@ -38,6 +40,7 @@ vi.mock("../lib/bcos-api", () => ({
   getUnits: vi.fn(),
 }));
 
+const mockedGetAccessResolution = vi.mocked(getAccessResolution);
 const mockedGetUnits = vi.mocked(getUnits);
 const mockedGetResources = vi.mocked(getResources);
 const mockedGetProfessionals = vi.mocked(getProfessionals);
@@ -54,6 +57,7 @@ const confirmedBooking = { id: "booking-1", unit_id: "unit-1", resource_id: "res
 const usageInvoice = { id: "invoice-1", professional_id: "professional-1", source_usage_id: "usage-1", professional_billing_contract_id: null, billing_cycle_start: null, billing_cycle_end: null, manual_closed_at: null, status: "OPEN", currency: "BRL", subtotal_amount: "100.00", discount_amount: "0.00", total_amount: "100.00", created_at: "2026-09-15T17:00:00Z", updated_at: "2026-09-15T17:00:00Z" };
 
 beforeEach(() => {
+  mockedGetAccessResolution.mockResolvedValue({ platform_destination: null, tenants: [{ tenant_id: "tenant-1", tenant_name: "La Beauté Batel", role: "RECEPTION", destination: "/" }] });
   mockedGetUnits.mockResolvedValue([
     {
       id: "unit-1",
