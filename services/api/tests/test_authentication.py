@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from bcos_api.auth.dependencies import (
     _neon_issuer_origin,
     _neon_jwks_candidates,
+    _neon_jwks_candidates,
     get_authenticated_identity,
     get_identity_verifier,
 )
@@ -183,3 +184,12 @@ def test_neon_jwks_candidates_do_not_invent_path_from_origin_only() -> None:
         "https://example.neonauth.example",
         "https://example.neonauth.example/neondb/auth/.well-known/jwks.json",
     ) == ("https://example.neonauth.example/neondb/auth/.well-known/jwks.json",)
+
+
+def test_neon_jwks_candidates_include_managed_auth_endpoint() -> None:
+    candidates = _neon_jwks_candidates(
+        "https://example.invalid/neondb/auth",
+        "https://example.invalid/configured-jwks",
+    )
+    assert candidates[0].endswith("/configured-jwks")
+    assert candidates[1].endswith("/neondb/auth/.well-known/jwks.json")
