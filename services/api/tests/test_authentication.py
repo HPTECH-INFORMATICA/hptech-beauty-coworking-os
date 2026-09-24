@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
 from bcos_api.auth.dependencies import (
+    _neon_issuer_origin,
     get_authenticated_identity,
     get_identity_verifier,
 )
@@ -156,3 +157,11 @@ def test_unconfigured_production_verifier_fails_closed() -> None:
     assert response.json() == {
         "detail": "Authentication failed."
     }
+
+
+def test_neon_issuer_uses_auth_origin() -> None:
+    assert _neon_issuer_origin("https://example.neonauth.example/api/auth") == "https://example.neonauth.example"
+
+
+def test_neon_issuer_rejects_non_http_configuration() -> None:
+    assert _neon_issuer_origin("not-a-url") == ""
