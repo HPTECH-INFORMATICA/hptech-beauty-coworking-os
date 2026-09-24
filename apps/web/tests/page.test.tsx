@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import HomePage from "../app/page";
 import {
+  getAccessResolution,
   getProfessionals,
   getReceptionAgenda,
   getReceptionNow,
@@ -12,12 +13,14 @@ import {
 vi.mock("../lib/auth/server", () => ({ auth: { getSession: vi.fn().mockResolvedValue({ data: { session: {}, user: { id: "test-user" } } }) } }));
 
 vi.mock("../lib/bcos-api", () => ({
+  getAccessResolution: vi.fn(),
   getProfessionals: vi.fn(),
   getReceptionAgenda: vi.fn(),
   getReceptionNow: vi.fn(),
   getUnits: vi.fn(),
 }));
 
+const mockedGetAccessResolution = vi.mocked(getAccessResolution);
 const mockedGetUnits = vi.mocked(getUnits);
 const mockedGetProfessionals = vi.mocked(getProfessionals);
 const mockedGetReceptionAgenda = vi.mocked(getReceptionAgenda);
@@ -25,6 +28,7 @@ const mockedGetReceptionNow = vi.mocked(getReceptionNow);
 
 describe("HomePage", () => {
   beforeEach(() => {
+    mockedGetAccessResolution.mockResolvedValue({ platform_destination: null, tenants: [{ tenant_id: "tenant-1", tenant_name: "La Beauté Batel", role: "RECEPTION", destination: "/" }] });
     mockedGetUnits.mockResolvedValue([
       {
         id: "unit-1",
