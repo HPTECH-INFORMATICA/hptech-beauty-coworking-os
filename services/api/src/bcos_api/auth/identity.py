@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import hmac
+import logging
 from dataclasses import dataclass
 from typing import Protocol
 
 import jwt
 from jwt import PyJWKClient
 from jwt.exceptions import InvalidTokenError
+
+logger = logging.getLogger(__name__)
 
 
 class AuthenticationFailed(Exception):
@@ -90,6 +93,13 @@ class NeonAuthIdentityVerifier:
                 options={"require": ["exp", "sub", "iss"]},
             )
         except (InvalidTokenError, ValueError, RuntimeError) as exc:
+            # Never log the bearer token or claims. The exception class/message is
+            # sufficient to diagnose issuer/JWKS/algorithm failures in production.
+            logger.warning(
+                "Neon Auth JWT verification rejected: %s: %s",
+                type(exc).__name__,
+                exc,
+            )
             raise AuthenticationFailed("Neon Auth token verification failed.") from exc
 
         external_user_id = str(claims.get("sub", "")).strip()
