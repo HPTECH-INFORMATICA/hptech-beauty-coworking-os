@@ -35,7 +35,9 @@ export const auth = {
   getSession: (...args: Parameters<NeonAuth["getSession"]>) => getAuth().getSession(...args),
   token: (...args: Parameters<NeonAuth["token"]>) => getAuth().token(...args),
   handler: () => {
-    const handle = async (request: Request) => {
+    type HandlerContext = { params: Promise<{ path: string[] }> };
+
+    const handle = async (request: Request, context: HandlerContext) => {
       const handlers = getAuth().handler();
       const method = request.method as keyof typeof handlers;
       const handler = handlers[method];
@@ -47,7 +49,7 @@ export const auth = {
         });
       }
 
-      return handler(request);
+      return handler(request, context);
     };
 
     return {
