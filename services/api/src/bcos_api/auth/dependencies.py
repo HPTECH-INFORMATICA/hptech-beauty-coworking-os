@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from urllib.parse import urlsplit
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -23,12 +24,22 @@ bearer_scheme = HTTPBearer(
 )
 
 
+def _neon_issuer_origin(value: str) -> str:
+    """Normalize Neon Auth configuration to the JWT issuer origin."""
+
+    parsed = urlsplit(value.strip())
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return ""
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
 def get_identity_verifier() -> IdentityVerifier:
     """Return the configured trusted identity verifier."""
 
     provider = os.getenv("BCOS_IDENTITY_PROVIDER", "").strip().lower()
     if provider == "neon":
-        issuer = os.getenv("BCOS_NEON_AUTH_ISSUER", "").strip()
+        configured_issuer = os.getenv("BCOS_NEON_AUTH_ISSUER", "").strip()
+        issuer = _neon_issuer_origin(configured_issuer)
         jwks_url = os.getenv("BCOS_NEON_AUTH_JWKS_URL", "").strip()
         if issuer and jwks_url:
             return NeonAuthIdentityVerifier(issuer=issuer, jwks_url=jwks_url)
