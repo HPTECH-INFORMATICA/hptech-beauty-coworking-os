@@ -10,10 +10,39 @@ export default async function AccessPage() {
   const { data: session } = await auth.getSession();
   if (!session?.user) redirect("/auth/sign-in");
 
-  const [access, invitations] = await Promise.all([
-    getAccessResolution(),
-    getPendingInvitations(),
-  ]);
+  let access;
+  let invitations;
+
+  try {
+    [access, invitations] = await Promise.all([
+      getAccessResolution(),
+      getPendingInvitations(),
+    ]);
+  } catch (error) {
+    console.error(
+      "BCOS access resolution failed after authenticated Neon session:",
+      error instanceof Error ? error.message : "unknown error",
+    );
+
+    return (
+      <main className="auth-shell">
+        <section className="auth-brand">
+          <span>HPTECH PLATFORM</span>
+          <h1>Beauty Coworking OS</h1>
+          <p>Sua autenticação foi concluída com segurança.</p>
+        </section>
+        <section className="auth-card">
+          <h2>Acesso temporariamente indisponível</h2>
+          <p>
+            Sua sessão está autenticada, mas não foi possível consultar suas
+            permissões no BCOS neste momento.
+          </p>
+          <p>Tente novamente em alguns instantes.</p>
+          <p><Link href="/acesso">Tentar novamente</Link></p>
+        </section>
+      </main>
+    );
+  }
 
   const destinations = [
     ...(access.platform_destination ? [{ label: "Administração HPTECH", href: access.platform_destination }] : []),
