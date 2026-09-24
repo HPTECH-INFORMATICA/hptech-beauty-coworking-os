@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-from urllib.parse import urlsplit
 from typing import Annotated
+from urllib.parse import urlsplit
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
