@@ -52,6 +52,7 @@ async def test_neon_verifier_allows_current_managed_auth_eddsa_algorithm(
         assert key is FakeSigningKey.key
         assert "EdDSA" in kwargs["algorithms"]  # type: ignore[operator]
         assert kwargs["issuer"] == "https://auth.example"
+        assert kwargs["options"] == {"require": ["exp", "sub", "iss"], "verify_aud": False}
         return {"sub": "user-123", "iss": "https://auth.example"}
 
     monkeypatch.setattr("bcos_api.auth.identity.PyJWKClient", FakeJWKClient)
