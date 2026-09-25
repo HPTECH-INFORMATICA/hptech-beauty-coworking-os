@@ -308,3 +308,4 @@ async def replace_reception_hours_endpoint(
         for entry in entries
     ]
 
+

@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 
 from bcos_api.access.router import router as access_router
+from bcos_api.admin.router import profile_router as admin_profile_router
 from bcos_api.admin.router import router as admin_router
 from bcos_api.availability.router import router as availability_router
 from bcos_api.billing.router import router as billing_router
@@ -54,6 +55,7 @@ def create_app() -> FastAPI:
 
     app.include_router(access_router)
     app.include_router(admin_router)
+    app.include_router(admin_profile_router)
     app.include_router(units_router)
     app.include_router(professionals_router)
     app.include_router(resource_categories_router)
