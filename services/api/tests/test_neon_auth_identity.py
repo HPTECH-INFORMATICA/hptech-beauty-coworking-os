@@ -8,7 +8,7 @@ from bcos_api.auth.identity import AuthenticationFailed, NeonAuthIdentityVerifie
 
 @pytest.mark.asyncio
 async def test_neon_verifier_fails_closed_when_unconfigured() -> None:
-    verifier = NeonAuthIdentityVerifier(issuer="", jwks_url="")
+    verifier = NeonAuthIdentityVerifier(issuer="", jwks_urls=())
     with pytest.raises(AuthenticationFailed, match="not configured"):
         await verifier.verify("token")
 
@@ -26,7 +26,7 @@ async def test_neon_verifier_rejects_invalid_token(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr("bcos_api.auth.identity.PyJWKClient", FakeJWKClient)
     verifier = NeonAuthIdentityVerifier(
         issuer="https://auth.example",
-        jwks_url="https://auth.example/jwks",
+        jwks_urls=("https://auth.example/jwks",),
     )
     with pytest.raises(AuthenticationFailed, match="verification failed"):
         await verifier.verify("bad-token")
@@ -58,7 +58,7 @@ async def test_neon_verifier_allows_current_managed_auth_eddsa_algorithm(
     monkeypatch.setattr("bcos_api.auth.identity.jwt.decode", fake_decode)
     verifier = NeonAuthIdentityVerifier(
         issuer="https://auth.example",
-        jwks_url="https://auth.example/jwks",
+        jwks_urls=("https://auth.example/jwks",),
     )
 
     identity = await verifier.verify("managed-auth-token")

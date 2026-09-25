@@ -9,7 +9,7 @@ from typing import Protocol
 
 import jwt
 from jwt import PyJWKClient
-from jwt.exceptions import InvalidTokenError
+from jwt.exceptions import InvalidTokenError, PyJWKClientError
 
 logger = logging.getLogger(__name__)
 
@@ -75,32 +75,38 @@ class NeonAuthIdentityVerifier:
     """Cryptographically verify production Neon Auth JWTs."""
 
     issuer: str
-    jwks_url: str
+    jwks_urls: tuple[str, ...]
 
     async def verify(self, token: str) -> AuthenticatedIdentity:
         """Verify signature, issuer, expiry and stable subject."""
 
-        if not self.issuer or not self.jwks_url:
+        if not self.issuer or not self.jwks_urls:
             raise AuthenticationFailed("Neon Auth verification is not configured.")
 
-        try:
-            signing_key = PyJWKClient(self.jwks_url).get_signing_key_from_jwt(token)
-            claims = jwt.decode(
-                token,
-                signing_key.key,
-                algorithms=["EdDSA", "RS256", "ES256"],
-                issuer=self.issuer,
-                options={"require": ["exp", "sub", "iss"]},
-            )
-        except (InvalidTokenError, ValueError, RuntimeError) as exc:
-            # Never log the bearer token or claims. The exception class/message is
-            # sufficient to diagnose issuer/JWKS/algorithm failures in production.
+        last_error: Exception | None = None
+        claims: dict[str, object] | None = None
+        for jwks_url in self.jwks_urls:
+            try:
+                signing_key = PyJWKClient(jwks_url).get_signing_key_from_jwt(token)
+                claims = jwt.decode(
+                    token,
+                    signing_key.key,
+                    algorithms=["EdDSA", "RS256", "ES256"],
+                    issuer=self.issuer,
+                    options={"require": ["exp", "sub", "iss"]},
+                )
+                break
+            except (InvalidTokenError, PyJWKClientError, ValueError, RuntimeError) as exc:
+                last_error = exc
+
+        if claims is None:
             logger.warning(
-                "Neon Auth JWT verification rejected: %s: %s",
-                type(exc).__name__,
-                exc,
+                "Neon Auth JWT verification rejected after %d trusted JWKS candidate(s): %s: %s",
+                len(self.jwks_urls),
+                type(last_error).__name__ if last_error else "UnknownError",
+                last_error or "verification failed",
             )
-            raise AuthenticationFailed("Neon Auth token verification failed.") from exc
+            raise AuthenticationFailed("Neon Auth token verification failed.") from last_error
 
         external_user_id = str(claims.get("sub", "")).strip()
         if not external_user_id:

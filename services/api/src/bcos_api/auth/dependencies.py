@@ -33,6 +33,23 @@ def _neon_issuer_origin(value: str) -> str:
     return f"{parsed.scheme}://{parsed.netloc}"
 
 
+def _neon_jwks_candidates(configured_issuer: str, configured_jwks_url: str) -> tuple[str, ...]:
+    """Build trusted Neon Managed Auth JWKS candidates from server configuration."""
+
+    candidates: list[str] = []
+    explicit = configured_jwks_url.strip()
+    if explicit:
+        candidates.append(explicit)
+
+    parsed = urlsplit(configured_issuer.strip())
+    if parsed.scheme in {"http", "https"} and parsed.netloc and parsed.path.rstrip("/"):
+        managed = f"{parsed.scheme}://{parsed.netloc}{parsed.path.rstrip('/')}/.well-known/jwks.json"
+        if managed not in candidates:
+            candidates.append(managed)
+
+    return tuple(candidates)
+
+
 def get_identity_verifier() -> IdentityVerifier:
     """Return the configured trusted identity verifier."""
 
@@ -40,9 +57,10 @@ def get_identity_verifier() -> IdentityVerifier:
     if provider == "neon":
         configured_issuer = os.getenv("BCOS_NEON_AUTH_ISSUER", "").strip()
         issuer = _neon_issuer_origin(configured_issuer)
-        jwks_url = os.getenv("BCOS_NEON_AUTH_JWKS_URL", "").strip()
-        if issuer and jwks_url:
-            return NeonAuthIdentityVerifier(issuer=issuer, jwks_url=jwks_url)
+        configured_jwks_url = os.getenv("BCOS_NEON_AUTH_JWKS_URL", "").strip()
+        jwks_urls = _neon_jwks_candidates(configured_issuer, configured_jwks_url)
+        if issuer and jwks_urls:
+            return NeonAuthIdentityVerifier(issuer=issuer, jwks_urls=jwks_urls)
         return UnconfiguredIdentityVerifier()
 
     homologation_token = os.getenv(
