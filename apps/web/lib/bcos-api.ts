@@ -4,6 +4,7 @@ import { config as loadEnv } from "dotenv";
 import path from "node:path";
 
 import { auth } from "./auth/server";
+import { resolveSelectedTenant } from "./auth/tenant";
 
 loadEnv({ path: path.resolve(process.cwd(), "..", "..", ".env.local"), override: false });
 
@@ -47,15 +48,19 @@ async function getBearerToken(): Promise<string> {
   return token;
 }
 
-function getTenantId(): string {
+async function getTenantId(): Promise<string> {
+  if (process.env.BCOS_IDENTITY_PROVIDER === "neon") {
+    return (await resolveSelectedTenant()).tenant_id;
+  }
+
   const tenantId = process.env.BCOS_HUMAN_TENANT_ID;
-  if (!tenantId) throw new Error("BCOS_HUMAN_TENANT_ID não está disponível no servidor Next.js.");
+  if (!tenantId) throw new Error("BCOS_HUMAN_TENANT_ID não está disponível no ambiente de homologação.");
   return tenantId;
 }
 
 async function apiRequest<T>(pathName: string, init: RequestInit = {}): Promise<T> {
   const token = await getBearerToken();
-  const tenantId = getTenantId();
+  const tenantId = await getTenantId();
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${token}`);
   headers.set("X-Tenant-Id", tenantId);
