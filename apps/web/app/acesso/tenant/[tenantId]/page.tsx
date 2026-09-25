@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { persistSelectedTenant } from "../../../../lib/auth/tenant";
+import { persistSelectedTenant } from "../../../../lib/bcos-api";
 import { auth } from "../../../../lib/auth/server";
 
 export const dynamic = "force-dynamic";
