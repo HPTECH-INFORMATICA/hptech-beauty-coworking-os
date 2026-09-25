@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bcos_api.admin.domain import InvalidMembershipAdministration
 from bcos_api.admin.profile_repository import get_tenant_profile, update_tenant_profile
 from bcos_api.admin.profile_schemas import TenantProfileResponse, TenantProfileUpdate
-from bcos_api.tenancy.rbac import Permission, require_permission
 from bcos_api.admin.schemas import (
     MembershipInvitationCreate,
     MembershipResponse,
@@ -24,6 +23,7 @@ from bcos_api.admin.service import (
 from bcos_api.db.session import get_async_session
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.dependencies import get_tenant_context
+from bcos_api.tenancy.rbac import Permission, require_permission
 
 router=APIRouter(prefix="/api/v1/admin/memberships", tags=["Tenant Administration"])
 SessionDependency=Annotated[AsyncSession, Depends(get_async_session)]
