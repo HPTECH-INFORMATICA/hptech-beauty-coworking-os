@@ -38,7 +38,7 @@ export default async function AccessPage() {
             permissões no BCOS neste momento.
           </p>
           <p>Tente novamente em alguns instantes.</p>
-          <p><Link href="/acesso">Tentar novamente</Link></p>
+          <p><Link href={`/acesso?retry=${Date.now()}`}>Tentar novamente</Link></p>
         </section>
       </main>
     );
