@@ -26,9 +26,6 @@ from bcos_api.reception_hours.service import (
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.dependencies import get_tenant_context
 from bcos_api.units.domain import InvalidUnit, Unit
-from bcos_api.tenancy.rbac import Permission, require_permission
-from bcos_api.units.reception_repository import list_reception_hours, replace_reception_hours
-from bcos_api.units.reception_schemas import ReceptionHour, ReceptionHoursUpdate
 from bcos_api.units.schemas import (
     Unit as UnitResponse,
 )
@@ -312,24 +309,3 @@ async def replace_reception_hours_endpoint(
     ]
 
 
-
-@router.get("/{unit_id}/reception-hours", response_model=list[ReceptionHour])
-async def get_reception_hours_endpoint(unit_id: UUID, session: SessionDependency, context: TenantContextDependency) -> list[ReceptionHour]:
-    require_permission(context, Permission.TENANT_ADMIN)
-    await get_tenant_unit(session, context=context, unit_id=unit_id)
-    rows = await list_reception_hours(session, context=context, unit_id=unit_id)
-    return [ReceptionHour.model_validate(dict(row)) for row in rows]
-
-
-@router.put("/{unit_id}/reception-hours", response_model=list[ReceptionHour])
-async def put_reception_hours_endpoint(unit_id: UUID, payload: ReceptionHoursUpdate, session: SessionDependency, context: TenantContextDependency) -> list[ReceptionHour]:
-    require_permission(context, Permission.TENANT_ADMIN)
-    await get_tenant_unit(session, context=context, unit_id=unit_id)
-    rows = await replace_reception_hours(
-        session,
-        context=context,
-        unit_id=unit_id,
-        hours=[item.model_dump() for item in payload.hours],
-    )
-    await session.commit()
-    return [ReceptionHour.model_validate(dict(row)) for row in rows]
