@@ -5,7 +5,7 @@
 **Authority purpose:** single consolidated project-state authority for implementation recovery, audit and completion.  
 **Audit date:** 2026-09-25  
 **Repository:** `HPTECH-INFORMATICA/hptech-beauty-coworking-os`  
-**Audited main baseline:** `6b7bba36a35d89f1997ca89fdb6105d032005323`  
+**Audited main baseline:** `6e632152917e010f34c398faf1b2b659a9e7b3e4`  
 **Status:** SYSTEM AUDIT BASELINE — freeze after reconciliation gate.
 
 ## 1. Governance and immutable authorities
@@ -91,7 +91,7 @@ Authoritative commercial target:
 
 **Materially implemented:** PlatformOperator; platform tenant onboarding APIs/UI; tenant lifecycle; first OWNER invitation; tenant membership administration; Neon Auth; JWT/JWKS/issuer verification; access resolver; HPTECH `/platform` console; Reception root authorization gate; `/platform` authentication/authorization layout.
 
-**Not globally closed:** route protection is not centralized; tenant selection is not authoritative in the Web adapter; tenant API requests still obtain `X-Tenant-Id` from `BCOS_HUMAN_TENANT_ID` (homologation plumbing); complete login → access → tenant selection → role shell → logout/revocation E2E is not frozen.
+**Current state after C1 security reconciliation:** Web route-family authorization is centralized for Platform, tenant administration, Reception operational surfaces, Finance and Professional portal. Under Neon production identity, tenant context is selected only from authenticated `/api/v1/access`, persisted server-side in an HTTP-only same-site cookie and revalidated before `X-Tenant-Id` is sent. `BCOS_HUMAN_TENANT_ID` remains only in the explicit homologation path. Complete login → access → tenant selection → role shell → logout/revocation production E2E is still not frozen.
 
 ### C2 — Tenant master data
 
@@ -131,18 +131,9 @@ NOT COMPLETE. Production deployment exists, but the complete commercial journey 
 ### Reception root
 - `/` — current main requires session plus an access tenant authorized to `/`.
 
-### SECURITY GAP — route-family enforcement is inconsistent
+### Route-family enforcement — IMPLEMENTED / awaiting production E2E freeze
 
-These product surfaces do not all have an explicit shared Web route-family authorization layout:
-
-- `/agenda`
-- `/disponibilidade`
-- `/check-in`
-- `/operacao`
-- `/operations`
-- `/financeiro`
-- `/profissional`
-- `/administracao/*`
+Explicit server-side Web gates now cover Platform authority, tenant administration, Reception operational surfaces, Finance and Professional portal. `/auth/*` remains public by design and `/acesso` remains the authenticated access resolver. Tenant selection is revalidated against active access before tenant API calls.
 
 Required invariant:
 
@@ -160,7 +151,7 @@ Known topology: Web/Vercel; API/Render; Neon PostgreSQL; separate Python Worker 
 
 Deployment existence is not completion evidence.
 
-Remaining closure: authoritative selected-tenant/session propagation; uniform route guards; migration execution ownership; Worker/Outbox deployed-runtime evidence; Web → Auth → API → PostgreSQL → Worker/Outbox → Billing → Payment E2E; tenant isolation/role E2E; retirement of homologation-only production plumbing after the real path is proven.
+Remaining closure: production E2E evidence for selected-tenant/session propagation and route guards; migration execution ownership; Worker/Outbox deployed-runtime evidence; Web → Auth → API → PostgreSQL → Worker/Outbox → Billing → Payment E2E; tenant isolation/role E2E; retirement of homologation-only production plumbing after the real path is proven.
 
 ## 8. TODO audit
 
@@ -170,9 +161,9 @@ Literal indexed repository search for `TODO`, `FIXME`, `XXX` and `HACK` returned
 - [ ] Recover/materialize exact Architecture Freeze v1.2.
 - [ ] Reconcile T32 with milestone status.
 - [ ] Keep T27 blocked until authority exists.
-- [ ] Centralize Web authentication/authorization guards.
-- [ ] Remove `BCOS_HUMAN_TENANT_ID` as production tenant-selection authority.
-- [ ] Implement authoritative tenant selection for multi-membership identities.
+- [x] Centralize Web authentication/authorization guards.
+- [x] Remove `BCOS_HUMAN_TENANT_ID` as production tenant-selection authority.
+- [x] Implement authoritative tenant selection for multi-membership identities.
 - [ ] Complete C2 tenant master-data surfaces.
 - [ ] Complete C3 pricing administration and professional calendar/price journey.
 - [ ] Complete C4 administrative-finance domain/surfaces without corrupting Billing.
