@@ -31,6 +31,8 @@ export type TenantMembershipInvite = { externalUserId: string; role: "ADMIN" | "
 export type AccessTenant = { tenant_id: string; tenant_name: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; destination: "/administracao" | "/" | "/profissional" };
 export type AccessResolution = { platform_destination: "/platform" | null; tenants: AccessTenant[] };
 export type PendingInvitation = TenantMembership;
+export type TenantProfile = { legal_name: string; trade_name: string; tax_id: string | null; email: string; phone: string | null };
+export type ReceptionHour = { day_of_week: number; opens_at: string | null; closes_at: string | null; is_closed: boolean };
 
 export type PaymentResult = { payment: Payment; invoice_status: string; invoice_total_amount: string; confirmed_amount: string; remaining_amount: string };
 
@@ -143,9 +145,14 @@ async function platformApiRequest<T>(pathName: string, init: RequestInit = {}): 
 
 async function apiGet<T>(pathName: string): Promise<T> { return apiRequest<T>(pathName, { method: "GET" }); }
 async function apiPost<T>(pathName: string, body?: Record<string, unknown>): Promise<T> { return apiRequest<T>(pathName, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) }); }
+async function apiPut<T>(pathName: string, body: unknown): Promise<T> { return apiRequest<T>(pathName, { method: "PUT", body: JSON.stringify(body) }); }
 
+export async function getTenantProfile(): Promise<TenantProfile> { return apiGet<TenantProfile>("/api/v1/admin/profile"); }
+export async function updateTenantProfile(input: TenantProfile): Promise<TenantProfile> { return apiPut<TenantProfile>("/api/v1/admin/profile", input); }
 export async function getUnits(): Promise<Unit[]> { return apiGet<Unit[]>("/api/v1/units"); }
 export async function createUnit(input: { name: string; timezone: string }): Promise<Unit> { return apiPost<Unit>("/api/v1/units", { name: input.name, timezone: input.timezone, active: true }); }
+export async function getReceptionHours(unitId: string): Promise<ReceptionHour[]> { return apiGet<ReceptionHour[]>(`/api/v1/units/${encodeURIComponent(unitId)}/reception-hours`); }
+export async function updateReceptionHours(unitId: string, hours: ReceptionHour[]): Promise<ReceptionHour[]> { return apiPut<ReceptionHour[]>(`/api/v1/units/${encodeURIComponent(unitId)}/reception-hours`, hours); }
 export async function getResourceCategories(): Promise<ResourceCategory[]> { return apiGet<ResourceCategory[]>("/api/v1/resource-categories"); }
 export async function createResourceCategory(input: { name: string }): Promise<ResourceCategory> { return apiPost<ResourceCategory>("/api/v1/resource-categories", { name: input.name, active: true }); }
 export async function getResources(unitId?: string): Promise<Resource[]> { const search = new URLSearchParams(); if (unitId) search.set("unit_id", unitId); const query = search.toString(); return apiGet<Resource[]>(`/api/v1/resources${query ? `?${query}` : ""}`); }
