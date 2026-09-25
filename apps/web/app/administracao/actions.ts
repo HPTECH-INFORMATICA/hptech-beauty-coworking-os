@@ -8,7 +8,7 @@ import {
   createResource,
   createResourceCategory,
   createUnit,
-} from "../../../lib/bcos-api";
+} from "../../lib/bcos-api";
 
 function value(formData: FormData, name: string): string {
   return String(formData.get(name) ?? "").trim();
