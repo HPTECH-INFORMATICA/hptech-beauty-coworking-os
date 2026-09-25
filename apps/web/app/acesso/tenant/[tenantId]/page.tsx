@@ -14,9 +14,10 @@ export default async function SelectTenantPage({
   if (!session?.user) redirect("/auth/sign-in");
 
   const { tenantId } = await params;
+  let destination: "/" | "/administracao" | "/profissional";
   try {
     const tenant = await persistSelectedTenant(tenantId);
-    redirect(tenant.destination);
+    destination = tenant.destination;
   } catch (error) {
     console.error(
       "BCOS tenant selection failed:",
@@ -24,4 +25,6 @@ export default async function SelectTenantPage({
     );
     redirect("/acesso");
   }
+
+  redirect(destination);
 }
