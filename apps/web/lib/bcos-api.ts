@@ -9,6 +9,8 @@ import { auth } from "./auth/server";
 loadEnv({ path: path.resolve(process.cwd(), "..", "..", ".env.local"), override: false });
 
 export type Unit = { id: string; name: string; timezone: string; active: boolean; created_at: string; updated_at: string };
+export type ResourceCategory = { id: string; name: string; active: boolean };
+export type PricingRule = { id: string; unit_id: string | null; resource_category_id: string | null; name: string; status: string; priority: number; currency: "BRL"; rule_definition: Record<string, unknown>; valid_from: string | null; valid_until: string | null };
 export type Resource = { id: string; unit_id: string; category_id: string; name: string; operational_status: string; buffer_before_minutes: number; buffer_after_minutes: number; active: boolean };
 export type Professional = { id: string; external_user_id: string | null; name: string; email: string | null; phone: string | null; status: string };
 export type Booking = { id: string; unit_id: string; resource_id: string; professional_id: string; series_id: string | null; status: string; starts_at: string; ends_at: string; buffer_before_minutes: number; buffer_after_minutes: number; pricing_snapshot: Record<string, unknown> };
@@ -143,8 +145,14 @@ async function apiGet<T>(pathName: string): Promise<T> { return apiRequest<T>(pa
 async function apiPost<T>(pathName: string, body?: Record<string, unknown>): Promise<T> { return apiRequest<T>(pathName, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) }); }
 
 export async function getUnits(): Promise<Unit[]> { return apiGet<Unit[]>("/api/v1/units"); }
+export async function createUnit(input: { name: string; timezone: string }): Promise<Unit> { return apiPost<Unit>("/api/v1/units", { name: input.name, timezone: input.timezone, active: true }); }
+export async function getResourceCategories(): Promise<ResourceCategory[]> { return apiGet<ResourceCategory[]>("/api/v1/resource-categories"); }
+export async function createResourceCategory(input: { name: string }): Promise<ResourceCategory> { return apiPost<ResourceCategory>("/api/v1/resource-categories", { name: input.name, active: true }); }
 export async function getResources(unitId?: string): Promise<Resource[]> { const search = new URLSearchParams(); if (unitId) search.set("unit_id", unitId); const query = search.toString(); return apiGet<Resource[]>(`/api/v1/resources${query ? `?${query}` : ""}`); }
 export async function getProfessionals(): Promise<Professional[]> { return apiGet<Professional[]>("/api/v1/professionals"); }
+export async function createProfessional(input: { name: string; email?: string; phone?: string }): Promise<Professional> { return apiPost<Professional>("/api/v1/professionals", { name: input.name, ...(input.email ? { email: input.email } : {}), ...(input.phone ? { phone: input.phone } : {}) }); }
+export async function createResource(input: { unitId: string; categoryId: string; name: string }): Promise<Resource> { return apiPost<Resource>("/api/v1/resources", { unit_id: input.unitId, category_id: input.categoryId, name: input.name, buffer_before_minutes: 0, buffer_after_minutes: 0, active: true }); }
+export async function getPricingRules(): Promise<PricingRule[]> { return apiGet<PricingRule[]>("/api/v1/pricing-rules"); }
 export async function getReceptionNow(unitId: string): Promise<ReceptionNow> { return apiGet<ReceptionNow>(`/api/v1/reception/now?${new URLSearchParams({ unit_id: unitId }).toString()}`); }
 export async function getReceptionAgenda(input: { unitId: string; startsAt: string; endsAt: string }): Promise<AgendaEntry[]> { return apiGet<AgendaEntry[]>(`/api/v1/reception/agenda?${new URLSearchParams({ unit_id: input.unitId, starts_at: input.startsAt, ends_at: input.endsAt }).toString()}`); }
 export async function getBookings(params?: { startsFrom?: string; startsUntil?: string; professionalId?: string; resourceId?: string; status?: string }): Promise<Booking[]> { const search = new URLSearchParams(); if (params?.startsFrom) search.set("starts_from", params.startsFrom); if (params?.startsUntil) search.set("starts_until", params.startsUntil); if (params?.professionalId) search.set("professional_id", params.professionalId); if (params?.resourceId) search.set("resource_id", params.resourceId); if (params?.status) search.set("status", params.status); const query = search.toString(); return apiGet<Booking[]>(`/api/v1/bookings${query ? `?${query}` : ""}`); }
