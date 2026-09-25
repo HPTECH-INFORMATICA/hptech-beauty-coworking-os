@@ -93,7 +93,7 @@ class NeonAuthIdentityVerifier:
                     signing_key.key,
                     algorithms=["EdDSA", "RS256", "ES256"],
                     issuer=self.issuer,
-                    options={"require": ["exp", "sub", "iss"]},
+                    options={"require": ["exp", "sub", "iss"], "verify_aud": False},
                 )
                 break
             except (InvalidTokenError, PyJWKClientError, ValueError, RuntimeError) as exc:
