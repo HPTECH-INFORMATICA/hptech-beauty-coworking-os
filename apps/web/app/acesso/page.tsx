@@ -48,7 +48,7 @@ export default async function AccessPage() {
     ...(access.platform_destination ? [{ label: "Administração HPTECH", href: access.platform_destination }] : []),
     ...access.tenants.map((tenant) => ({
       label: `${tenant.tenant_name} — ${tenant.role}`,
-      href: tenant.destination,
+      href: `/acesso/tenant/${encodeURIComponent(tenant.tenant_id)}`,
     })),
   ];
 

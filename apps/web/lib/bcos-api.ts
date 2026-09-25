@@ -2,6 +2,7 @@ import "server-only";
 
 import { config as loadEnv } from "dotenv";
 import path from "node:path";
+import { cookies } from "next/headers";
 
 import { auth } from "./auth/server";
 
@@ -47,15 +48,29 @@ async function getBearerToken(): Promise<string> {
   return token;
 }
 
-function getTenantId(): string {
+const TENANT_COOKIE = "bcos_tenant_id";
+
+async function getTenantId(): Promise<string> {
+  if (process.env.BCOS_IDENTITY_PROVIDER === "neon") {
+    const access = await getAccessResolution();
+    const cookieStore = await cookies();
+    const selectedId = cookieStore.get(TENANT_COOKIE)?.value;
+    const selected = selectedId
+      ? access.tenants.find((tenant) => tenant.tenant_id === selectedId)
+      : undefined;
+    if (selected) return selected.tenant_id;
+    if (access.tenants.length === 1) return access.tenants[0].tenant_id;
+    throw new Error("Selecione um coworking autorizado antes de acessar dados do tenant.");
+  }
+
   const tenantId = process.env.BCOS_HUMAN_TENANT_ID;
-  if (!tenantId) throw new Error("BCOS_HUMAN_TENANT_ID não está disponível no servidor Next.js.");
+  if (!tenantId) throw new Error("BCOS_HUMAN_TENANT_ID não está disponível no ambiente de homologação.");
   return tenantId;
 }
 
 async function apiRequest<T>(pathName: string, init: RequestInit = {}): Promise<T> {
   const token = await getBearerToken();
-  const tenantId = getTenantId();
+  const tenantId = await getTenantId();
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${token}`);
   headers.set("X-Tenant-Id", tenantId);
@@ -85,6 +100,21 @@ async function identityApiRequest<T>(pathName: string, init: RequestInit = {}): 
 
 export async function getAccessResolution(): Promise<AccessResolution> {
   return identityApiRequest<AccessResolution>("/api/v1/access");
+}
+
+export async function persistSelectedTenant(tenantId: string): Promise<AccessTenant> {
+  const access = await getAccessResolution();
+  const selected = access.tenants.find((tenant) => tenant.tenant_id === tenantId);
+  if (!selected) throw new Error("Tenant selecionado não está autorizado para esta identidade.");
+
+  const cookieStore = await cookies();
+  cookieStore.set(TENANT_COOKIE, selected.tenant_id, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+  return selected;
 }
 
 export async function getPendingInvitations(): Promise<PendingInvitation[]> {
