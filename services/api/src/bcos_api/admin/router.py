@@ -26,6 +26,7 @@ from bcos_api.tenancy.dependencies import get_tenant_context
 from bcos_api.tenancy.rbac import Permission, require_permission
 
 router=APIRouter(prefix="/api/v1/admin/memberships", tags=["Tenant Administration"])
+profile_router=APIRouter(prefix="/api/v1/admin/profile", tags=["Tenant Administration"])
 SessionDependency=Annotated[AsyncSession, Depends(get_async_session)]
 TenantContextDependency=Annotated[TenantContext, Depends(get_tenant_context)]
 
@@ -63,7 +64,7 @@ async def update_membership_status_endpoint(membership_id: UUID, payload: Member
     return MembershipResponse.model_validate(item)
 
 
-@router.get("/profile", response_model=TenantProfileResponse)
+@profile_router.get("", response_model=TenantProfileResponse)
 async def get_profile_endpoint(session: SessionDependency, context: TenantContextDependency) -> TenantProfileResponse:
     require_permission(context, Permission.TENANT_ADMIN)
     profile = await get_tenant_profile(session, context=context)
@@ -72,7 +73,7 @@ async def get_profile_endpoint(session: SessionDependency, context: TenantContex
     return TenantProfileResponse.model_validate(dict(profile))
 
 
-@router.put("/profile", response_model=TenantProfileResponse)
+@profile_router.put("", response_model=TenantProfileResponse)
 async def update_profile_endpoint(payload: TenantProfileUpdate, session: SessionDependency, context: TenantContextDependency) -> TenantProfileResponse:
     require_permission(context, Permission.TENANT_ADMIN)
     values = {
