@@ -95,7 +95,7 @@ Authoritative commercial target:
 
 ### C2 — Tenant master data
 
-Backend foundations exist for units/resources/professionals/users. Complete OWNER/ADMIN master-data UI is not proven. Current `/administracao` tree visibly contains user administration; company, units/hours, categories/resources, professionals and pricing administration require reconciliation before C2 completion.
+**IMPLEMENTED / awaiting production human homologation.** OWNER/ADMIN administration now materializes the existing tenant authorities for company profile, units, reception hours, resource categories, resources, professionals and tenant users. Company profile persists through `tenant_profiles`; reception hours reuse the pre-existing frozen `unit_reception_hours` contract rather than duplicating domain authority. Pricing remains intentionally outside C2 and belongs to C3.
 
 ### C3 — Pricing and commercial calendar
 
@@ -164,7 +164,7 @@ Literal indexed repository search for `TODO`, `FIXME`, `XXX` and `HACK` returned
 - [x] Centralize Web authentication/authorization guards.
 - [x] Remove `BCOS_HUMAN_TENANT_ID` as production tenant-selection authority.
 - [x] Implement authoritative tenant selection for multi-membership identities.
-- [ ] Complete C2 tenant master-data surfaces.
+- [x] Complete C2 tenant master-data surfaces.
 - [ ] Complete C3 pricing administration and professional calendar/price journey.
 - [ ] Complete C4 administrative-finance domain/surfaces without corrupting Billing.
 - [ ] Complete C5 finance views/reconciliation.
