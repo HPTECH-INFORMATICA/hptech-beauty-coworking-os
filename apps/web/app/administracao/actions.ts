@@ -56,8 +56,8 @@ export async function createPricingRuleAction(formData: FormData) {
     categoryId: value(formData, "category_id") || undefined,
     priority: Number(value(formData, "priority") || "100"),
     ruleDefinition,
-    validFrom: value(formData, "valid_from") || undefined,
-    validUntil: value(formData, "valid_until") || undefined,
+    validFrom: value(formData, "valid_from") ? new Date(value(formData, "valid_from")).toISOString() : undefined,
+    validUntil: value(formData, "valid_until") ? new Date(value(formData, "valid_until")).toISOString() : undefined,
   });
   revalidatePath("/administracao");
   redirect("/administracao?created=pricing-rule");
