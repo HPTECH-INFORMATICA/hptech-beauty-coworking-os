@@ -4,6 +4,7 @@ import { getAccessResolution } from "../../lib/bcos-api";
 import { auth } from "../../lib/auth/server";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function PlatformLayout({
   children,
