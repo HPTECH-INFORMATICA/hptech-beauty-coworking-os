@@ -15,7 +15,8 @@ from bcos_api.bookings import repository as bookings_repository
 from bcos_api.bookings.schemas import Booking as BookingResponse
 from bcos_api.bookings.schemas import BookingStatus as PublicBookingStatus
 from bcos_api.bookings.pricing import PricingSnapshotRequest, PricingSnapshotUnavailable
-from bcos_api.bookings.service import BookingConflict, create_booking as service_create_booking
+from bcos_api.bookings.domain import InvalidBooking
+from bcos_api.bookings.service import BookingConflict, create_professional_booking
 from bcos_api.pricing.snapshot import DatabasePricingSnapshotProducer
 from bcos_api.availability.domain import InvalidAvailabilityInterval
 from bcos_api.availability.repository import list_resource_availability
@@ -196,7 +197,7 @@ async def create_my_booking(
 
     professional_id = await _own_professional_id(session, context)
     try:
-        booking = await service_create_booking(
+        booking = await create_professional_booking(
             session,
             context=context,
             unit_id=payload.unit_id,
@@ -208,6 +209,9 @@ async def create_my_booking(
             pricing_snapshot_producer=DatabasePricingSnapshotProducer(session),
         )
         await session.commit()
+    except InvalidBooking as exc:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc
     except (BookingConflict, PricingSnapshotUnavailable) as exc:
         await session.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
