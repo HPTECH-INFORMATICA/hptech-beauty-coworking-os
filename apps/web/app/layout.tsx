@@ -5,6 +5,7 @@ import "@neondatabase/auth-ui/css";
 
 import "./globals.css";
 import "./product-polish.css";
+import { BrowserSessionBoundary } from "./browser-session-boundary";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body><Providers>{children}</Providers></body>
+      <body><Providers><BrowserSessionBoundary />{children}</Providers></body>
     </html>
   );
 }
