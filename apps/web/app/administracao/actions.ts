@@ -39,7 +39,6 @@ export async function createProfessionalAction(formData: FormData) {
   redirect("/administracao?created=professional");
 }
 
-
 export async function createPricingRuleAction(formData: FormData) {
   const definitionText = value(formData, "rule_definition");
   let ruleDefinition: Record<string, unknown>;
