@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export function proxy(_request: NextRequest) {
+export function proxy() {
   const response = NextResponse.next();
   response.headers.set("Cache-Control", "private, no-store, max-age=0");
   return response;
