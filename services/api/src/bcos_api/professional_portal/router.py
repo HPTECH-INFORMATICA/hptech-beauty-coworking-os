@@ -9,32 +9,32 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from bcos_api.availability.domain import InvalidAvailabilityInterval
+from bcos_api.availability.repository import list_resource_availability
 from bcos_api.billing import repository as billing_repository
 from bcos_api.billing.schemas import InvoiceSummary
 from bcos_api.bookings import repository as bookings_repository
+from bcos_api.bookings.domain import InvalidBooking
+from bcos_api.bookings.pricing import PricingSnapshotRequest, PricingSnapshotUnavailable
 from bcos_api.bookings.schemas import Booking as BookingResponse
 from bcos_api.bookings.schemas import BookingStatus as PublicBookingStatus
-from bcos_api.bookings.pricing import PricingSnapshotRequest, PricingSnapshotUnavailable
-from bcos_api.bookings.domain import InvalidBooking
 from bcos_api.bookings.service import BookingConflict, create_professional_booking
-from bcos_api.pricing.snapshot import DatabasePricingSnapshotProducer
-from bcos_api.availability.domain import InvalidAvailabilityInterval
-from bcos_api.availability.repository import list_resource_availability
-from bcos_api.resources.repository import get_resource, list_resources
-from bcos_api.units.repository import get_unit
 from bcos_api.db.session import get_async_session
 from bcos_api.openapi_responses import error_responses
+from bcos_api.pricing.snapshot import DatabasePricingSnapshotProducer
 from bcos_api.professional_portal.schemas import (
     ProfessionalBookingCreate,
     ProfessionalCommercialAvailability,
     ProfessionalCommercialOption,
 )
+from bcos_api.resources.repository import list_resources
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.dependencies import get_tenant_context
 from bcos_api.tenancy.professional_scope import (
     ProfessionalScopeDenied,
     resolve_professional_scope,
 )
+from bcos_api.units.repository import get_unit
 
 router = APIRouter(prefix="/api/v1/professional/me", tags=["Professional Portal"])
 
