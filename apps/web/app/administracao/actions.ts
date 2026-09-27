@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
+  createPricingRule,
   createProfessional,
   createResource,
   createResourceCategory,
@@ -36,4 +37,28 @@ export async function createProfessionalAction(formData: FormData) {
   await createProfessional({ name: value(formData, "name"), email: value(formData, "email") || undefined, phone: value(formData, "phone") || undefined });
   revalidatePath("/administracao");
   redirect("/administracao?created=professional");
+}
+
+
+export async function createPricingRuleAction(formData: FormData) {
+  const definitionText = value(formData, "rule_definition");
+  let ruleDefinition: Record<string, unknown>;
+  try {
+    const parsed: unknown = JSON.parse(definitionText);
+    if (parsed === null || Array.isArray(parsed) || typeof parsed !== "object") throw new Error("Pricing rule definition must be an object.");
+    ruleDefinition = parsed as Record<string, unknown>;
+  } catch {
+    throw new Error("A definição da regra deve ser um objeto JSON válido.");
+  }
+  await createPricingRule({
+    name: value(formData, "name"),
+    unitId: value(formData, "unit_id") || undefined,
+    categoryId: value(formData, "category_id") || undefined,
+    priority: Number(value(formData, "priority") || "100"),
+    ruleDefinition,
+    validFrom: value(formData, "valid_from") || undefined,
+    validUntil: value(formData, "valid_until") || undefined,
+  });
+  revalidatePath("/administracao");
+  redirect("/administracao?created=pricing-rule");
 }
