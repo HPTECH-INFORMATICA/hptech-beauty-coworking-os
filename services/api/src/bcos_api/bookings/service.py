@@ -283,6 +283,57 @@ async def create_booking(
     )
 
 
+async def create_professional_booking(
+    session: AsyncSession,
+    *,
+    context: TenantContext,
+    unit_id: UUID,
+    resource_id: UUID,
+    professional_id: UUID,
+    starts_at: datetime,
+    ends_at: datetime,
+    notes: str | None,
+    pricing_snapshot_producer: PricingSnapshotProducer,
+) -> Booking:
+    """Create one own-scope PENDING booking for an authenticated professional."""
+
+    require_permission(context, Permission.PROFESSIONAL_OWN)
+    validate_booking_period(starts_at, ends_at)
+    creation = await _prepare_booking_creation(
+        session,
+        context=context,
+        unit_id=unit_id,
+        resource_id=resource_id,
+        professional_id=professional_id,
+    )
+    pricing_snapshot = await pricing_snapshot_producer.produce(
+        PricingSnapshotRequest(
+            tenant_id=context.tenant_id,
+            unit_id=creation.unit_id,
+            resource_id=creation.resource_id,
+            resource_category_id=creation.resource_category_id,
+            professional_id=creation.professional_id,
+            starts_at=starts_at,
+            ends_at=ends_at,
+        )
+    )
+    if not pricing_snapshot:
+        raise InvalidBooking("Pricing snapshot must be a non-empty object.")
+    return await persist_create_booking(
+        session,
+        tenant_id=context.tenant_id,
+        unit_id=creation.unit_id,
+        resource_id=creation.resource_id,
+        professional_id=creation.professional_id,
+        starts_at=starts_at,
+        ends_at=ends_at,
+        buffer_before_minutes=creation.buffer_before_minutes,
+        buffer_after_minutes=creation.buffer_after_minutes,
+        pricing_snapshot=pricing_snapshot,
+        notes=notes,
+    )
+
+
 async def create_booking_series(
     session: AsyncSession,
     *,
