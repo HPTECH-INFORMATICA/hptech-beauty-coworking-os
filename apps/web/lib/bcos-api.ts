@@ -20,6 +20,8 @@ export type ReceptionNow = { unit_id: string; generated_at: string; resources: R
 export type AgendaEntry = { booking: Booking; usage: Usage | null };
 export type AvailabilityItem = { resource_id: string; available: boolean; reason: string | null };
 export type AvailabilityResponse = { starts_at: string; ends_at: string; resources: AvailabilityItem[] };
+export type ProfessionalCommercialOption = { resource_id: string; resource_name: string; resource_category_id: string; available: boolean; unavailable_reason: string | null; pricing_snapshot: Record<string, unknown> | null };
+export type ProfessionalCommercialAvailability = { unit_id: string; starts_at: string; ends_at: string; resources: ProfessionalCommercialOption[] };
 export type Invoice = { id: string; professional_id: string; source_usage_id: string | null; professional_billing_contract_id: string | null; billing_cycle_start: string | null; billing_cycle_end: string | null; manual_closed_at: string | null; status: string; currency: string; subtotal_amount: string; discount_amount: string; total_amount: string; created_at: string; updated_at: string };
 export type InvoiceItem = { id: string; usage_id: string | null; item_type: string; description: string; quantity: string; unit_amount: string; total_amount: string; billing_period_start: string | null; billing_period_end: string | null; related_invoice_item_id: string | null; created_at: string };
 export type InvoiceDetail = Invoice & { items: InvoiceItem[]; confirmed_amount: string; remaining_amount: string };
@@ -174,6 +176,8 @@ export async function getInvoice(invoiceId: string): Promise<InvoiceDetail> { re
 export async function closeManualInvoice(invoiceId: string): Promise<Invoice> { return apiPost<Invoice>(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/close`); }
 export async function confirmPixPayment(input: { invoiceId: string; idempotencyKey: string; amount: string; reference?: string; paidAt?: string }): Promise<PaymentResult> { return apiPost<PaymentResult>("/api/v1/payments/pix/confirm", { invoice_id: input.invoiceId, idempotency_key: input.idempotencyKey, amount: input.amount, ...(input.reference ? { reference: input.reference } : {}), ...(input.paidAt ? { paid_at: input.paidAt } : {}) }); }
 export async function getMyBookings(): Promise<Booking[]> { return apiGet<Booking[]>("/api/v1/professional/me/bookings"); }
+export async function getMyCommercialAvailability(input: { unitId: string; startsAt: string; endsAt: string; categoryId?: string }): Promise<ProfessionalCommercialAvailability> { const search = new URLSearchParams({ unit_id: input.unitId, starts_at: input.startsAt, ends_at: input.endsAt }); if (input.categoryId) search.set("category_id", input.categoryId); return apiGet<ProfessionalCommercialAvailability>(`/api/v1/professional/me/commercial-availability?${search.toString()}`); }
+export async function createMyBooking(input: { unitId: string; resourceId: string; startsAt: string; endsAt: string; notes?: string }): Promise<Booking> { return apiPost<Booking>("/api/v1/professional/me/bookings", { unit_id: input.unitId, resource_id: input.resourceId, starts_at: input.startsAt, ends_at: input.endsAt, ...(input.notes ? { notes: input.notes } : {}) }); }
 export async function getMyInvoices(): Promise<Invoice[]> { return apiGet<Invoice[]>("/api/v1/professional/me/invoices"); }
 
 export async function createContractingTenant(input: ContractingTenantCreate): Promise<ContractingTenant> {
