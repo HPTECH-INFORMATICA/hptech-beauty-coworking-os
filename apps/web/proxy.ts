@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function proxy(request: NextRequest) {
-  const signIn = new URL("/auth/sign-in", request.url);
-  signIn.searchParams.set("redirectTo", request.nextUrl.pathname + request.nextUrl.search);
-  return NextResponse.redirect(signIn);
+  const response = NextResponse.next();
+  response.headers.set("Cache-Control", "private, no-store, max-age=0");
+  return response;
 }
 
 export const config = {
