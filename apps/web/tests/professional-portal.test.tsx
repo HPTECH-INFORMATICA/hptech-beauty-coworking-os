@@ -2,14 +2,16 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ProfessionalPage from "../app/profissional/page";
-import { getMyBookings, getMyInvoices } from "../lib/bcos-api";
+import { getMyBookings, getMyInvoices, getResourceCategories, getUnits } from "../lib/bcos-api";
 
-vi.mock("../lib/bcos-api", () => ({ getMyBookings: vi.fn(), getMyInvoices: vi.fn() }));
+vi.mock("../lib/bcos-api", () => ({ getMyBookings: vi.fn(), getMyInvoices: vi.fn(), getResourceCategories: vi.fn(), getUnits: vi.fn(), getMyCommercialAvailability: vi.fn(), createMyBooking: vi.fn() }));
 
 const mockedGetMyBookings = vi.mocked(getMyBookings);
 const mockedGetMyInvoices = vi.mocked(getMyInvoices);
+const mockedGetResourceCategories = vi.mocked(getResourceCategories);
+const mockedGetUnits = vi.mocked(getUnits);
 
-beforeEach(() => { mockedGetMyBookings.mockResolvedValue([]); mockedGetMyInvoices.mockResolvedValue([]); });
+beforeEach(() => { mockedGetMyBookings.mockResolvedValue([]); mockedGetMyInvoices.mockResolvedValue([]); mockedGetResourceCategories.mockResolvedValue([]); mockedGetUnits.mockResolvedValue([]); });
 
 describe("Professional Portal", () => {
   it("materializes own-scope bookings and invoices with business-facing labels", async () => {
