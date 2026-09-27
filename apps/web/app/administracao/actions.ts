@@ -4,12 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
+  createPricingRule,
   createProfessional,
   createResource,
   createResourceCategory,
   createUnit,
-  updateReceptionHours,
-  updateTenantProfile,
 } from "../../lib/bcos-api";
 
 function value(formData: FormData, name: string): string {
@@ -40,31 +39,25 @@ export async function createProfessionalAction(formData: FormData) {
   redirect("/administracao?created=professional");
 }
 
-
-export async function updateTenantProfileAction(formData: FormData) {
-  await updateTenantProfile({
-    legal_name: value(formData, "legal_name"),
-    trade_name: value(formData, "trade_name"),
-    tax_id: value(formData, "tax_id") || null,
-    email: value(formData, "email"),
-    phone: value(formData, "phone") || null,
+export async function createPricingRuleAction(formData: FormData) {
+  const definitionText = value(formData, "rule_definition");
+  let ruleDefinition: Record<string, unknown>;
+  try {
+    const parsed: unknown = JSON.parse(definitionText);
+    if (parsed === null || Array.isArray(parsed) || typeof parsed !== "object") throw new Error("Pricing rule definition must be an object.");
+    ruleDefinition = parsed as Record<string, unknown>;
+  } catch {
+    throw new Error("A definição da regra deve ser um objeto JSON válido.");
+  }
+  await createPricingRule({
+    name: value(formData, "name"),
+    unitId: value(formData, "unit_id") || undefined,
+    categoryId: value(formData, "category_id") || undefined,
+    priority: Number(value(formData, "priority") || "100"),
+    ruleDefinition,
+    validFrom: value(formData, "valid_from") ? new Date(value(formData, "valid_from")).toISOString() : undefined,
+    validUntil: value(formData, "valid_until") ? new Date(value(formData, "valid_until")).toISOString() : undefined,
   });
   revalidatePath("/administracao");
-  redirect("/administracao?updated=profile");
-}
-
-export async function updateReceptionHoursAction(formData: FormData) {
-  const unitId = value(formData, "unit_id");
-  const hours = Array.from({ length: 7 }, (_, day) => {
-    const isClosed = formData.get(`closed_${day}`) === "on";
-    return {
-      day_of_week: day,
-      opens_at: isClosed ? null : value(formData, `opens_${day}`),
-      closes_at: isClosed ? null : value(formData, `closes_${day}`),
-      is_closed: isClosed,
-    };
-  });
-  await updateReceptionHours(unitId, hours);
-  revalidatePath("/administracao");
-  redirect("/administracao?updated=reception-hours");
+  redirect("/administracao?created=pricing-rule");
 }
