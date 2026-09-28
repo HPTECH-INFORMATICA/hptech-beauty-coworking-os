@@ -116,6 +116,11 @@ async def update_tenant_status_endpoint(
     )
     if tenant is None:
         await session.rollback()
+        if payload.status.value == "ACTIVE":
+            raise HTTPException(
+                status_code=409,
+                detail="Contracting tenant requires an active OWNER before activation.",
+            )
         raise HTTPException(status_code=404, detail="Contracting tenant not found.")
     await create_platform_audit_log(
         session,
