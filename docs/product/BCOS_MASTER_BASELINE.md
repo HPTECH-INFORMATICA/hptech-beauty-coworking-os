@@ -5,7 +5,7 @@
 **Authority purpose:** single consolidated project-state authority for implementation recovery, audit and completion.  
 **Audit date:** 2026-09-25  
 **Repository:** `HPTECH-INFORMATICA/hptech-beauty-coworking-os`  
-**Audited main baseline:** `6e632152917e010f34c398faf1b2b659a9e7b3e4`  
+**Audited main baseline:** `f42a044abff001e4ce5ee95c5537886c2fc9cb02`  
 **Status:** SYSTEM AUDIT BASELINE — freeze after reconciliation gate.
 
 ## 1. Governance and immutable authorities
@@ -91,7 +91,7 @@ Authoritative commercial target:
 
 **Materially implemented:** PlatformOperator; platform tenant onboarding APIs/UI; tenant lifecycle; first OWNER invitation; tenant membership administration; Neon Auth; JWT/JWKS/issuer verification; access resolver; HPTECH `/platform` console; Reception root authorization gate; `/platform` authentication/authorization layout.
 
-**Current state after C1 security reconciliation:** Web route-family authorization is centralized for Platform, tenant administration, Reception operational surfaces, Finance and Professional portal. Under Neon production identity, tenant context is selected only from authenticated `/api/v1/access`, persisted server-side in an HTTP-only same-site cookie and revalidated before `X-Tenant-Id` is sent. `BCOS_HUMAN_TENANT_ID` remains only in the explicit homologation path. Complete login → access → tenant selection → role shell → logout/revocation production E2E is still not frozen.
+**Current state after C1 security reconciliation:** Web route-family authorization is centralized for Platform, tenant administration, Reception operational surfaces, Finance and Professional portal. Under Neon production identity, tenant context is selected only from authenticated `/api/v1/access`, persisted server-side in an HTTP-only same-site cookie and revalidated before `X-Tenant-Id` is sent. `BCOS_HUMAN_TENANT_ID` remains only in the explicit homologation path. Production login/password access and browser-session termination behavior are HUMAN HOMOLOGATED: anonymous Platform access requires authentication, valid credentials open the authorized Platform surface, and a new browser session requires fresh sign-in. Complete role/revocation production E2E remains to be frozen.
 
 ### C2 — Tenant master data
 
@@ -99,7 +99,7 @@ Authoritative commercial target:
 
 ### C3 — Pricing and commercial calendar
 
-Availability and operational booking exist. Pricing engine/snapshot exists. Complete professional discovery of unit/resource type/calendar/slot/price/review/confirmation is not proven as frozen C3. Pricing administration remains a gap.
+Availability and operational booking exist. Pricing engine/snapshot exists. Pricing administration is materially implemented using the server-side pricing authority. Professional own-scope commercial discovery and booking UI is now materialized on the secured main: unit/category/period → server-authoritative availability → resource option → booking submission. C3 still requires production human homologation and reconciliation of displayable price/calendar semantics before it can be frozen complete.
 
 ### C4 — Administrative finance foundation
 
@@ -165,7 +165,7 @@ Literal indexed repository search for `TODO`, `FIXME`, `XXX` and `HACK` returned
 - [x] Remove `BCOS_HUMAN_TENANT_ID` as production tenant-selection authority.
 - [x] Implement authoritative tenant selection for multi-membership identities.
 - [x] Complete C2 tenant master-data surfaces.
-- [ ] Complete C3 pricing administration and professional calendar/price journey.
+- [ ] Human-homologate C3 pricing administration and professional commercial journey; reconcile displayable price/calendar semantics.
 - [ ] Complete C4 administrative-finance domain/surfaces without corrupting Billing.
 - [ ] Complete C5 finance views/reconciliation.
 - [ ] Complete C6 role-specific shells/navigation.
