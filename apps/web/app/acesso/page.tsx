@@ -64,22 +64,12 @@ export default async function AccessPage() {
       </section>
       <section className="auth-card">
         <div className="access-session"><SessionControls label={session.user.name || session.user.email || "Usuário autenticado"} /></div>
-        <h2>Acessos disponíveis</h2>
-        {destinations.length === 0 ? <p>Nenhum acesso ativo encontrado.</p> : (
-          <div>
-            {destinations.map((item) => <p key={item.label}><Link href={item.href}>{item.label}</Link></p>)}
-          </div>
-        )}
-        {invitations.length > 0 && (
-          <div>
-            <h3>Convites pendentes</h3>
-            {invitations.map((invitation) => (
-              <p key={invitation.id}>
-                {invitation.role} — <Link href={`/acesso/convites/${invitation.id}`}>Aceitar convite</Link>
-              </p>
-            ))}
-          </div>
-        )}
+        <div className="access-panel">
+          <div className="access-heading"><span>SEUS ACESSOS</span><h2>Escolha onde deseja entrar.</h2><p>Ambientes liberados para a sua conta no Beauty Coworking OS.</p></div>
+          {destinations.length > 0 && <div className="access-list">{destinations.map((item) => <Link className="access-item" key={item.label} href={item.href}><span>{item.label}</span><strong>Entrar →</strong></Link>)}</div>}
+          {destinations.length === 0 && invitations.length === 0 ? <div className="access-empty"><strong>Nenhum acesso disponível</strong><span>Quando um ambiente for liberado para sua conta, ele aparecerá aqui.</span></div> : null}
+          {invitations.length > 0 && <div className="invitation-block"><div><span>CONVITE PENDENTE</span><h3>Finalize seu acesso</h3><p>Você recebeu permissão para entrar em um ambiente BCOS.</p></div>{invitations.map((invitation) => <Link className="invitation-action" key={invitation.id} href={`/acesso/convites/${invitation.id}`}><span>Perfil {invitation.role}</span><strong>Revisar convite →</strong></Link>)}</div>}
+        </div>
       </section>
     </main>
   );
