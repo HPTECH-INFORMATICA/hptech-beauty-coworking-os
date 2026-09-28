@@ -30,5 +30,5 @@ export default async function PlatformLayout({
 
   const identityLabel = session.user.name || session.user.email || "Usuário autenticado";
 
-  return <><div className="platform-session"><SessionControls label={identityLabel} /></div>{children}</>;
+  return <div className="platform-authenticated-shell"><div className="platform-session"><SessionControls label={identityLabel} /></div>{children}</div>;
 }
