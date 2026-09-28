@@ -82,6 +82,7 @@ async def create_contracting_tenant(
         email=email,
         phone=phone,
         owner_external_user_id=owner_external_user_id,
+        owner_membership_status="INVITED" if owner_external_user_id else None,
         created_at=tenant["created_at"],
     )
 
@@ -98,6 +99,7 @@ def _contracting_tenant_from_row(mapping: RowMapping) -> ContractingTenant:
         email=mapping["email"],
         phone=mapping["phone"],
         owner_external_user_id=mapping["owner_external_user_id"],
+        owner_membership_status=mapping["owner_membership_status"],
         created_at=mapping["created_at"],
     )
 
@@ -117,11 +119,12 @@ async def list_contracting_tenants(session: AsyncSession) -> list[ContractingTen
                 p.email,
                 p.phone,
                 owner.external_user_id AS owner_external_user_id,
+                owner.status AS owner_membership_status,
                 t.created_at
             FROM tenants AS t
             JOIN tenant_profiles AS p ON p.tenant_id = t.id
             LEFT JOIN LATERAL (
-                SELECT tm.external_user_id
+                SELECT tm.external_user_id, tm.status::text AS status
                 FROM tenant_memberships AS tm
                 WHERE tm.tenant_id = t.id
                   AND tm.role = 'OWNER'
