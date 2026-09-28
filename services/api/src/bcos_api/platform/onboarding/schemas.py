@@ -34,6 +34,7 @@ class ContractingTenant(BaseModel):
     email: str
     phone: str | None
     owner_external_user_id: str | None
+    owner_membership_status: str | None = None
     created_at: datetime
 
 class ContractingTenantStatusUpdate(BaseModel):
