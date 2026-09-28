@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { updateContractingTenantStatus, type ContractingTenant } from "../../../../lib/bcos-api";
+import { inviteContractingTenantOwner, updateContractingTenantStatus, type ContractingTenant } from "../../../../lib/bcos-api";
 
 export async function updateClientStatusAction(formData: FormData) {
   const tenantId = String(formData.get("tenant_id") ?? "");
