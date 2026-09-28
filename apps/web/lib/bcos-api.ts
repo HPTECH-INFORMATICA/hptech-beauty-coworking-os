@@ -235,3 +235,10 @@ export async function updateTenantMembershipStatus(
     { method: "PATCH", body: JSON.stringify({ status }) },
   );
 }
+
+export async function inviteContractingTenantOwner(tenantId: string, email: string): Promise<{ membership_id: string; tenant_id: string; external_user_id: string; role: string; status: string }> {
+  return platformApiRequest(`/api/v1/platform/tenants/${encodeURIComponent(tenantId)}/owner-invitations`, {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
