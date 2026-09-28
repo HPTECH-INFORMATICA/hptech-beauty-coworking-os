@@ -28,6 +28,7 @@ class ContractingTenant:
     phone: str | None
     owner_external_user_id: str | None
     created_at: datetime
+    owner_membership_status: str | None = None
 
 
 class InvalidTenantOnboarding(Exception):
