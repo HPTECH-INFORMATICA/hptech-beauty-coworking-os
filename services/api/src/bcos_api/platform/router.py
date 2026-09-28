@@ -157,8 +157,8 @@ async def create_owner_invitation_endpoint(
         row = identity.mappings().one_or_none()
         if row is None:
             raise HTTPException(
-                status_code=422,
-                detail="O proprietário ainda não possui uma conta de acesso com este e-mail.",
+                status_code=409,
+                detail="OWNER_ACCOUNT_REQUIRED",
             )
         external_user_id = str(row["id"]).strip()
     if not external_user_id:
