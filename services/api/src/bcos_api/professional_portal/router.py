@@ -177,6 +177,21 @@ async def get_my_commercial_availability(
             available=item.available and snapshot is not None,
             unavailable_reason=item.reason if not item.available else (None if snapshot is not None else "Pricing is not configured for this period."),
             pricing_snapshot=snapshot,
+            price_amount=(
+                snapshot["pricing_rule"]["rule_definition"]["base_price_amount"]
+                if snapshot is not None
+                else None
+            ),
+            price_currency=(
+                snapshot["pricing_rule"]["currency"]
+                if snapshot is not None
+                else None
+            ),
+            price_modality=(
+                snapshot["pricing_rule"]["rule_definition"]["modality"]
+                if snapshot is not None
+                else None
+            ),
         ))
     return ProfessionalCommercialAvailability(unit_id=unit_id, starts_at=starts_at, ends_at=ends_at, resources=options)
 
