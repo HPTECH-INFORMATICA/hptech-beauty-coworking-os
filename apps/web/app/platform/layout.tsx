@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { getAccessResolution } from "../../lib/bcos-api";
 import { auth } from "../../lib/auth/server";
+import { SessionControls } from "../../components/session-controls";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -27,5 +28,7 @@ export default async function PlatformLayout({
     redirect("/acesso");
   }
 
-  return children;
+  const identityLabel = session.user.name || session.user.email || "Usuário autenticado";
+
+  return <><div className="platform-session"><SessionControls label={identityLabel} /></div>{children}</>;
 }
