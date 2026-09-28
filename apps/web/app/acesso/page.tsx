@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getAccessResolution, getPendingInvitations } from "../../lib/bcos-api";
 import { auth } from "../../lib/auth/server";
+import { LogoutButton } from "./logout-button";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,7 @@ export default async function AccessPage() {
         <p>Escolha o ambiente autorizado para sua identidade.</p>
       </section>
       <section className="auth-card">
+        <div className="auth-session-bar"><div><span>Conectado como</span><strong>{session.user.name || session.user.email || "Usuário autenticado"}</strong>{session.user.email && session.user.name ? <small>{session.user.email}</small> : null}</div><LogoutButton /></div>
         <h2>Acessos disponíveis</h2>
         {destinations.length === 0 ? <p>Nenhum acesso ativo encontrado.</p> : (
           <div>
