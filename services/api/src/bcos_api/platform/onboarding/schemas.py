@@ -43,7 +43,8 @@ class ContractingTenantStatusUpdate(BaseModel):
 
 class OwnerInvitationCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    external_user_id: str = Field(min_length=1, max_length=255)
+    external_user_id: str | None = Field(default=None, min_length=1, max_length=255)
+    email: str | None = Field(default=None, min_length=1, max_length=255)
 
 
 class OwnerInvitation(BaseModel):
