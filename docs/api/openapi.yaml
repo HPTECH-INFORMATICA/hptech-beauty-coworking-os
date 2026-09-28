@@ -1204,6 +1204,84 @@ paths:
                   $ref: "#/components/schemas/Booking"
         "403":
           $ref: "#/components/responses/Forbidden"
+    post:
+      tags:
+        - Professional Portal
+      summary: Criar minha reserva
+      operationId: createMyBooking
+      description: |
+        Cria reserva PENDING para o profissional derivado da identidade autenticada.
+        Disponibilidade e Pricing Snapshot são resolvidos server-side.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalBookingCreate"
+      responses:
+        "201":
+          description: Reserva criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/professional/me/commercial-availability:
+    get:
+      tags:
+        - Professional Portal
+      summary: Consultar disponibilidade comercial
+      operationId: getMyCommercialAvailability
+      description: |
+        Retorna disponibilidade own-scope com preço comercial derivado
+        exclusivamente do Pricing Snapshot autoritativo.
+      parameters:
+        - $ref: "#/components/parameters/TenantHeader"
+        - name: unit_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: starts_at
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: ends_at
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: category_id
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: uuid
+              - type: "null"
+      responses:
+        "200":
+          description: Disponibilidade comercial do período
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalCommercialAvailability"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
 
   /api/v1/professional/me/invoices:
     get:
@@ -2532,6 +2610,94 @@ components:
           oneOf:
             - $ref: "#/components/schemas/Usage"
             - type: "null"
+
+    ProfessionalBookingCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - unit_id
+        - resource_id
+        - starts_at
+        - ends_at
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        resource_id:
+          type: string
+          format: uuid
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        notes:
+          anyOf:
+            - type: string
+            - type: "null"
+
+    ProfessionalCommercialOption:
+      type: object
+      required:
+        - resource_id
+        - resource_name
+        - resource_category_id
+        - available
+      properties:
+        resource_id:
+          type: string
+          format: uuid
+        resource_name:
+          type: string
+        resource_category_id:
+          type: string
+          format: uuid
+        available:
+          type: boolean
+        unavailable_reason:
+          anyOf:
+            - type: string
+            - type: "null"
+        pricing_snapshot:
+          anyOf:
+            - type: object
+              additionalProperties: true
+            - type: "null"
+        price_amount:
+          anyOf:
+            - type: string
+            - type: "null"
+        price_currency:
+          anyOf:
+            - type: string
+            - type: "null"
+        price_modality:
+          anyOf:
+            - type: string
+            - type: "null"
+
+    ProfessionalCommercialAvailability:
+      type: object
+      required:
+        - unit_id
+        - starts_at
+        - ends_at
+        - resources
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfessionalCommercialOption"
 
     OwnerDashboard:
       type: object
