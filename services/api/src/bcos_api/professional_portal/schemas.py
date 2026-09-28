@@ -18,6 +18,9 @@ class ProfessionalCommercialOption(BaseModel):
     available: bool
     unavailable_reason: str | None = None
     pricing_snapshot: dict[str, Any] | None = None
+    price_amount: str | None = None
+    price_currency: str | None = None
+    price_modality: str | None = None
 
 
 class ProfessionalCommercialAvailability(BaseModel):
