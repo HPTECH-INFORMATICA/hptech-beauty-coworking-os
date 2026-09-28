@@ -28,7 +28,9 @@ export default async function NewPlatformClientPage() {
               <label>E-mail da empresa<input name="email" type="email" required maxLength={255}/></label>
               <label>Telefone<input name="phone" maxLength={40}/></label>
             </div></div>
-            <div className="platform-form-section"><div><span>PRIMEIRO ACESSO</span><h2>Acesso do proprietário</h2><p>Opcional. Para prospect ou possível cliente, deixe em branco. O contratante ficará Pendente de ativação e o OWNER poderá ser convidado posteriormente.</p></div><div className="platform-fields platform-fields-single">\n              <label>E-mail de acesso do proprietário (opcional)<input name="owner_email" type="email" maxLength={255} placeholder="Preencher somente quando o acesso for liberado"/></label>\n            </div></div>
+            <div className="platform-form-section"><div><span>PRIMEIRO ACESSO</span><h2>Acesso do proprietário</h2><p>Opcional. Para prospect ou possível cliente, deixe em branco. O contratante ficará Pendente de ativação e o OWNER poderá ser convidado posteriormente.</p></div><div className="platform-fields platform-fields-single">
+              <label>E-mail de acesso do proprietário (opcional)<input name="owner_email" type="email" maxLength={255} placeholder="Preencher somente quando o acesso for liberado"/></label>
+            </div></div>
             <div className="platform-form-actions"><Link href="/platform/clientes">Cancelar</Link><button type="submit">Cadastrar contratante</button></div>
           </form>
         </div>
