@@ -25,3 +25,20 @@ def test_owner_invitation_create_forbids_extra_authority_fields() -> None:
     except ValueError:
         return
     raise AssertionError("Owner invitation input must not accept caller-selected role.")
+
+
+def test_contracting_tenant_exposes_owner_membership_status() -> None:
+    from bcos_api.platform.onboarding.schemas import ContractingTenant
+
+    assert "owner_membership_status" in ContractingTenant.model_fields
+
+
+def test_owner_invitation_acceptance_route_is_materialized() -> None:
+    from bcos_api.invitation.router import router
+
+    route = next(
+        route
+        for route in router.routes
+        if getattr(route, "path", "") == "/api/v1/invitations/{membership_id}/accept"
+    )
+    assert "POST" in route.methods

@@ -27,6 +27,7 @@ class ContractingTenant:
     email: str
     phone: str | None
     owner_external_user_id: str | None
+    owner_membership_status: str | None
     created_at: datetime
 
 
