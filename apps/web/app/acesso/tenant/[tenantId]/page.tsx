@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { persistSelectedTenant } from "../../../../lib/bcos-api";
+import { getAccessResolution, persistSelectedTenant } from "../../../../lib/bcos-api";
 import { auth } from "../../../../lib/auth/server";
 import { SessionControls } from "../../../../components/session-controls";
 
@@ -16,6 +16,12 @@ export default async function SelectTenantPage({
   if (!session?.user) redirect("/auth/sign-in");
 
   const { tenantId } = await params;
+  let pendingTenantName = "sua empresa";
+  try {
+    const resolution = await getAccessResolution();
+    pendingTenantName = resolution.tenants.find((item) => item.tenant_id === tenantId)?.tenant_name || pendingTenantName;
+  } catch {}
+
   try {
     const tenant = await persistSelectedTenant(tenantId);
     redirect(tenant.destination);
@@ -39,10 +45,11 @@ export default async function SelectTenantPage({
         </div>
         <div className="invitation-card">
           <span className="invitation-eyebrow">ATIVAÇÃO DO CONTRATANTE</span>
-          <h1>Seu convite foi aceito.</h1>
-          <p>A HPTECH ainda precisa concluir a ativação da empresa. Assim que o contratante estiver ativo, seu painel administrativo será liberado.</p>
-          <div className="invitation-role"><span>STATUS</span><strong>AGUARDANDO ATIVAÇÃO</strong></div>
-          <Link className="activation-return" href="/acesso">Voltar aos acessos</Link>
+          <h1>Acesso confirmado.</h1>
+          <p>Seu perfil de proprietário foi confirmado para <strong>{pendingTenantName}</strong>. A liberação comercial da empresa está em conclusão pela HPTECH PLATFORM.</p>
+          <div className="invitation-role"><span>PRÓXIMA ETAPA</span><strong>LIBERAÇÃO DA EMPRESA</strong></div>
+          <p>Você não precisa criar outra conta, aceitar outro convite ou repetir este processo.</p>
+          <Link className="activation-return" href="/acesso">Ir para meus acessos</Link>
         </div>
       </section>
     </main>
