@@ -87,4 +87,4 @@ async def test_platform_admin_can_register_pending_prospect_without_owner(
         phone=None,
     )
 
-    assert captured["owner_external_user_id"] == ""
+    assert captured["owner_external_user_id"] is None
