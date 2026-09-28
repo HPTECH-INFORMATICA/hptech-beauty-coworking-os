@@ -157,11 +157,12 @@ async def get_contracting_tenant(
                 p.email,
                 p.phone,
                 owner.external_user_id AS owner_external_user_id,
+                owner.status AS owner_membership_status,
                 t.created_at
             FROM tenants AS t
             JOIN tenant_profiles AS p ON p.tenant_id = t.id
             LEFT JOIN LATERAL (
-                SELECT tm.external_user_id
+                SELECT tm.external_user_id, tm.status::text AS status
                 FROM tenant_memberships AS tm
                 WHERE tm.tenant_id = t.id
                   AND tm.role = 'OWNER'
