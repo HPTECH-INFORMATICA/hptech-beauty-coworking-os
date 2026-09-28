@@ -19,7 +19,7 @@ export async function createClientAction(formData: FormData) {
     taxId: String(formData.get("tax_id") ?? "").trim() || undefined,
     email: required(formData, "email"),
     phone: String(formData.get("phone") ?? "").trim() || undefined,
-    ownerExternalUserId: required(formData, "owner_external_user_id"),
+    ownerEmail: required(formData, "owner_email"),
   });
   redirect(`/platform/clientes?created=${encodeURIComponent(tenant.trade_name)}`);
 }
