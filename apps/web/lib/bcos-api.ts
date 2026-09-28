@@ -27,7 +27,7 @@ export type InvoiceItem = { id: string; usage_id: string | null; item_type: stri
 export type InvoiceDetail = Invoice & { items: InvoiceItem[]; confirmed_amount: string; remaining_amount: string };
 export type Payment = { id: string; invoice_id: string; idempotency_key: string; method: string; status: string; currency: string; amount: string; reference: string | null; metadata: Record<string, unknown>; paid_at: string | null; created_at: string; updated_at: string };
 export type ContractingTenant = { id: string; name: string; slug: string; status: "PENDING_ACTIVATION" | "ACTIVE" | "SUSPENDED" | "INACTIVE"; legal_name: string; trade_name: string; tax_id: string | null; email: string; phone: string | null; owner_external_user_id: string; created_at: string };
-export type ContractingTenantCreate = { name: string; slug: string; legalName: string; tradeName: string; taxId?: string; email: string; phone?: string; ownerEmail: string };
+export type ContractingTenantCreate = { name: string; slug: string; legalName: string; tradeName: string; taxId?: string; email: string; phone?: string; ownerEmail?: string };
 export type TenantMembership = { id: string; tenant_id: string; external_user_id: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; status: "INVITED" | "ACTIVE" | "INACTIVE" };
 export type TenantMembershipInvite = { externalUserId: string; role: "ADMIN" | "RECEPTION" | "PROFESSIONAL" };
 export type AccessTenant = { tenant_id: string; tenant_name: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; destination: "/administracao" | "/" | "/profissional" };
@@ -191,7 +191,7 @@ export async function createContractingTenant(input: ContractingTenantCreate): P
       tax_id: input.taxId || null,
       email: input.email,
       phone: input.phone || null,
-      owner_email: input.ownerEmail,
+      ...(input.ownerEmail ? { owner_email: input.ownerEmail } : {}),
     }),
   });
 }
