@@ -296,7 +296,17 @@ async def test_create_rejects_unit_outside_authorized_tenant(
             name="Tabela",
             priority=100,
             currency="BRL",
-            rule_definition={"opaque": True},
+            rule_definition={
+            "schema_version": 1,
+            "modality": "HOURLY",
+            "base_price_amount": "100.00",
+            "overtime": {
+                "hourly_price_amount": "100.00",
+                "proportional_until_minutes": 29,
+                "full_hour_from_minutes": 30,
+                "forgiveness_allowed": True,
+            },
+        },
             valid_from=None,
             valid_until=None,
         )
@@ -352,7 +362,17 @@ async def test_create_rejects_category_outside_authorized_tenant(
             name="Tabela",
             priority=100,
             currency="BRL",
-            rule_definition={"opaque": True},
+            rule_definition={
+            "schema_version": 1,
+            "modality": "HOURLY",
+            "base_price_amount": "100.00",
+            "overtime": {
+                "hourly_price_amount": "100.00",
+                "proportional_until_minutes": 29,
+                "full_hour_from_minutes": 30,
+                "forgiveness_allowed": True,
+            },
+        },
             valid_from=None,
             valid_until=None,
         )
@@ -397,7 +417,17 @@ async def test_create_rejects_invalid_contract_before_relation_lookup(
             name=name,
             priority=priority,
             currency=currency,  # type: ignore[arg-type]
-            rule_definition={"opaque": True},
+            rule_definition={
+            "schema_version": 1,
+            "modality": "HOURLY",
+            "base_price_amount": "100.00",
+            "overtime": {
+                "hourly_price_amount": "100.00",
+                "proportional_until_minutes": 29,
+                "full_hour_from_minutes": 30,
+                "forgiveness_allowed": True,
+            },
+        },
             valid_from=None,
             valid_until=None,
         )
@@ -431,7 +461,17 @@ async def test_create_rejects_invalid_validity_window_before_repository(
             name="Tabela",
             priority=100,
             currency="BRL",
-            rule_definition={"opaque": True},
+            rule_definition={
+            "schema_version": 1,
+            "modality": "HOURLY",
+            "base_price_amount": "100.00",
+            "overtime": {
+                "hourly_price_amount": "100.00",
+                "proportional_until_minutes": 29,
+                "full_hour_from_minutes": 30,
+                "forgiveness_allowed": True,
+            },
+        },
             valid_from=now,
             valid_until=now - timedelta(minutes=1),
         )
