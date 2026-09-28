@@ -58,9 +58,13 @@ async def onboard_contracting_tenant(
         tax_id=tax_id.strip() if tax_id and tax_id.strip() else None,
         email=required_text(email, field="email", maximum=255),
         phone=phone.strip() if phone and phone.strip() else None,
-        owner_external_user_id=required_text(
-            resolved_owner_external_user_id,
-            field="owner_external_user_id",
-            maximum=255,
+        owner_external_user_id=(
+            required_text(
+                resolved_owner_external_user_id,
+                field="owner_external_user_id",
+                maximum=255,
+            )
+            if resolved_owner_external_user_id
+            else None
         ),
     )
