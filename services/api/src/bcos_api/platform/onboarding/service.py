@@ -49,9 +49,6 @@ async def onboard_contracting_tenant(
                 "Crie a conta de acesso com este e-mail antes de concluir o onboarding."
             )
         resolved_owner_external_user_id = str(row["id"]).strip()
-    if not resolved_owner_external_user_id:
-        raise InvalidTenantOnboarding("owner_email or owner_external_user_id is required.")
-
     return await create_contracting_tenant(
         session,
         name=required_text(name, field="name", maximum=160),
@@ -61,9 +58,13 @@ async def onboard_contracting_tenant(
         tax_id=tax_id.strip() if tax_id and tax_id.strip() else None,
         email=required_text(email, field="email", maximum=255),
         phone=phone.strip() if phone and phone.strip() else None,
-        owner_external_user_id=required_text(
-            resolved_owner_external_user_id,
-            field="owner_external_user_id",
-            maximum=255,
+        owner_external_user_id=(
+            required_text(
+                resolved_owner_external_user_id,
+                field="owner_external_user_id",
+                maximum=255,
+            )
+            if resolved_owner_external_user_id
+            else None
         ),
     )

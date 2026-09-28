@@ -20,7 +20,7 @@ async def create_contracting_tenant(
     tax_id: str | None,
     email: str,
     phone: str | None,
-    owner_external_user_id: str,
+    owner_external_user_id: str | None,
 ) -> ContractingTenant:
     tenant_result = await session.execute(
         text(
@@ -55,20 +55,21 @@ async def create_contracting_tenant(
         },
     )
 
-    await session.execute(
-        text(
-            """
-            INSERT INTO tenant_memberships (
-                tenant_id, external_user_id, role, status
-            )
-            VALUES (:tenant_id, :external_user_id, 'OWNER', 'INVITED')
-            """
-        ),
-        {
-            "tenant_id": tenant["id"],
-            "external_user_id": owner_external_user_id,
-        },
-    )
+    if owner_external_user_id:
+        await session.execute(
+            text(
+                """
+                INSERT INTO tenant_memberships (
+                    tenant_id, external_user_id, role, status
+                )
+                VALUES (:tenant_id, :external_user_id, 'OWNER', 'INVITED')
+                """
+            ),
+            {
+                "tenant_id": tenant["id"],
+                "external_user_id": owner_external_user_id,
+            },
+        )
 
     return ContractingTenant(
         id=tenant["id"],
@@ -119,7 +120,7 @@ async def list_contracting_tenants(session: AsyncSession) -> list[ContractingTen
                 t.created_at
             FROM tenants AS t
             JOIN tenant_profiles AS p ON p.tenant_id = t.id
-            JOIN LATERAL (
+            LEFT JOIN LATERAL (
                 SELECT tm.external_user_id
                 FROM tenant_memberships AS tm
                 WHERE tm.tenant_id = t.id
@@ -156,7 +157,7 @@ async def get_contracting_tenant(
                 t.created_at
             FROM tenants AS t
             JOIN tenant_profiles AS p ON p.tenant_id = t.id
-            JOIN LATERAL (
+            LEFT JOIN LATERAL (
                 SELECT tm.external_user_id
                 FROM tenant_memberships AS tm
                 WHERE tm.tenant_id = t.id

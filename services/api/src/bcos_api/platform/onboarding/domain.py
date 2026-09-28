@@ -26,7 +26,7 @@ class ContractingTenant:
     tax_id: str | None
     email: str
     phone: str | None
-    owner_external_user_id: str
+    owner_external_user_id: str | None
     created_at: datetime
 
 
