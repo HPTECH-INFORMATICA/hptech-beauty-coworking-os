@@ -6,6 +6,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -146,9 +147,22 @@ async def create_owner_invitation_endpoint(
     session: SessionDependency,
     context: PlatformContextDependency,
 ) -> OwnerInvitation:
-    external_user_id = payload.external_user_id.strip()
+    external_user_id = payload.external_user_id.strip() if payload.external_user_id else ""
+    if payload.email:
+        owner_email = payload.email.strip().lower()
+        identity = await session.execute(
+            text('SELECT id FROM neon_auth."user" WHERE lower(email) = :email LIMIT 1'),
+            {"email": owner_email},
+        )
+        row = identity.mappings().one_or_none()
+        if row is None:
+            raise HTTPException(
+                status_code=422,
+                detail="O proprietário ainda não possui uma conta de acesso com este e-mail.",
+            )
+        external_user_id = str(row["id"]).strip()
     if not external_user_id:
-        raise HTTPException(status_code=422, detail="external_user_id must not be blank.")
+        raise HTTPException(status_code=422, detail="email or external_user_id is required.")
     try:
         membership_id = await create_owner_invitation(
             session,
