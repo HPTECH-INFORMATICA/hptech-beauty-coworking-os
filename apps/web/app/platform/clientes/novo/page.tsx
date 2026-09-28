@@ -28,8 +28,8 @@ export default async function NewPlatformClientPage() {
               <label>E-mail da empresa<input name="email" type="email" required maxLength={255}/></label>
               <label>Telefone<input name="phone" maxLength={40}/></label>
             </div></div>
-            <div className="platform-form-section"><div><span>PRIMEIRO ACESSO</span><h2>Proprietário responsável</h2><p>O cadastro nasce como Pendente de ativação. A credencial pertence à autoridade de identidade, não ao banco do BCOS.</p></div><div className="platform-fields platform-fields-single">
-              <label>Identidade do proprietário<input name="owner_external_user_id" required maxLength={255} placeholder="Identidade confiável do OWNER"/></label>
+            <div className="platform-form-section"><div><span>PRIMEIRO ACESSO</span><h2>Proprietário responsável</h2><p>O cadastro nasce como Pendente de ativação. Informe o e-mail usado pelo proprietário no acesso ao BCOS; a identidade técnica é vinculada automaticamente pelo Neon Auth.</p></div><div className="platform-fields platform-fields-single">
+              <label>E-mail de acesso do proprietário<input name="owner_email" type="email" required maxLength={255} placeholder="proprietario@empresa.com.br"/></label>
             </div></div>
             <div className="platform-form-actions"><Link href="/platform/clientes">Cancelar</Link><button type="submit">Cadastrar contratante</button></div>
           </form>

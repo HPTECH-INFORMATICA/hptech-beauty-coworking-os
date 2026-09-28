@@ -19,7 +19,8 @@ class ContractingTenantCreate(BaseModel):
     tax_id: str | None = Field(default=None, max_length=32)
     email: str = Field(min_length=1, max_length=255)
     phone: str | None = Field(default=None, max_length=40)
-    owner_external_user_id: str = Field(min_length=1, max_length=255)
+    owner_external_user_id: str | None = Field(default=None, min_length=1, max_length=255)
+    owner_email: str | None = Field(default=None, min_length=1, max_length=255)
 
 
 class ContractingTenant(BaseModel):
