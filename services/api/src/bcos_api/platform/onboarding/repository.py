@@ -180,6 +180,23 @@ async def update_contracting_tenant_status(
     tenant_id: UUID,
     status: TenantCommercialStatus,
 ) -> ContractingTenant | None:
+    if status is TenantCommercialStatus.ACTIVE:
+        owner = await session.execute(
+            text(
+                """
+                SELECT 1
+                FROM tenant_memberships
+                WHERE tenant_id = :tenant_id
+                  AND role = 'OWNER'
+                  AND status = 'ACTIVE'
+                LIMIT 1
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+        if owner.scalar_one_or_none() is None:
+            return None
+
     updated = await session.execute(
         text(
             """
