@@ -64,7 +64,7 @@ describe("tenant administration", () => {
     expect(screen.getByText("Sala 01")).toBeInTheDocument();
     expect(screen.getByText("Cristiana")).toBeInTheDocument();
     expect(screen.getAllByText("Ativa", { selector: "span" })).toHaveLength(2);
-    expect(screen.getByText("Ativo", { selector: "span" })).toBeInTheDocument();
+    expect(screen.getAllByText("Ativo", { selector: "span" })).toHaveLength(2);
   });
 
   it("renders users as administration content without a legacy product shell", async () => {
