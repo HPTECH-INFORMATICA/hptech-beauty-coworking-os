@@ -1781,3 +1781,7 @@ svg {
 .bcos-session-actions>a{font-size:11px;font-weight:800;color:var(--text-soft);text-decoration:none}
 .bcos-session-actions>a:hover{text-decoration:underline}
 @media(max-width:760px){.bcos-session-actions{align-items:flex-end;flex-direction:column;gap:6px}}
+
+.bcos-environment-switch{appearance:none;border:0;background:transparent;padding:0;font:inherit;font-size:11px;font-weight:800;color:var(--text-soft);cursor:pointer}
+.bcos-environment-switch:hover{text-decoration:underline}
+.bcos-environment-switch:disabled{cursor:wait;opacity:.65}
