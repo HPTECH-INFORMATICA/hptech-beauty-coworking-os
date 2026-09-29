@@ -25,6 +25,9 @@ def _professional_from_row(
         name=row["name"],  # type: ignore[arg-type]
         email=row["email"],  # type: ignore[arg-type]
         phone=row["phone"],  # type: ignore[arg-type]
+        profession=row["profession"],  # type: ignore[arg-type]
+        council_type=row["council_type"],  # type: ignore[arg-type]
+        council_number=row["council_number"],  # type: ignore[arg-type]
         status=ProfessionalStatus(
             row["status"]  # type: ignore[arg-type]
         ),
@@ -48,6 +51,9 @@ async def list_professionals(
                 name,
                 email,
                 phone,
+                profession,
+                council_type,
+                council_number,
                 status
             FROM professionals
             WHERE tenant_id = :tenant_id
@@ -84,6 +90,9 @@ async def get_professional(
                 name,
                 email,
                 phone,
+                profession,
+                council_type,
+                council_number,
                 status
             FROM professionals
             WHERE id = :professional_id
@@ -114,6 +123,9 @@ async def create_professional(
     name: str,
     email: str | None,
     phone: str | None,
+    profession: str | None,
+    council_type: str | None,
+    council_number: str | None,
 ) -> Professional:
     """Create one professional inside the authorized tenant."""
 
@@ -125,14 +137,20 @@ async def create_professional(
                 external_user_id,
                 name,
                 email,
-                phone
+                phone,
+                profession,
+                council_type,
+                council_number
             )
             VALUES (
                 :tenant_id,
                 :external_user_id,
                 :name,
                 :email,
-                :phone
+                :phone,
+                :profession,
+                :council_type,
+                :council_number
             )
             RETURNING
                 id,
@@ -141,6 +159,9 @@ async def create_professional(
                 name,
                 email,
                 phone,
+                profession,
+                council_type,
+                council_number,
                 status
             """
         ),
@@ -150,6 +171,9 @@ async def create_professional(
             "name": name,
             "email": email,
             "phone": phone,
+            "profession": profession,
+            "council_type": council_type,
+            "council_number": council_number,
         },
     )
 
@@ -167,6 +191,9 @@ async def update_professional(
     name: str,
     email: str | None,
     phone: str | None,
+    profession: str | None,
+    council_type: str | None,
+    council_number: str | None,
     status: ProfessionalStatus,
 ) -> Professional | None:
     """Update one professional without crossing tenant boundaries."""
@@ -180,6 +207,9 @@ async def update_professional(
                 name = :name,
                 email = :email,
                 phone = :phone,
+                profession = :profession,
+                council_type = :council_type,
+                council_number = :council_number,
                 status = :status,
                 updated_at = now()
             WHERE id = :professional_id
@@ -192,6 +222,9 @@ async def update_professional(
                 name,
                 email,
                 phone,
+                profession,
+                council_type,
+                council_number,
                 status
             """
         ),
@@ -202,6 +235,9 @@ async def update_professional(
             "name": name,
             "email": email,
             "phone": phone,
+            "profession": profession,
+            "council_type": council_type,
+            "council_number": council_number,
             "status": status.value,
         },
     )
