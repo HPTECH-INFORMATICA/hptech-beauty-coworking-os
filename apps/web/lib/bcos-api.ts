@@ -12,7 +12,7 @@ export type Unit = { id: string; name: string; timezone: string; active: boolean
 export type ResourceCategory = { id: string; name: string; active: boolean };
 export type PricingRule = { id: string; unit_id: string | null; resource_category_id: string | null; name: string; status: string; priority: number; currency: "BRL"; rule_definition: Record<string, unknown>; valid_from: string | null; valid_until: string | null };
 export type Resource = { id: string; unit_id: string; category_id: string; name: string; operational_status: string; buffer_before_minutes: number; buffer_after_minutes: number; active: boolean };
-export type Professional = { id: string; external_user_id: string | null; name: string; email: string | null; phone: string | null; status: string };
+export type Professional = { id: string; external_user_id: string | null; name: string; email: string | null; phone: string | null; profession: string | null; council_type: string | null; council_number: string | null; status: string };
 export type Booking = { id: string; unit_id: string; resource_id: string; professional_id: string; series_id: string | null; status: string; starts_at: string; ends_at: string; buffer_before_minutes: number; buffer_after_minutes: number; pricing_snapshot: Record<string, unknown> };
 export type Usage = { id: string; booking_id: string; resource_id: string; professional_id: string; status: string; checked_in_at: string | null; checked_out_at: string | null };
 export type ReceptionResourceState = { resource_id: string; resource_name: string; operational_status: string; booking_id: string | null; professional_id: string | null; starts_at: string | null; ends_at: string | null; usage_id: string | null; usage_status: string | null; checked_in_at: string | null; checked_out_at: string | null };
@@ -87,6 +87,7 @@ async function apiRequest<T>(pathName: string, init: RequestInit = {}): Promise<
     const body = await response.text();
     throw new Error(`BCOS API ${init.method ?? "GET"} ${pathName} falhou com HTTP ${response.status}: ${body}`);
   }
+  if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
 
@@ -155,16 +156,18 @@ export async function updateTenantProfile(input: TenantProfile): Promise<TenantP
 export async function getUnits(): Promise<Unit[]> { return apiGet<Unit[]>("/api/v1/units"); }
 export async function createUnit(input: { name: string; timezone: string }): Promise<Unit> { return apiPost<Unit>("/api/v1/units", { name: input.name, timezone: input.timezone, active: true }); }
 export async function updateUnit(unitId: string, input: { name: string; timezone: string; active: boolean }): Promise<Unit> { return apiPatch<Unit>(`/api/v1/units/${encodeURIComponent(unitId)}`, input); }
+export async function deleteUnit(unitId: string): Promise<void> { return apiRequest<void>(`/api/v1/units/${encodeURIComponent(unitId)}`, { method: "DELETE" }); }
 export async function getReceptionHours(unitId: string): Promise<ReceptionHour[]> { return apiGet<ReceptionHour[]>(`/api/v1/units/${encodeURIComponent(unitId)}/reception-hours`); }
 export async function updateReceptionHours(unitId: string, hours: ReceptionHour[]): Promise<ReceptionHour[]> { return apiPut<ReceptionHour[]>(`/api/v1/units/${encodeURIComponent(unitId)}/reception-hours`, hours); }
 export async function getResourceCategories(): Promise<ResourceCategory[]> { return apiGet<ResourceCategory[]>("/api/v1/resource-categories"); }
 export async function createResourceCategory(input: { name: string }): Promise<ResourceCategory> { return apiPost<ResourceCategory>("/api/v1/resource-categories", { name: input.name, active: true }); }
 export async function getResources(unitId?: string): Promise<Resource[]> { const search = new URLSearchParams(); if (unitId) search.set("unit_id", unitId); const query = search.toString(); return apiGet<Resource[]>(`/api/v1/resources${query ? `?${query}` : ""}`); }
 export async function getProfessionals(): Promise<Professional[]> { return apiGet<Professional[]>("/api/v1/professionals"); }
-export async function createProfessional(input: { name: string; email?: string; phone?: string }): Promise<Professional> { return apiPost<Professional>("/api/v1/professionals", { name: input.name, ...(input.email ? { email: input.email } : {}), ...(input.phone ? { phone: input.phone } : {}) }); }
-export async function updateProfessional(professionalId: string, input: { name: string; email: string | null; phone: string | null; status: string }): Promise<Professional> { return apiPatch<Professional>(`/api/v1/professionals/${encodeURIComponent(professionalId)}`, input); }
+export async function createProfessional(input: { name: string; email?: string; phone?: string; profession?: string; councilType?: string; councilNumber?: string }): Promise<Professional> { return apiPost<Professional>("/api/v1/professionals", { name: input.name, ...(input.email ? { email: input.email } : {}), ...(input.phone ? { phone: input.phone } : {}), ...(input.profession ? { profession: input.profession } : {}), ...(input.councilType ? { council_type: input.councilType } : {}), ...(input.councilNumber ? { council_number: input.councilNumber } : {}) }); }
+export async function updateProfessional(professionalId: string, input: { name: string; email: string | null; phone: string | null; profession: string | null; council_type: string | null; council_number: string | null; status: string }): Promise<Professional> { return apiPatch<Professional>(`/api/v1/professionals/${encodeURIComponent(professionalId)}`, input); }
 export async function createResource(input: { unitId: string; categoryId: string; name: string }): Promise<Resource> { return apiPost<Resource>("/api/v1/resources", { unit_id: input.unitId, category_id: input.categoryId, name: input.name, buffer_before_minutes: 0, buffer_after_minutes: 0, active: true }); }
 export async function updateResource(resourceId: string, input: { name: string; operational_status: string; buffer_before_minutes: number; buffer_after_minutes: number; active: boolean }): Promise<Resource> { return apiPatch<Resource>(`/api/v1/resources/${encodeURIComponent(resourceId)}`, input); }
+export async function deleteResource(resourceId: string): Promise<void> { return apiRequest<void>(`/api/v1/resources/${encodeURIComponent(resourceId)}`, { method: "DELETE" }); }
 export async function getPricingRules(): Promise<PricingRule[]> { return apiGet<PricingRule[]>("/api/v1/pricing-rules"); }
 export async function createPricingRule(input: { name: string; unitId?: string; categoryId?: string; priority: number; ruleDefinition: Record<string, unknown>; validFrom?: string; validUntil?: string }): Promise<PricingRule> { return apiPost<PricingRule>("/api/v1/pricing-rules", { name: input.name, ...(input.unitId ? { unit_id: input.unitId } : {}), ...(input.categoryId ? { resource_category_id: input.categoryId } : {}), priority: input.priority, currency: "BRL", rule_definition: input.ruleDefinition, ...(input.validFrom ? { valid_from: input.validFrom } : {}), ...(input.validUntil ? { valid_until: input.validUntil } : {}) }); }
 export async function getReceptionNow(unitId: string): Promise<ReceptionNow> { return apiGet<ReceptionNow>(`/api/v1/reception/now?${new URLSearchParams({ unit_id: unitId }).toString()}`); }
