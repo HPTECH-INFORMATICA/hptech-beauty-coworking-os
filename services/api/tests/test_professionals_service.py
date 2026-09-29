@@ -49,6 +49,9 @@ def professional_for(
     name: str = "Cristiana Valente",
     email: str | None = "contato@example.com",
     phone: str | None = "41999999999",
+    profession: str | None = None,
+    council_type: str | None = None,
+    council_number: str | None = None,
     status: ProfessionalStatus = ProfessionalStatus.ACTIVE,
 ) -> Professional:
     return Professional(
@@ -58,6 +61,9 @@ def professional_for(
         name=name,
         email=email,
         phone=phone,
+        profession=profession,
+        council_type=council_type,
+        council_number=council_number,
         status=status,
     )
 
@@ -138,6 +144,9 @@ async def test_create_professional_uses_context_tenant_and_normalizes_fields(
         name: str,
         email: str | None,
         phone: str | None,
+        profession: str | None,
+        council_type: str | None,
+        council_number: str | None,
     ) -> Professional:
         del session
         assert tenant_id == context.tenant_id
@@ -167,6 +176,9 @@ async def test_create_professional_uses_context_tenant_and_normalizes_fields(
         name="  Cristiana Valente  ",
         email="  contato@example.com  ",
         phone="  41999999999  ",
+        profession=None,
+        council_type=None,
+        council_number=None,
     )
 
     assert result.id == created_id
@@ -191,6 +203,9 @@ async def test_create_professional_preserves_late_binding_nulls(
         name: str,
         email: str | None,
         phone: str | None,
+        profession: str | None,
+        council_type: str | None,
+        council_number: str | None,
     ) -> Professional:
         del session
         assert tenant_id == context.tenant_id
@@ -218,6 +233,9 @@ async def test_create_professional_preserves_late_binding_nulls(
         name="Profissional sem convite",
         email="   ",
         phone=None,
+        profession=None,
+        council_type=None,
+        council_number=None,
     )
 
     assert result.external_user_id is None
@@ -271,6 +289,9 @@ async def test_create_rejects_invalid_fields_before_repository(
             name=values["name"] or "",
             email=values["email"],
             phone=values["phone"],
+            profession=None,
+            council_type=None,
+            council_number=None,
         )
 
     assert repository_called is False
@@ -293,6 +314,9 @@ async def test_update_professional_is_tenant_scoped_and_normalized(
         name: str,
         email: str | None,
         phone: str | None,
+        profession: str | None,
+        council_type: str | None,
+        council_number: str | None,
         status: ProfessionalStatus,
     ) -> Professional:
         del session
@@ -327,6 +351,9 @@ async def test_update_professional_is_tenant_scoped_and_normalized(
         name="  Cristiana Valente  ",
         email="  novo@example.com  ",
         phone="   ",
+        profession=" Enfermeira Esteta ",
+        council_type=" COREN ",
+        council_number=" PR 451.408 ",
         status=ProfessionalStatus.INACTIVE,
     )
 
@@ -361,6 +388,9 @@ async def test_update_missing_professional_is_not_found(
             name="Cristiana Valente",
             email=None,
             phone=None,
+            profession=None,
+            council_type=None,
+            council_number=None,
             status=ProfessionalStatus.ACTIVE,
         )
 
