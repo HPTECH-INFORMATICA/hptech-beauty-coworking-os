@@ -1813,3 +1813,11 @@ svg {
 .admin-check{display:flex!important;align-items:center;gap:8px!important}.admin-check input{width:16px!important;min-height:16px!important}.admin-advanced{grid-column:1/-1;padding:12px;border:1px solid var(--line);border-radius:12px}.admin-advanced summary{cursor:pointer;font-size:10px;font-weight:800}.admin-advanced[open]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.admin-advanced[open] summary{grid-column:1/-1}
 @media(max-width:1000px){.admin-commercial{padding:28px 24px 70px}.admin-overview{grid-template-columns:repeat(2,1fr)}.admin-content-grid{grid-template-columns:1fr}.admin-card-wide{grid-column:auto}.admin-pricing-layout{grid-template-columns:1fr}.admin-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.admin-commercial{padding:22px 16px 60px}.admin-hero{align-items:flex-start}.admin-users-action{margin-top:14px}.admin-section-tabs{top:58px;overflow:auto;flex-wrap:nowrap}.admin-overview{grid-template-columns:1fr 1fr}.admin-overview>div{min-height:96px;padding:14px}.admin-form-grid,.admin-advanced[open]{grid-template-columns:1fr}.admin-inline-form{grid-template-columns:1fr}.admin-card-heading{gap:12px}.admin-config-card{padding:18px}.admin-hours-unit .reception-hours-form>div{grid-template-columns:1fr 1fr}.admin-hours-unit .reception-hours-form>div>strong{grid-column:1/-1}}
+
+.admin-editor{margin-top:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface-soft);overflow:hidden}
+.admin-editor>summary{padding:12px 14px;cursor:pointer;list-style:none;color:var(--text);font-size:10px;font-weight:800}
+.admin-editor>summary::after{content:"+";float:right;color:var(--text-faint);font-size:15px;line-height:10px}
+.admin-editor[open]>summary{border-bottom:1px solid var(--line)}
+.admin-editor[open]>summary::after{content:"−"}
+.admin-editor>.admin-form-grid,.admin-editor>.admin-inline-form{margin:0;padding:14px;background:var(--surface)}
+.admin-pricing-editor{margin-top:0;align-self:start}
