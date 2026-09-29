@@ -58,7 +58,7 @@ describe("tenant administration", () => {
     expect(screen.getByRole("link", { name: /Usuários.*Acessos e permissões/i })).toHaveAttribute("href", "/administracao/usuarios");
     expect(screen.getByText("Regras comerciais")).toBeInTheDocument();
     expect(screen.getAllByText("Editar horários", { selector: "strong" })).toHaveLength(2);
-    expect(screen.getByRole("button", { name: "Salvar unidade" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Salvar unidade" })).toHaveLength(2);
     expect(screen.getByRole("button", { name: "Salvar espaço" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar profissional" })).toBeInTheDocument();
     expect(screen.getByText("Livre")).toBeInTheDocument();
