@@ -17,8 +17,8 @@ from bcos_api.units.repository import (
     create_unit,
     get_unit,
     list_units,
-    update_unit,
     soft_delete_unit,
+    update_unit,
 )
 
 
