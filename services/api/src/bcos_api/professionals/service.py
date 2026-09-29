@@ -32,7 +32,10 @@ def _normalize_professional_fields(
     name: str,
     email: str | None,
     phone: str | None,
-) -> tuple[str | None, str, str | None, str | None]:
+    profession: str | None,
+    council_type: str | None,
+    council_number: str | None,
+) -> tuple[str | None, str, str | None, str | None, str | None, str | None, str | None]:
     """Normalize professional fields according to the database baseline."""
 
     normalized_external_user_id = normalize_optional_text(
@@ -52,11 +55,18 @@ def _normalize_professional_fields(
         max_length=40,
     )
 
+    normalized_profession = normalize_optional_text(profession, field_name="profession", max_length=120)
+    normalized_council_type = normalize_optional_text(council_type, field_name="council_type", max_length=40)
+    normalized_council_number = normalize_optional_text(council_number, field_name="council_number", max_length=80)
+
     return (
         normalized_external_user_id,
         normalized_name,
         normalized_email,
         normalized_phone,
+        normalized_profession,
+        normalized_council_type,
+        normalized_council_number,
     )
 
 
@@ -105,6 +115,9 @@ async def create_tenant_professional(
     name: str,
     email: str | None,
     phone: str | None,
+    profession: str | None,
+    council_type: str | None,
+    council_number: str | None,
 ) -> Professional:
     """Create a validated professional inside the authorized tenant."""
 
@@ -115,11 +128,17 @@ async def create_tenant_professional(
         normalized_name,
         normalized_email,
         normalized_phone,
+        normalized_profession,
+        normalized_council_type,
+        normalized_council_number,
     ) = _normalize_professional_fields(
         external_user_id=external_user_id,
         name=name,
         email=email,
         phone=phone,
+        profession=profession,
+        council_type=council_type,
+        council_number=council_number,
     )
 
     return await create_professional(
@@ -129,6 +148,9 @@ async def create_tenant_professional(
         name=normalized_name,
         email=normalized_email,
         phone=normalized_phone,
+        profession=normalized_profession,
+        council_type=normalized_council_type,
+        council_number=normalized_council_number,
     )
 
 
@@ -141,6 +163,9 @@ async def update_tenant_professional(
     name: str,
     email: str | None,
     phone: str | None,
+    profession: str | None,
+    council_type: str | None,
+    council_number: str | None,
     status: ProfessionalStatus,
 ) -> Professional:
     """Update a validated professional inside the authorized tenant."""
@@ -152,11 +177,17 @@ async def update_tenant_professional(
         normalized_name,
         normalized_email,
         normalized_phone,
+        normalized_profession,
+        normalized_council_type,
+        normalized_council_number,
     ) = _normalize_professional_fields(
         external_user_id=external_user_id,
         name=name,
         email=email,
         phone=phone,
+        profession=profession,
+        council_type=council_type,
+        council_number=council_number,
     )
 
     professional = await update_professional(
@@ -167,6 +198,9 @@ async def update_tenant_professional(
         name=normalized_name,
         email=normalized_email,
         phone=normalized_phone,
+        profession=normalized_profession,
+        council_type=normalized_council_type,
+        council_number=normalized_council_number,
         status=status,
     )
 
