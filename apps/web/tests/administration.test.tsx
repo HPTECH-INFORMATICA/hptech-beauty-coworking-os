@@ -55,7 +55,7 @@ describe("tenant administration", () => {
     expect(screen.getByRole("button", { name: "Salvar horários de Centro" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "Seu coworking, organizado." })).toBeInTheDocument();
     expect(screen.getByText("Regras comerciais")).toBeInTheDocument();
-    expect(screen.getByText("Editar horários", { selector: "strong" })).toBeInTheDocument();
+    expect(screen.getAllByText("Editar horários", { selector: "strong" })).toHaveLength(2);
   });
 
   it("renders users as administration content without a legacy product shell", async () => {
