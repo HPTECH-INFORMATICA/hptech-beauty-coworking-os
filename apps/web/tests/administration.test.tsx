@@ -53,6 +53,9 @@ describe("tenant administration", () => {
     expect(mockedGetReceptionHours).toHaveBeenCalledWith("unit-2");
     expect(screen.getByRole("button", { name: "Salvar horários de Batel" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar horários de Centro" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Seu coworking, organizado." })).toBeInTheDocument();
+    expect(screen.getByText("Regras comerciais")).toBeInTheDocument();
+    expect(screen.getByText("Editar horários", { selector: "strong" })).toBeInTheDocument();
   });
 
   it("renders users as administration content without a legacy product shell", async () => {
