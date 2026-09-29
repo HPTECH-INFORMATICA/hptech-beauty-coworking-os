@@ -50,7 +50,7 @@ export async function BcosShell({
       <div className="bcos-content">
         <header className="bcos-topbar">
           <div><span>Ambiente do cliente</span><strong>{tenant.tenant_name}</strong></div>
-          <SessionControls label={identity} />
+          <div className="bcos-session-actions"><Link href="/acesso">Trocar ambiente</Link><SessionControls label={identity} /></div>
         </header>
         {children}
       </div>
