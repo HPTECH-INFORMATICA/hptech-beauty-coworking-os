@@ -10,7 +10,10 @@ import {
   createResourceCategory,
   createUnit,
   updateReceptionHours,
+  updateResource,
+  updateProfessional,
   updateTenantProfile,
+  updateUnit,
 } from "../../lib/bcos-api";
 import { pricingRuleDefinitionFromForm } from "./pricing-form";
 
@@ -83,4 +86,37 @@ export async function createPricingRuleAction(formData: FormData) {
   });
   revalidatePath("/administracao");
   redirect("/administracao?created=pricing-rule");
+}
+
+export async function updateUnitAction(formData: FormData) {
+  await updateUnit(value(formData, "unit_id"), {
+    name: value(formData, "name"),
+    timezone: value(formData, "timezone"),
+    active: formData.get("active") === "on",
+  });
+  revalidatePath("/administracao");
+  redirect("/administracao?updated=unit#unidades");
+}
+
+export async function updateResourceAction(formData: FormData) {
+  await updateResource(value(formData, "resource_id"), {
+    name: value(formData, "name"),
+    operational_status: value(formData, "operational_status"),
+    buffer_before_minutes: Number(value(formData, "buffer_before_minutes") || "0"),
+    buffer_after_minutes: Number(value(formData, "buffer_after_minutes") || "0"),
+    active: formData.get("active") === "on",
+  });
+  revalidatePath("/administracao");
+  redirect("/administracao?updated=resource#espacos");
+}
+
+export async function updateProfessionalAction(formData: FormData) {
+  await updateProfessional(value(formData, "professional_id"), {
+    name: value(formData, "name"),
+    email: value(formData, "email") || null,
+    phone: value(formData, "phone") || null,
+    status: value(formData, "status"),
+  });
+  revalidatePath("/administracao");
+  redirect("/administracao?updated=professional#profissionais");
 }
