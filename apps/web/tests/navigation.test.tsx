@@ -29,7 +29,7 @@ vi.mock("../components/session-controls", () => ({
 vi.mock("../components/bcos-shell", () => ({
   BcosShell: ({ children, tenant }: { children: React.ReactNode; tenant: { tenant_name: string } }) => (
     <div>
-      <header>{tenant.tenant_name}</header>
+      <header><strong>HPTECH PLATFORM</strong><span>{tenant.tenant_name}</span></header>
       <nav>
         <Link href="/">Visão geral</Link>
         <Link href="/agenda">Agenda</Link>
