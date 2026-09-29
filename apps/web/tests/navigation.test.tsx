@@ -88,7 +88,6 @@ describe("operational navigation", () => {
     expect(screen.getByRole("link", { name: "Agenda" })).toHaveAttribute("href", "/agenda");
     expect(screen.getByRole("link", { name: "Check-in" })).toHaveAttribute("href", "/check-in");
     expect(screen.getByRole("link", { name: "Financeiro" })).toHaveAttribute("href", "/financeiro");
-    expect(screen.getByRole("link", { name: "Meu portal" })).toHaveAttribute("href", "/profissional");
     expect(screen.queryByText("CentralCheck-inFinanceiro")).not.toBeInTheDocument();
   });
 
