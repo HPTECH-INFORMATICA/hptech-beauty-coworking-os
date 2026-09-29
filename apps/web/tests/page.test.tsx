@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -20,11 +21,11 @@ vi.mock("../components/bcos-shell", () => ({
   BcosShell: ({ children }: { children: React.ReactNode }) => (
     <div>
       <nav>
-        <a href="/">Visão geral</a>
-        <a href="/agenda">Agenda</a>
-        <a href="/disponibilidade">Disponibilidade</a>
-        <a href="/check-in">Check-in</a>
-        <a href="/financeiro">Financeiro</a>
+        <Link href="/">Visão geral</Link>
+        <Link href="/agenda">Agenda</Link>
+        <Link href="/disponibilidade">Disponibilidade</Link>
+        <Link href="/check-in">Check-in</Link>
+        <Link href="/financeiro">Financeiro</Link>
       </nav>
       {children}
     </div>
