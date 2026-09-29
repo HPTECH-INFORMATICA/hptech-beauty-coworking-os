@@ -1698,3 +1698,71 @@ svg {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Integrated tenant identity and navigation */
+.tenant-authenticated-shell { min-height: 100vh; }
+.tenant-context {
+  position: fixed;
+  z-index: 90;
+  top: 8px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tenant-context-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.tenant-context-copy span {
+  color: var(--text-faint);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.tenant-context-copy strong { margin-top: 2px; font-size: 10px; }
+.tenant-context .session-controls { min-width: 220px; }
+.operator .session-controls {
+  min-width: 210px;
+  padding: 7px 8px 7px 10px;
+  box-shadow: none;
+}
+.operator .session-controls::before { width: 32px; height: 32px; }
+.operator .session-controls > span { display: none; }
+.operator .session-controls > strong { max-width: 125px; }
+.operator .session-controls > button { min-height: 30px; }
+@media (max-width: 900px) {
+  .tenant-context-copy { display: none; }
+  .tenant-context { right: 10px; }
+}
+
+/* BCOS commercial product shell */
+.bcos-shell{min-height:100vh;display:grid;grid-template-columns:232px minmax(0,1fr);background:var(--surface-soft)}
+.bcos-sidebar{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;justify-content:space-between;padding:22px 14px;background:var(--surface-deep);color:#fff}
+.bcos-nav{display:grid;gap:6px;margin-top:30px}
+.bcos-nav a{display:flex;align-items:center;min-height:42px;padding:0 13px;border-radius:11px;color:rgba(255,255,255,.68);font-size:11px;font-weight:700;text-decoration:none}
+.bcos-nav a:hover,.bcos-nav a.active{background:rgba(255,255,255,.1);color:#fff}
+.bcos-sidebar-foot{display:grid;gap:4px;padding:12px}
+.bcos-sidebar-foot span{color:rgba(255,255,255,.46);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em}
+.bcos-sidebar-foot strong{font-size:10px;overflow:hidden;text-overflow:ellipsis}
+.bcos-content{min-width:0}
+.bcos-topbar{height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:0 30px;border-bottom:1px solid var(--line);background:var(--surface)}
+.bcos-topbar>div:first-child{display:flex;flex-direction:column;gap:3px}
+.bcos-topbar>div:first-child span{color:var(--text-faint);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em}
+.bcos-topbar>div:first-child strong{font-size:13px}
+.bcos-topbar .session-controls{min-width:230px;box-shadow:none}
+.admin-page{width:min(1180px,calc(100% - 48px));margin:0 auto;padding:42px 0 72px}
+.admin-page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;margin-bottom:28px}
+.admin-page-head>div>span{color:var(--text-faint);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
+.admin-page-head h1{margin:7px 0 5px;font-size:34px;letter-spacing:-.04em}
+.admin-page-head p{margin:0;color:var(--text-soft);font-size:11px}
+.admin-section-nav{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.admin-section-nav a{padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text-soft);font-size:10px;font-weight:700;text-decoration:none}
+.admin-section-nav a:hover{border-color:var(--line-strong);color:var(--text)}
+.admin-settings-grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;align-items:start;gap:18px}
+.reception-hours-form>div{grid-template-columns:86px 110px 110px minmax(78px,1fr)!important}
+@media(max-width:1080px){.admin-settings-grid{grid-template-columns:1fr}.admin-page-head{align-items:flex-start;flex-direction:column}.admin-section-nav{justify-content:flex-start}.tenant-invite-card{position:static}}
+@media(max-width:820px){.bcos-shell{display:block}.bcos-sidebar{position:static;height:auto}.bcos-nav{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:16px}.bcos-sidebar-foot{display:none}.bcos-topbar{padding:0 16px}.admin-page{width:min(100% - 28px,1180px);padding-top:28px}}

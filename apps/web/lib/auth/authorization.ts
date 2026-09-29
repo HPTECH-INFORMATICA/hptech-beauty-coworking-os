@@ -22,7 +22,10 @@ export async function requireTenantRole(allowedRoles: readonly TenantRole[]): Pr
     redirect("/acesso");
   }
 
-  const tenant = access.tenants.find((candidate) => allowedRoles.includes(candidate.role));
-  if (!tenant) redirect("/acesso");
-  return tenant;
+  const selectedTenant = access.tenants.find(
+    (candidate) => candidate.destination === "/" && allowedRoles.includes(candidate.role),
+  );
+
+  if (!selectedTenant) redirect("/acesso");
+  return selectedTenant;
 }
