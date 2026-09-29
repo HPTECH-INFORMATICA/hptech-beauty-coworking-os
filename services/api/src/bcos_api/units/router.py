@@ -36,6 +36,7 @@ from bcos_api.units.schemas import (
     UnitUpdate as UnitUpdateRequest,
 )
 from bcos_api.units.service import (
+    UnitDeleteConflict,
     UnitNotFound,
     create_tenant_unit,
     get_tenant_unit,
@@ -309,3 +310,22 @@ async def replace_reception_hours_endpoint(
     ]
 
 
+
+
+@router.delete(
+    "/{unit_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=error_responses(status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND, status.HTTP_409_CONFLICT),
+)
+async def delete_unit_endpoint(unit_id: UUID, session: SessionDependency, context: TenantContextDependency) -> None:
+    """Safely remove an unused unit from the active tenant catalog."""
+    from bcos_api.units.service import delete_tenant_unit
+    try:
+        await delete_tenant_unit(session, context=context, unit_id=unit_id)
+        await session.commit()
+    except UnitNotFound as exc:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except UnitDeleteConflict as exc:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
