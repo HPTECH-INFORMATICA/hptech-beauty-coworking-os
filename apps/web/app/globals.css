@@ -1698,3 +1698,43 @@ svg {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Integrated tenant identity and navigation */
+.tenant-authenticated-shell { min-height: 100vh; }
+.tenant-context {
+  position: fixed;
+  z-index: 90;
+  top: 8px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tenant-context-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.tenant-context-copy span {
+  color: var(--text-faint);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.tenant-context-copy strong { margin-top: 2px; font-size: 10px; }
+.tenant-context .session-controls { min-width: 220px; }
+.operator .session-controls {
+  min-width: 210px;
+  padding: 7px 8px 7px 10px;
+  box-shadow: none;
+}
+.operator .session-controls::before { width: 32px; height: 32px; }
+.operator .session-controls > span { display: none; }
+.operator .session-controls > strong { max-width: 125px; }
+.operator .session-controls > button { min-height: 30px; }
+@media (max-width: 900px) {
+  .tenant-context-copy { display: none; }
+  .tenant-context { right: 10px; }
+}
