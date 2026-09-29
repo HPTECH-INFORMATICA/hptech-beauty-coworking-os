@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { auth } from "../lib/auth/server";
 import type { AccessTenant } from "../lib/bcos-api";
+import { EnvironmentSwitch } from "./environment-switch";
 import { SessionControls } from "./session-controls";
 
 const roleLabel = {
@@ -50,7 +51,7 @@ export async function BcosShell({
       <div className="bcos-content">
         <header className="bcos-topbar">
           <div><span>Ambiente do cliente</span><strong>{tenant.tenant_name}</strong></div>
-          <div className="bcos-session-actions"><Link href="/acesso">Trocar ambiente</Link><SessionControls label={identity} /></div>
+          <div className="bcos-session-actions"><EnvironmentSwitch /><SessionControls label={identity} /></div>
         </header>
         {children}
       </div>
