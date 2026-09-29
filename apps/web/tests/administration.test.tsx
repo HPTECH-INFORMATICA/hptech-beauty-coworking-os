@@ -39,7 +39,7 @@ describe("tenant administration", () => {
     ]);
     vi.mocked(getResourceCategories).mockResolvedValue([]);
     vi.mocked(getResources).mockResolvedValue([{ id: "resource-1", unit_id: "unit-1", category_id: "category-1", name: "Sala 01", operational_status: "AVAILABLE", buffer_before_minutes: 0, buffer_after_minutes: 0, active: true }]);
-    vi.mocked(getProfessionals).mockResolvedValue([{ id: "professional-1", external_user_id: null, name: "Cristiana", email: "cris@example.com", phone: null, status: "ACTIVE" }]);
+    vi.mocked(getProfessionals).mockResolvedValue([{ id: "professional-1", external_user_id: null, name: "Cristiana", email: "cris@example.com", phone: null, profession: "Enfermeira Esteta", council_type: "COREN", council_number: "PR 451.408", status: "ACTIVE" }]);
     vi.mocked(getPricingRules).mockResolvedValue([]);
     mockedGetReceptionHours.mockImplementation(async (unitId) => unitId === "unit-1"
       ? [{ day_of_week: 0, opens_at: "08:00:00", closes_at: "18:00:00", is_closed: false }]
@@ -63,6 +63,10 @@ describe("tenant administration", () => {
     expect(screen.getByRole("button", { name: "Salvar profissional" })).toBeInTheDocument();
     expect(screen.getByText("Sala 01")).toBeInTheDocument();
     expect(screen.getByText("Cristiana")).toBeInTheDocument();
+    expect(screen.getByText(/Enfermeira Esteta/)).toBeInTheDocument();
+    expect(screen.getByText("1. Tipos de espaço")).toBeInTheDocument();
+    expect(screen.getByText("2. Espaços da unidade")).toBeInTheDocument();
+    expect(screen.getAllByText("Configurar semana")).toHaveLength(2);
     expect(screen.getAllByText("Ativa", { selector: "span" })).toHaveLength(2);
     expect(screen.getAllByText("Ativo", { selector: "span" })).toHaveLength(2);
   });
