@@ -18,6 +18,7 @@ from bcos_api.resources.repository import (
     get_resource,
     list_resources,
     update_resource,
+    soft_delete_resource,
 )
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.rbac import Permission, require_permission
@@ -202,3 +203,14 @@ async def update_tenant_resource(
         raise ResourceNotFound("Resource was not found.")
 
     return resource
+
+
+class ResourceDeleteConflict(Exception):
+    """Raised when an operationally referenced resource cannot be removed."""
+
+async def delete_tenant_resource(session: AsyncSession, *, context: TenantContext, resource_id: UUID) -> None:
+    require_permission(context, Permission.OPERATIONS)
+    if await get_resource(session, tenant_id=context.tenant_id, resource_id=resource_id) is None:
+        raise ResourceNotFound("Resource was not found.")
+    if not await soft_delete_resource(session, tenant_id=context.tenant_id, resource_id=resource_id):
+        raise ResourceDeleteConflict("O espaço possui vínculos operacionais. Inative-o em vez de excluir.")
