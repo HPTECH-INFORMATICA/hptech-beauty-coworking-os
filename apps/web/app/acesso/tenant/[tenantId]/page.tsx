@@ -17,20 +17,23 @@ export default async function SelectTenantPage({
 
   const { tenantId } = await params;
   let pendingTenantName = "sua empresa";
+  let selectedDestination: string | null = null;
   try {
     const resolution = await getAccessResolution();
-    pendingTenantName = resolution.tenants.find((item) => item.tenant_id === tenantId)?.tenant_name || pendingTenantName;
-  } catch {}
-
-  try {
-    const tenant = await persistSelectedTenant(tenantId);
-    redirect(tenant.destination);
+    const accessTenant = resolution.tenants.find((item) => item.tenant_id === tenantId);
+    pendingTenantName = accessTenant?.tenant_name || pendingTenantName;
+    if (accessTenant) {
+      const selected = await persistSelectedTenant(tenantId);
+      selectedDestination = selected.destination;
+    }
   } catch (error) {
     console.error(
       "BCOS tenant selection failed:",
       error instanceof Error ? error.message : "unknown error",
     );
   }
+
+  if (selectedDestination) redirect(selectedDestination);
 
   return (
     <main className="auth-shell">
