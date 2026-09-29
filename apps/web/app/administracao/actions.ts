@@ -71,15 +71,33 @@ export async function updateReceptionHoursAction(formData: FormData) {
 }
 
 export async function createPricingRuleAction(formData: FormData) {
-  const definitionText = value(formData, "rule_definition");
-  let ruleDefinition: Record<string, unknown>;
-  try {
-    const parsed: unknown = JSON.parse(definitionText);
-    if (parsed === null || Array.isArray(parsed) || typeof parsed !== "object") throw new Error("Pricing rule definition must be an object.");
-    ruleDefinition = parsed as Record<string, unknown>;
-  } catch {
-    throw new Error("A definição da regra deve ser um objeto JSON válido.");
+  const modality = value(formData, "modality");
+  if (!["HOURLY", "PERIOD", "WEEKLY", "MONTHLY"].includes(modality)) throw new Error("Modalidade de preço inválida.");
+
+  const basePriceAmount = value(formData, "base_price_amount");
+  const overtimeHourlyPriceAmount = value(formData, "overtime_hourly_price_amount");
+  const proportionalUntilMinutes = Number(value(formData, "proportional_until_minutes"));
+  const fullHourFromMinutes = Number(value(formData, "full_hour_from_minutes"));
+
+  const ruleDefinition: Record<string, unknown> = {
+    schema_version: 1,
+    modality,
+    base_price_amount: basePriceAmount,
+    overtime: {
+      hourly_price_amount: overtimeHourlyPriceAmount,
+      proportional_until_minutes: proportionalUntilMinutes,
+      full_hour_from_minutes: fullHourFromMinutes,
+      forgiveness_allowed: formData.get("forgiveness_allowed") === "on",
+    },
+  };
+
+  const penaltyMode = value(formData, "conflict_penalty_mode");
+  const penaltyValue = value(formData, "conflict_penalty_value");
+  if (penaltyMode && penaltyValue) {
+    if (!["FIXED_AMOUNT", "PERCENTAGE"].includes(penaltyMode)) throw new Error("Tipo de penalidade inválido.");
+    ruleDefinition.conflict_penalty = { mode: penaltyMode, value: penaltyValue };
   }
+
   await createPricingRule({
     name: value(formData, "name"),
     unitId: value(formData, "unit_id") || undefined,
