@@ -1827,3 +1827,12 @@ svg {
 .admin-config-card:target{border-color:var(--line-strong);box-shadow:0 14px 34px rgba(17,19,24,.08)}
 @media(max-width:1100px){.admin-control-center{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.admin-control-center{grid-template-columns:1fr}.admin-control-center>a{min-height:68px}}
+
+.admin-maintenance-list{display:grid;gap:8px}
+.admin-record{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.admin-record>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 14px;cursor:pointer;list-style:none}
+.admin-record>summary>div{display:flex;min-width:0;flex-direction:column;gap:3px}
+.admin-record>summary strong{font-size:11px}.admin-record>summary small{overflow:hidden;color:var(--text-soft);font-size:9px;text-overflow:ellipsis;white-space:nowrap}
+.admin-record>summary>span{padding:5px 8px;border-radius:999px;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.admin-record .status-active{background:#eef7f0;color:#2d6b3c}.admin-record .status-inactive{background:var(--surface-soft);color:var(--text-faint)}
+.admin-record-form{padding:14px;border-top:1px solid var(--line);background:var(--surface-soft)}
