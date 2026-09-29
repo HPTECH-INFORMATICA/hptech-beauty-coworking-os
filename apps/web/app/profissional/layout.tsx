@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { EnvironmentSwitch } from "../../components/environment-switch";
 import { SessionControls } from "../../components/session-controls";
 import { auth } from "../../lib/auth/server";
 import { requireTenantRole } from "../../lib/auth/authorization";
@@ -25,7 +26,7 @@ export default async function ProfessionalLayout({ children }: Readonly<{ childr
       <div className="bcos-content">
         <header className="bcos-topbar">
           <div><span>Ambiente do cliente</span><strong>{tenant.tenant_name}</strong></div>
-          <div className="bcos-session-actions"><Link href="/acesso">Trocar ambiente</Link><SessionControls label={identity} /></div>
+          <div className="bcos-session-actions"><EnvironmentSwitch /><SessionControls label={identity} /></div>
         </header>
         {children}
       </div>
