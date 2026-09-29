@@ -40,32 +40,32 @@ export default async function TenantAdministrationPage() {
     <section className="admin-content-grid">
       <article id="empresa" className="admin-config-card admin-card-wide">
         <div className="admin-card-heading"><div><span>01 · EMPRESA</span><h2>Dados do negócio</h2><p>Informações que identificam este coworking no BCOS.</p></div><strong>{profile.trade_name}</strong></div>
-        <form className="admin-form-grid" action={updateTenantProfileAction}>
+        <details className="admin-editor" open><summary>Editar dados da empresa</summary><form className="admin-form-grid" action={updateTenantProfileAction}>
           <label>Nome fantasia<input name="trade_name" defaultValue={profile.trade_name} required/></label>
           <label>Razão social<input name="legal_name" defaultValue={profile.legal_name} required/></label>
           <label>CNPJ / CPF<input name="tax_id" defaultValue={profile.tax_id ?? ""}/></label>
           <label>E-mail<input name="email" type="email" defaultValue={profile.email} required/></label>
           <label>Telefone<input name="phone" defaultValue={profile.phone ?? ""}/></label>
           <div className="admin-form-action"><button type="submit">Salvar dados da empresa</button></div>
-        </form>
+        </form></details>
       </article>
 
       <article id="unidades" className="admin-config-card">
         <div className="admin-card-heading"><div><span>02 · UNIDADES</span><h2>Locais de atendimento</h2><p>Cadastre cada endereço operacional como uma unidade.</p></div><strong>{units.length}</strong></div>
         <div className="admin-chip-list">{units.map(unit=><span key={unit.id}>{unit.name}</span>)}{!units.length&&<small>Nenhuma unidade cadastrada.</small>}</div>
-        <form className="admin-inline-form" action={createUnitAction}><input name="name" required placeholder="Nome da unidade"/><input name="timezone" defaultValue="America/Sao_Paulo" required aria-label="Fuso horário"/><button type="submit">Adicionar</button></form>
+        <details className="admin-editor"><summary>Adicionar unidade</summary><form className="admin-inline-form" action={createUnitAction}><input name="name" required placeholder="Nome da unidade"/><input name="timezone" defaultValue="America/Sao_Paulo" required aria-label="Fuso horário"/><button type="submit">Adicionar</button></form></details>
       </article>
 
       <article id="espacos" className="admin-config-card">
         <div className="admin-card-heading"><div><span>03 · ESPAÇOS</span><h2>Categorias e recursos</h2><p>Organize salas, cadeiras e demais espaços disponíveis.</p></div><strong>{resources.length}</strong></div>
-        <div className="admin-subsection"><h3>Categorias</h3><div className="admin-chip-list">{categories.map(item=><span key={item.id}>{item.name}</span>)}{!categories.length&&<small>Nenhuma categoria.</small>}</div><form className="admin-inline-form" action={createCategoryAction}><input name="name" required placeholder="Ex.: Sala de estética"/><button type="submit">Adicionar categoria</button></form></div>
-        <div className="admin-subsection"><h3>Espaços cadastrados</h3><div className="admin-chip-list">{resources.map(item=><span key={item.id}>{item.name}</span>)}{!resources.length&&<small>Nenhum espaço.</small>}</div><form className="admin-form-grid admin-form-compact" action={createResourceAction}><label>Nome<input name="name" required placeholder="Ex.: Sala 01"/></label><label>Unidade<select name="unit_id" required defaultValue=""><option value="" disabled>Selecione</option>{units.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><label>Categoria<select name="category_id" required defaultValue=""><option value="" disabled>Selecione</option>{categories.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><div className="admin-form-action"><button type="submit">Adicionar espaço</button></div></form></div>
+        <div className="admin-subsection"><h3>Categorias</h3><div className="admin-chip-list">{categories.map(item=><span key={item.id}>{item.name}</span>)}{!categories.length&&<small>Nenhuma categoria.</small>}</div><details className="admin-editor"><summary>Adicionar categoria</summary><form className="admin-inline-form" action={createCategoryAction}><input name="name" required placeholder="Ex.: Sala de estética"/><button type="submit">Adicionar categoria</button></form></details></div>
+        <div className="admin-subsection"><h3>Espaços cadastrados</h3><div className="admin-chip-list">{resources.map(item=><span key={item.id}>{item.name}</span>)}{!resources.length&&<small>Nenhum espaço.</small>}</div><details className="admin-editor"><summary>Adicionar espaço</summary><form className="admin-form-grid admin-form-compact" action={createResourceAction}><label>Nome<input name="name" required placeholder="Ex.: Sala 01"/></label><label>Unidade<select name="unit_id" required defaultValue=""><option value="" disabled>Selecione</option>{units.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><label>Categoria<select name="category_id" required defaultValue=""><option value="" disabled>Selecione</option>{categories.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><div className="admin-form-action"><button type="submit">Adicionar espaço</button></div></form></details></div>
       </article>
 
       <article id="profissionais" className="admin-config-card">
         <div className="admin-card-heading"><div><span>04 · PROFISSIONAIS</span><h2>Equipe profissional</h2><p>Cadastre quem utiliza os espaços do coworking.</p></div><strong>{professionals.length}</strong></div>
         <div className="admin-chip-list">{professionals.map(item=><span key={item.id}>{item.name}</span>)}{!professionals.length&&<small>Nenhum profissional cadastrado.</small>}</div>
-        <form className="admin-form-grid admin-form-compact" action={createProfessionalAction}><label>Nome<input name="name" required/></label><label>E-mail<input name="email" type="email"/></label><label>Telefone<input name="phone"/></label><div className="admin-form-action"><button type="submit">Adicionar profissional</button></div></form>
+        <details className="admin-editor"><summary>Adicionar profissional</summary><form className="admin-form-grid admin-form-compact" action={createProfessionalAction}><label>Nome<input name="name" required/></label><label>E-mail<input name="email" type="email"/></label><label>Telefone<input name="phone"/></label><div className="admin-form-action"><button type="submit">Adicionar profissional</button></div></form></details>
       </article>
 
       <article className="admin-config-card">
@@ -77,7 +77,7 @@ export default async function TenantAdministrationPage() {
         <div className="admin-card-heading"><div><span>06 · PREÇOS</span><h2>Regras comerciais</h2><p>Defina como cada espaço será precificado nas reservas.</p></div><strong>{pricingRules.length}</strong></div>
         <div className="admin-pricing-layout">
           <div className="admin-rule-list">{pricingRules.map(rule=><div key={rule.id}><div><strong>{rule.name}</strong><span>{modalityLabel[String(rule.rule_definition?.modality)]??"Regra comercial"}</span></div><small>Prioridade {rule.priority}</small></div>)}{!pricingRules.length&&<div className="admin-empty">Nenhuma regra de preço cadastrada.</div>}</div>
-          <form className="admin-form-grid" action={createPricingRuleAction}>
+          <details className="admin-editor admin-pricing-editor"><summary>Nova regra de preço</summary><form className="admin-form-grid" action={createPricingRuleAction}>
             <label>Nome da tabela<input name="name" required placeholder="Ex.: Sala por hora"/></label>
             <label>Unidade<select name="unit_id" defaultValue=""><option value="">Todas as unidades</option>{units.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
             <label>Categoria<select name="category_id" defaultValue=""><option value="">Todas as categorias</option>{categories.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
@@ -89,7 +89,7 @@ export default async function TenantAdministrationPage() {
             <label className="admin-check"><input name="forgiveness_allowed" type="checkbox"/> Permitir tolerância autorizada</label>
             <details className="admin-advanced"><summary>Opções avançadas</summary><label>Prioridade<input name="priority" type="number" min="0" defaultValue="100" required/></label><label>Penalidade<select name="conflict_penalty_mode" defaultValue=""><option value="">Sem penalidade</option><option value="FIXED_AMOUNT">Valor fixo</option><option value="PERCENTAGE">Percentual</option></select></label><label>Valor<input name="conflict_penalty_value" inputMode="decimal"/></label><label>Válida a partir de<input name="valid_from" type="datetime-local"/></label><label>Válida até<input name="valid_until" type="datetime-local"/></label></details>
             <div className="admin-form-action"><button type="submit">Criar regra de preço</button></div>
-          </form>
+          </form></details>
         </div>
       </article>
     </section>
