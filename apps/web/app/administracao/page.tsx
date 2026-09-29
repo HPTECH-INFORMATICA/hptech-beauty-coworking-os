@@ -49,7 +49,29 @@ export default async function TenantAdministrationPage() {
         <article className="tenant-user-card"><div><span>ESPAÇOS E RECURSOS</span><strong>{resources.length} cadastrado(s)</strong><small>{resources.map(x=>x.name).join(" · ") || "Nenhum espaço cadastrado"}</small></div><form action={createResourceAction}><input name="name" required placeholder="Nome do espaço"/><select name="unit_id" required defaultValue=""><option value="" disabled>Unidade</option>{units.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select><select name="category_id" required defaultValue=""><option value="" disabled>Categoria</option>{categories.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select><button type="submit">Adicionar espaço</button></form></article>
         <article id="profissionais" className="tenant-user-card"><div><span>PROFISSIONAIS</span><strong>{professionals.length} cadastrado(s)</strong><small>{professionals.map(x=>x.name).join(" · ") || "Nenhum profissional"}</small></div><form action={createProfessionalAction}><input name="name" required placeholder="Nome"/><input name="email" type="email" placeholder="E-mail"/><input name="phone" placeholder="Telefone"/><button type="submit">Adicionar profissional</button></form></article>
       </div>
-      <aside id="precos" className="tenant-invite-card"><span>PREÇOS E REGRAS</span><h2>{pricingRules.length} regra(s) cadastrada(s)</h2><p>Defina as regras comerciais aplicadas às reservas e aos espaços do coworking.</p>{pricingRules.map(rule=><div key={rule.id}><strong>{rule.name}</strong><small>{rule.status} · prioridade {rule.priority}</small></div>)}<form action={createPricingRuleAction}><input name="name" required placeholder="Nome da regra"/><select name="unit_id" defaultValue=""><option value="">Todas as unidades</option>{units.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select><select name="category_id" defaultValue=""><option value="">Todas as categorias</option>{categories.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select><input name="priority" type="number" min="0" defaultValue="100" required/><textarea name="rule_definition" required defaultValue="{}" aria-label="Definição da regra"/><input name="valid_from" type="datetime-local"/><input name="valid_until" type="datetime-local"/><button type="submit">Criar regra de preço</button></form></aside>
+      <aside id="precos" className="tenant-invite-card"><span>PREÇOS E REGRAS</span><h2>{pricingRules.length} regra(s) cadastrada(s)</h2><p>Defina as regras comerciais aplicadas às reservas e aos espaços do coworking.</p>{pricingRules.map(rule=><div key={rule.id}><strong>{rule.name}</strong><small>{rule.status} · prioridade {rule.priority}</small></div>)}<form action={createPricingRuleAction}>
+  <label>Nome da tabela<input name="name" required placeholder="Ex.: Sala por hora"/></label>
+  <label>Unidade<select name="unit_id" defaultValue=""><option value="">Todas as unidades</option>{units.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+  <label>Categoria de espaço<select name="category_id" defaultValue=""><option value="">Todas as categorias</option>{categories.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+  <label>Modalidade<select name="modality" defaultValue="HOURLY" required><option value="HOURLY">Por hora</option><option value="PERIOD">Por período</option><option value="WEEKLY">Semanal</option><option value="MONTHLY">Mensal</option></select></label>
+  <div className="pricing-money-grid">
+    <label>Preço-base (R$)<input name="base_price_amount" inputMode="decimal" required placeholder="100.00"/></label>
+    <label>Hora excedente (R$)<input name="overtime_hourly_price_amount" inputMode="decimal" required placeholder="100.00"/></label>
+  </div>
+  <div className="pricing-money-grid">
+    <label>Proporcional até (min)<input name="proportional_until_minutes" type="number" min="0" defaultValue="29" required/></label>
+    <label>Hora cheia a partir de (min)<input name="full_hour_from_minutes" type="number" min="1" defaultValue="30" required/></label>
+  </div>
+  <label className="pricing-check"><input name="forgiveness_allowed" type="checkbox"/> Permitir tolerância/perdão de excedente quando autorizado</label>
+  <details className="pricing-advanced"><summary>Configurações avançadas</summary>
+    <label>Prioridade<input name="priority" type="number" min="0" defaultValue="100" required/></label>
+    <label>Penalidade por conflito<select name="conflict_penalty_mode" defaultValue=""><option value="">Sem penalidade</option><option value="FIXED_AMOUNT">Valor fixo</option><option value="PERCENTAGE">Percentual</option></select></label>
+    <label>Valor da penalidade<input name="conflict_penalty_value" inputMode="decimal" placeholder="0.00"/></label>
+    <label>Válida a partir de<input name="valid_from" type="datetime-local"/></label>
+    <label>Válida até<input name="valid_until" type="datetime-local"/></label>
+  </details>
+  <button type="submit">Criar regra de preço</button>
+</form></aside>
     </section>
   </main>;
 }
