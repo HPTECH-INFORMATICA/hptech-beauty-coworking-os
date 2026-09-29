@@ -1776,3 +1776,8 @@ svg {
 .pricing-advanced[open]{display:grid;gap:9px}
 .pricing-advanced[open] summary{margin-bottom:2px}
 @media(max-width:760px){.pricing-money-grid{grid-template-columns:1fr}}
+
+.bcos-session-actions{display:flex;align-items:center;gap:12px}
+.bcos-session-actions>a{font-size:11px;font-weight:800;color:var(--text-soft);text-decoration:none}
+.bcos-session-actions>a:hover{text-decoration:underline}
+@media(max-width:760px){.bcos-session-actions{align-items:flex-end;flex-direction:column;gap:6px}}
