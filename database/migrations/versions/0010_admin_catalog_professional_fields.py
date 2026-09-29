@@ -1,13 +1,13 @@
 """Extend professional profile for tenant administration.
 
-Revision ID: 0010_admin_catalog_professional_fields
+Revision ID: 0010_admin_catalog
 Revises: 0009_platform_audit
 """
 
 from collections.abc import Sequence
 from alembic import op
 
-revision: str = "0010_admin_catalog_professional_fields"
+revision: str = "0010_admin_catalog"
 down_revision: str | None = "0009_platform_audit"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
