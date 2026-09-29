@@ -60,6 +60,9 @@ def _to_response(professional: object) -> ProfessionalResponse:
         name=professional.name,
         email=professional.email,
         phone=professional.phone,
+        profession=professional.profession,
+        council_type=professional.council_type,
+        council_number=professional.council_number,
         status=professional.status,
     )
 
@@ -110,6 +113,9 @@ async def create_professional(
             name=payload.name,
             email=str(payload.email) if payload.email is not None else None,
             phone=payload.phone,
+            profession=payload.profession,
+            council_type=payload.council_type,
+            council_number=payload.council_number,
         )
         await session.commit()
     except InvalidProfessional as exc:
@@ -205,6 +211,9 @@ async def update_professional(
             if "phone" in payload.model_fields_set
             else current.phone
         )
+        profession = payload.profession if "profession" in payload.model_fields_set else current.profession
+        council_type = payload.council_type if "council_type" in payload.model_fields_set else current.council_type
+        council_number = payload.council_number if "council_number" in payload.model_fields_set else current.council_number
         professional_status = (
             payload.status
             if "status" in payload.model_fields_set
@@ -224,6 +233,9 @@ async def update_professional(
             name=name,
             email=email,
             phone=phone,
+            profession=profession,
+            council_type=council_type,
+            council_number=council_number,
             status=professional_status,
         )
         await session.commit()
