@@ -1,11 +1,14 @@
 import "server-only";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { getAccessResolution, type AccessTenant } from "../bcos-api";
 import { auth } from "./server";
 
 export type TenantRole = AccessTenant["role"];
+
+const TENANT_COOKIE = "bcos_tenant_id";
 
 export async function requireTenantRole(allowedRoles: readonly TenantRole[]): Promise<AccessTenant> {
   const { data: session } = await auth.getSession();
@@ -22,10 +25,14 @@ export async function requireTenantRole(allowedRoles: readonly TenantRole[]): Pr
     redirect("/acesso");
   }
 
+  const cookieStore = await cookies();
+  const selectedTenantId = cookieStore.get(TENANT_COOKIE)?.value;
+  if (!selectedTenantId) redirect("/acesso");
+
   const selectedTenant = access.tenants.find(
-    (candidate) => candidate.destination === "/" && allowedRoles.includes(candidate.role),
+    (candidate) => candidate.tenant_id === selectedTenantId,
   );
 
-  if (!selectedTenant) redirect("/acesso");
+  if (!selectedTenant || !allowedRoles.includes(selectedTenant.role)) redirect("/acesso");
   return selectedTenant;
 }
