@@ -17,8 +17,8 @@ from bcos_api.resources.repository import (
     create_resource,
     get_resource,
     list_resources,
-    update_resource,
     soft_delete_resource,
+    update_resource,
 )
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.rbac import Permission, require_permission
