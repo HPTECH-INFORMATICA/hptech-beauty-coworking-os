@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createPricingRuleAction } from "../app/administracao/actions";
+
 import TenantAdministrationPage from "../app/administracao/page";
 import UsersAdminPage from "../app/administracao/usuarios/page";
 import {
@@ -12,6 +14,7 @@ import {
   getTenantMemberships,
   getTenantProfile,
   getUnits,
+  createPricingRule,
 } from "../lib/bcos-api";
 
 vi.mock("../lib/bcos-api", () => ({
@@ -23,6 +26,7 @@ vi.mock("../lib/bcos-api", () => ({
   getTenantMemberships: vi.fn(),
   getTenantProfile: vi.fn(),
   getUnits: vi.fn(),
+  createPricingRule: vi.fn(),
 }));
 
 const mockedGetUnits = vi.mocked(getUnits);
@@ -58,5 +62,34 @@ describe("tenant administration", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Usuários e acessos" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Configurações" })).toHaveAttribute("href", "/administracao");
     expect(document.querySelector(".tenant-admin-shell")).not.toBeInTheDocument();
+  });
+  it("maps the commercial pricing form to the frozen V1 definition", async () => {
+    const form = new FormData();
+    form.set("name", "Sala por hora");
+    form.set("modality", "HOURLY");
+    form.set("base_price_amount", "120.00");
+    form.set("overtime_hourly_price_amount", "150.00");
+    form.set("proportional_until_minutes", "29");
+    form.set("full_hour_from_minutes", "30");
+    form.set("forgiveness_allowed", "on");
+    form.set("priority", "100");
+
+    await expect(createPricingRuleAction(form)).rejects.toBeDefined();
+
+    expect(vi.mocked(createPricingRule)).toHaveBeenCalledWith(expect.objectContaining({
+      name: "Sala por hora",
+      priority: 100,
+      ruleDefinition: {
+        schema_version: 1,
+        modality: "HOURLY",
+        base_price_amount: "120.00",
+        overtime: {
+          hourly_price_amount: "150.00",
+          proportional_until_minutes: 29,
+          full_hour_from_minutes: 30,
+          forgiveness_allowed: true,
+        },
+      },
+    }));
   });
 });
