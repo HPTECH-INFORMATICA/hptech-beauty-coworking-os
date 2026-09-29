@@ -5,5 +5,5 @@ export const dynamic = "force-dynamic";
 
 export default async function ModuleLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const tenant = await requireTenantRole(["OWNER","ADMIN","RECEPTION"]);
-  return <BcosShell tenant={tenant} active="agenda">{children}</BcosShell>;
+  return <BcosShell tenant={tenant} active="disponibilidade">{children}</BcosShell>;
 }

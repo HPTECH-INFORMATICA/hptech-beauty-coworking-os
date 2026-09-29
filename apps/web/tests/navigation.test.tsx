@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -23,6 +24,22 @@ vi.mock("../lib/auth/server", () => ({ auth: { getSession: vi.fn().mockResolvedV
 
 vi.mock("../components/session-controls", () => ({
   SessionControls: ({ label }: { label: string }) => <div data-testid="session-controls">{label}</div>,
+}));
+
+vi.mock("../components/bcos-shell", () => ({
+  BcosShell: ({ children, tenant }: { children: React.ReactNode; tenant: { tenant_name: string } }) => (
+    <div>
+      <header><strong>HPTECH PLATFORM</strong><span>{tenant.tenant_name}</span></header>
+      <nav>
+        <Link href="/">Visão geral</Link>
+        <Link href="/agenda">Agenda</Link>
+        <Link href="/disponibilidade">Disponibilidade</Link>
+        <Link href="/check-in">Check-in</Link>
+        <Link href="/financeiro">Financeiro</Link>
+      </nav>
+      {children}
+    </div>
+  ),
 }));
 
 vi.mock("../lib/bcos-api", () => ({

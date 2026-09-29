@@ -17,7 +17,7 @@ export async function BcosShell({
   children,
 }: Readonly<{
   tenant: AccessTenant;
-  active: "central" | "agenda" | "check-in" | "financeiro" | "administracao";
+  active: "central" | "agenda" | "disponibilidade" | "check-in" | "financeiro" | "administracao";
   children: React.ReactNode;
 }>) {
   const { data: session } = await auth.getSession();
@@ -35,7 +35,7 @@ export async function BcosShell({
           <nav className="bcos-nav" aria-label="Navegação principal">
             <Link className={active === "central" ? "active" : ""} href="/">Visão geral</Link>
             <Link className={active === "agenda" ? "active" : ""} href="/agenda">Agenda</Link>
-            <Link href="/disponibilidade">Disponibilidade</Link>
+            <Link className={active === "disponibilidade" ? "active" : ""} href="/disponibilidade">Disponibilidade</Link>
             <Link className={active === "check-in" ? "active" : ""} href="/check-in">Check-in e uso</Link>
             <Link className={active === "financeiro" ? "active" : ""} href="/financeiro">Financeiro</Link>
             {canAdminister ? <Link className={active === "administracao" ? "active" : ""} href="/administracao">Administração</Link> : null}
@@ -44,6 +44,7 @@ export async function BcosShell({
         <div className="bcos-sidebar-foot">
           <span>{roleLabel[tenant.role]}</span>
           <strong>{identity}</strong>
+          <span>Produto HPTECH PLATFORM</span>
         </div>
       </aside>
       <div className="bcos-content">
