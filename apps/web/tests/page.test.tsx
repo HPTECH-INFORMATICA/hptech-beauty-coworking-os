@@ -16,6 +16,21 @@ vi.mock("../components/session-controls", () => ({
   SessionControls: ({ label }: { label: string }) => <div data-testid="session-controls">{label}</div>,
 }));
 
+vi.mock("../components/bcos-shell", () => ({
+  BcosShell: ({ children }: { children: React.ReactNode }) => (
+    <div>
+      <nav>
+        <a href="/">Visão geral</a>
+        <a href="/agenda">Agenda</a>
+        <a href="/disponibilidade">Disponibilidade</a>
+        <a href="/check-in">Check-in</a>
+        <a href="/financeiro">Financeiro</a>
+      </nav>
+      {children}
+    </div>
+  ),
+}));
+
 vi.mock("../lib/bcos-api", () => ({
   getAccessResolution: vi.fn(),
   getProfessionals: vi.fn(),
