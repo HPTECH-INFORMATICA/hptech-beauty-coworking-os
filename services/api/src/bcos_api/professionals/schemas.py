@@ -25,6 +25,9 @@ class Professional(BaseModel):
     name: str
     email: EmailStr | None = None
     phone: str | None = None
+    profession: str | None = None
+    council_type: str | None = None
+    council_number: str | None = None
     status: ProfessionalStatus
 
 
@@ -40,6 +43,9 @@ class ProfessionalCreate(BaseModel):
     name: str = Field(min_length=1)
     email: EmailStr | None = None
     phone: str | None = None
+    profession: str | None = Field(default=None, max_length=120)
+    council_type: str | None = Field(default=None, max_length=40)
+    council_number: str | None = Field(default=None, max_length=80)
 
 
 class ProfessionalUpdate(BaseModel):
@@ -87,6 +93,9 @@ class ProfessionalUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1)
     email: EmailStr | None = None
     phone: str | None = None
+    profession: str | None = Field(default=None, max_length=120)
+    council_type: str | None = Field(default=None, max_length=40)
+    council_number: str | None = Field(default=None, max_length=80)
     status: ProfessionalStatus | None = None
 
     @model_validator(mode="after")
