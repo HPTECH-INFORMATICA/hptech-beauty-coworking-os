@@ -74,21 +74,7 @@ export default async function CheckInPage({
 
   return (
     <main className="agenda-shell">
-      <header className="agenda-topbar">
-        <div className="agenda-brand">
-          <span className="agenda-brand-mark">H</span>
-          <div>
-            <strong>HPTECH Beauty Coworking OS</strong>
-            <span>Central da Recepção</span>
-          </div>
-        </div>
-        <nav className="agenda-nav">
-          <Link href="/">Agora</Link>
-          <Link href="/agenda">Agenda</Link>
-          <Link className="active" href="/check-in">Check-in</Link>
-          <Link href="/financeiro">Financeiro</Link>
-        </nav>
-      </header>
+
 
       <div className="agenda-canvas checkin-canvas">
         <section className="agenda-hero">
