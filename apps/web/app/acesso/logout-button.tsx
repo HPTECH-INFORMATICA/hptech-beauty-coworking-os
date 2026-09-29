@@ -11,7 +11,7 @@ export function LogoutButton() {
   async function logout() {
     setPending(true);
     try {
-      await authClient.signOut();
+      await Promise.all([authClient.signOut(), fetch("/api/session/tenant", { method: "POST" })]);
       router.replace("/auth/sign-in");
       router.refresh();
     } finally {

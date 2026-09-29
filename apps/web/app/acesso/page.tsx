@@ -7,7 +7,8 @@ import { SessionControls } from "../../components/session-controls";
 
 export const dynamic = "force-dynamic";
 
-export default async function AccessPage() {
+export default async function AccessPage({ searchParams }: { searchParams?: Promise<{ invitationAccepted?: string; selectionError?: string }> }) {
+  const query = searchParams ? await searchParams : {};
   const { data: session } = await auth.getSession();
   if (!session?.user) redirect("/auth/sign-in");
 
@@ -65,6 +66,8 @@ export default async function AccessPage() {
       <section className="auth-card">
         <div className="access-session"><SessionControls label={session.user.name || session.user.email || "Usuário autenticado"} /></div>
         <div className="access-panel">
+          {query.invitationAccepted === "pendingActivation" ? <div className="access-notice"><strong>Convite aceito com sucesso.</strong><span>Seu vínculo já está ativo. O ambiente do cliente ainda aguarda liberação comercial pela HPTECH PLATFORM e aparecerá aqui assim que for ativado.</span></div> : null}
+          {query.selectionError === "1" ? <div className="access-notice"><strong>Este ambiente não está disponível para entrada.</strong><span>Atualizamos seus acessos. Se o ambiente ainda estiver aguardando ativação ou sua permissão tiver mudado, ele não será aberto.</span></div> : null}
           <div className="access-heading"><span>SEUS ACESSOS</span><h2>Escolha onde deseja entrar.</h2><p>Ambientes liberados para a sua conta no Beauty Coworking OS.</p></div>
           {destinations.length > 0 && <div className="access-list">{destinations.map((item) => <Link className="access-item" key={item.label} href={item.href}><span>{item.label}</span><strong>Entrar →</strong></Link>)}</div>}
           {destinations.length === 0 && invitations.length === 0 ? <div className="access-empty"><strong>Nenhum acesso disponível</strong><span>Quando um ambiente for liberado para sua conta, ele aparecerá aqui.</span></div> : null}
