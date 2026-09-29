@@ -1,77 +1,96 @@
 import Link from "next/link";
 
 import {
-  getPricingRules,
-  getReceptionHours,
-  getTenantProfile,
-  getProfessionals,
-  getResourceCategories,
-  getResources,
-  getUnits,
+  getPricingRules, getReceptionHours, getTenantProfile, getProfessionals,
+  getResourceCategories, getResources, getUnits,
 } from "../../lib/bcos-api";
 import {
-  createCategoryAction,
-  createPricingRuleAction,
-  createProfessionalAction,
-  createResourceAction,
-  createUnitAction,
-  updateReceptionHoursAction,
-  updateTenantProfileAction,
+  createCategoryAction, createPricingRuleAction, createProfessionalAction,
+  createResourceAction, createUnitAction, updateReceptionHoursAction, updateTenantProfileAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
 
+const dayNames = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+const modalityLabel: Record<string,string> = { HOURLY:"Por hora", PERIOD:"Por período", WEEKLY:"Semanal", MONTHLY:"Mensal" };
+
 export default async function TenantAdministrationPage() {
   const [units, categories, resources, professionals, pricingRules, profile] = await Promise.all([
-    getUnits(),
-    getResourceCategories(),
-    getResources(),
-    getProfessionals(),
-    getPricingRules(),
-    getTenantProfile(),
+    getUnits(), getResourceCategories(), getResources(), getProfessionals(), getPricingRules(), getTenantProfile(),
   ]);
-  const receptionHoursByUnit = new Map(await Promise.all(units.map(async (unit) => [unit.id, await getReceptionHours(unit.id)] as const)));
-  const dayNames = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+  const receptionHoursByUnit = new Map(await Promise.all(units.map(async unit => [unit.id, await getReceptionHours(unit.id)] as const)));
 
-  return <main className="admin-page">
-    <header className="admin-page-head">
-      <div><span>Administração</span><h1>Configurações do coworking</h1><p>Organize os dados da empresa e a estrutura usada na operação diária.</p></div>
-      <nav className="admin-section-nav" aria-label="Administração">
-        <a href="#empresa">Empresa</a><a href="#unidades">Unidades</a><a href="#espacos">Espaços</a><a href="#profissionais">Profissionais</a><a href="#precos">Preços</a><Link href="/administracao/usuarios">Usuários</Link>
-      </nav>
+  return <main className="admin-page admin-commercial">
+    <header className="admin-page-head admin-hero">
+      <div><span>ADMINISTRAÇÃO</span><h1>Configurações do coworking</h1><p>Escolha uma área para revisar ou configurar. A operação diária continua separada deste ambiente administrativo.</p></div>
+      <Link className="admin-users-action" href="/administracao/usuarios">Usuários e acessos →</Link>
     </header>
-    <section className="admin-settings-grid">
-      <div className="tenant-user-list">
-        <article id="empresa" className="tenant-user-card"><div><span>EMPRESA</span><strong>{profile.trade_name}</strong><small>{profile.legal_name}</small></div><form action={updateTenantProfileAction}><input name="trade_name" defaultValue={profile.trade_name} required placeholder="Nome fantasia"/><input name="legal_name" defaultValue={profile.legal_name} required placeholder="Razão social"/><input name="tax_id" defaultValue={profile.tax_id ?? ""} placeholder="CNPJ/CPF"/><input name="email" type="email" defaultValue={profile.email} required/><input name="phone" defaultValue={profile.phone ?? ""} placeholder="Telefone"/><button type="submit">Salvar empresa</button></form></article>
-        <article id="unidades" className="tenant-user-card"><div><span>UNIDADES</span><strong>{units.length} cadastrada(s)</strong><small>{units.map(x=>x.name).join(" · ") || "Nenhuma unidade"}</small></div><form action={createUnitAction}><input name="name" required placeholder="Nome da unidade"/><input name="timezone" defaultValue="America/Sao_Paulo" required/><button type="submit">Adicionar unidade</button></form></article>
-        {units.map((unit) => { const hoursByDay = new Map((receptionHoursByUnit.get(unit.id) ?? []).map((item) => [item.day_of_week, item])); return <article key={unit.id} className="tenant-user-card"><div><span>HORÁRIOS DE ATENDIMENTO</span><strong>{unit.name}</strong><small>Defina os horários disponíveis para a operação desta unidade.</small></div><form className="reception-hours-form" action={updateReceptionHoursAction}><input type="hidden" name="unit_id" value={unit.id}/>{dayNames.map((name, day) => { const item=hoursByDay.get(day); return <div key={day}><strong>{name}</strong><input name={`opens_${day}`} type="time" defaultValue={item?.opens_at?.slice(0,5) ?? "08:00"}/><input name={`closes_${day}`} type="time" defaultValue={item?.closes_at?.slice(0,5) ?? "18:00"}/><label><input name={`closed_${day}`} type="checkbox" defaultChecked={item?.is_closed ?? false}/> Fechado</label></div>;})}<button type="submit">Salvar horários de {unit.name}</button></form></article>; })}
-        <article id="espacos" className="tenant-user-card"><div><span>CATEGORIAS DE ESPAÇOS</span><strong>{categories.length} cadastrada(s)</strong><small>{categories.map(x=>x.name).join(" · ") || "Nenhuma categoria"}</small></div><form action={createCategoryAction}><input name="name" required placeholder="Ex.: Sala de estética"/><button type="submit">Adicionar categoria</button></form></article>
-        <article className="tenant-user-card"><div><span>ESPAÇOS E RECURSOS</span><strong>{resources.length} cadastrado(s)</strong><small>{resources.map(x=>x.name).join(" · ") || "Nenhum espaço cadastrado"}</small></div><form action={createResourceAction}><input name="name" required placeholder="Nome do espaço"/><select name="unit_id" required defaultValue=""><option value="" disabled>Unidade</option>{units.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select><select name="category_id" required defaultValue=""><option value="" disabled>Categoria</option>{categories.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select><button type="submit">Adicionar espaço</button></form></article>
-        <article id="profissionais" className="tenant-user-card"><div><span>PROFISSIONAIS</span><strong>{professionals.length} cadastrado(s)</strong><small>{professionals.map(x=>x.name).join(" · ") || "Nenhum profissional"}</small></div><form action={createProfessionalAction}><input name="name" required placeholder="Nome"/><input name="email" type="email" placeholder="E-mail"/><input name="phone" placeholder="Telefone"/><button type="submit">Adicionar profissional</button></form></article>
-      </div>
-      <aside id="precos" className="tenant-invite-card"><span>PREÇOS E REGRAS</span><h2>{pricingRules.length} regra(s) cadastrada(s)</h2><p>Defina as regras comerciais aplicadas às reservas e aos espaços do coworking.</p>{pricingRules.map(rule=><div key={rule.id}><strong>{rule.name}</strong><small>{rule.status} · prioridade {rule.priority}</small></div>)}<form action={createPricingRuleAction}>
-  <label>Nome da tabela<input name="name" required placeholder="Ex.: Sala por hora"/></label>
-  <label>Unidade<select name="unit_id" defaultValue=""><option value="">Todas as unidades</option>{units.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-  <label>Categoria de espaço<select name="category_id" defaultValue=""><option value="">Todas as categorias</option>{categories.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-  <label>Modalidade<select name="modality" defaultValue="HOURLY" required><option value="HOURLY">Por hora</option><option value="PERIOD">Por período</option><option value="WEEKLY">Semanal</option><option value="MONTHLY">Mensal</option></select></label>
-  <div className="pricing-money-grid">
-    <label>Preço-base (R$)<input name="base_price_amount" inputMode="decimal" required placeholder="100.00"/></label>
-    <label>Hora excedente (R$)<input name="overtime_hourly_price_amount" inputMode="decimal" required placeholder="100.00"/></label>
-  </div>
-  <div className="pricing-money-grid">
-    <label>Proporcional até (min)<input name="proportional_until_minutes" type="number" min="0" defaultValue="29" required/></label>
-    <label>Hora cheia a partir de (min)<input name="full_hour_from_minutes" type="number" min="1" defaultValue="30" required/></label>
-  </div>
-  <label className="pricing-check"><input name="forgiveness_allowed" type="checkbox"/> Permitir tolerância/perdão de excedente quando autorizado</label>
-  <details className="pricing-advanced"><summary>Configurações avançadas</summary>
-    <label>Prioridade<input name="priority" type="number" min="0" defaultValue="100" required/></label>
-    <label>Penalidade por conflito<select name="conflict_penalty_mode" defaultValue=""><option value="">Sem penalidade</option><option value="FIXED_AMOUNT">Valor fixo</option><option value="PERCENTAGE">Percentual</option></select></label>
-    <label>Valor da penalidade<input name="conflict_penalty_value" inputMode="decimal" placeholder="0.00"/></label>
-    <label>Válida a partir de<input name="valid_from" type="datetime-local"/></label>
-    <label>Válida até<input name="valid_until" type="datetime-local"/></label>
-  </details>
-  <button type="submit">Criar regra de preço</button>
-</form></aside>
+
+    <section className="admin-control-center" aria-label="Áreas de configuração">
+      <a href="#empresa"><span>01</span><div><strong>Empresa</strong><small>Identidade e contato</small></div><b>→</b></a>
+      <a href="#unidades"><span>02</span><div><strong>Unidades</strong><small>{units.length} {units.length === 1 ? "local" : "locais"}</small></div><b>→</b></a>
+      <a href="#espacos"><span>03</span><div><strong>Espaços</strong><small>{resources.length} cadastrados</small></div><b>→</b></a>
+      <a href="#profissionais"><span>04</span><div><strong>Profissionais</strong><small>{professionals.length} cadastrados</small></div><b>→</b></a>
+      <a href="#funcionamento"><span>05</span><div><strong>Funcionamento</strong><small>Horários por unidade</small></div><b>→</b></a>
+      <a href="#precos"><span>06</span><div><strong>Preços</strong><small>{pricingRules.length} {pricingRules.length === 1 ? "regra" : "regras"}</small></div><b>→</b></a>
+      <Link href="/administracao/usuarios"><span>07</span><div><strong>Usuários</strong><small>Acessos e permissões</small></div><b>→</b></Link>
+    </section>
+
+    <section className="admin-content-grid">
+      <article id="empresa" className="admin-config-card admin-card-wide">
+        <div className="admin-card-heading"><div><span>01 · EMPRESA</span><h2>Dados do negócio</h2><p>Informações que identificam este coworking no BCOS.</p></div><strong>{profile.trade_name}</strong></div>
+        <details className="admin-editor" open><summary>Editar dados da empresa</summary><form className="admin-form-grid" action={updateTenantProfileAction}>
+          <label>Nome fantasia<input name="trade_name" defaultValue={profile.trade_name} required/></label>
+          <label>Razão social<input name="legal_name" defaultValue={profile.legal_name} required/></label>
+          <label>CNPJ / CPF<input name="tax_id" defaultValue={profile.tax_id ?? ""}/></label>
+          <label>E-mail<input name="email" type="email" defaultValue={profile.email} required/></label>
+          <label>Telefone<input name="phone" defaultValue={profile.phone ?? ""}/></label>
+          <div className="admin-form-action"><button type="submit">Salvar dados da empresa</button></div>
+        </form></details>
+      </article>
+
+      <article id="unidades" className="admin-config-card">
+        <div className="admin-card-heading"><div><span>02 · UNIDADES</span><h2>Locais de atendimento</h2><p>Cadastre cada endereço operacional como uma unidade.</p></div><strong>{units.length}</strong></div>
+        <div className="admin-chip-list">{units.map(unit=><span key={unit.id}>{unit.name}</span>)}{!units.length&&<small>Nenhuma unidade cadastrada.</small>}</div>
+        <details className="admin-editor"><summary>Adicionar unidade</summary><form className="admin-inline-form" action={createUnitAction}><input name="name" required placeholder="Nome da unidade"/><input name="timezone" defaultValue="America/Sao_Paulo" required aria-label="Fuso horário"/><button type="submit">Adicionar</button></form></details>
+      </article>
+
+      <article id="espacos" className="admin-config-card">
+        <div className="admin-card-heading"><div><span>03 · ESPAÇOS</span><h2>Categorias e recursos</h2><p>Organize salas, cadeiras e demais espaços disponíveis.</p></div><strong>{resources.length}</strong></div>
+        <div className="admin-subsection"><h3>Categorias</h3><div className="admin-chip-list">{categories.map(item=><span key={item.id}>{item.name}</span>)}{!categories.length&&<small>Nenhuma categoria.</small>}</div><details className="admin-editor"><summary>Adicionar categoria</summary><form className="admin-inline-form" action={createCategoryAction}><input name="name" required placeholder="Ex.: Sala de estética"/><button type="submit">Adicionar categoria</button></form></details></div>
+        <div className="admin-subsection"><h3>Espaços cadastrados</h3><div className="admin-chip-list">{resources.map(item=><span key={item.id}>{item.name}</span>)}{!resources.length&&<small>Nenhum espaço.</small>}</div><details className="admin-editor"><summary>Adicionar espaço</summary><form className="admin-form-grid admin-form-compact" action={createResourceAction}><label>Nome<input name="name" required placeholder="Ex.: Sala 01"/></label><label>Unidade<select name="unit_id" required defaultValue=""><option value="" disabled>Selecione</option>{units.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><label>Categoria<select name="category_id" required defaultValue=""><option value="" disabled>Selecione</option>{categories.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><div className="admin-form-action"><button type="submit">Adicionar espaço</button></div></form></details></div>
+      </article>
+
+      <article id="profissionais" className="admin-config-card">
+        <div className="admin-card-heading"><div><span>04 · PROFISSIONAIS</span><h2>Equipe profissional</h2><p>Cadastre quem utiliza os espaços do coworking.</p></div><strong>{professionals.length}</strong></div>
+        <div className="admin-chip-list">{professionals.map(item=><span key={item.id}>{item.name}</span>)}{!professionals.length&&<small>Nenhum profissional cadastrado.</small>}</div>
+        <details className="admin-editor"><summary>Adicionar profissional</summary><form className="admin-form-grid admin-form-compact" action={createProfessionalAction}><label>Nome<input name="name" required/></label><label>E-mail<input name="email" type="email"/></label><label>Telefone<input name="phone"/></label><div className="admin-form-action"><button type="submit">Adicionar profissional</button></div></form></details>
+      </article>
+
+      <article id="funcionamento" className="admin-config-card">
+        <div className="admin-card-heading"><div><span>05 · FUNCIONAMENTO</span><h2>Horários por unidade</h2><p>Abra somente a unidade que deseja ajustar.</p></div></div>
+        <div className="admin-hours-list">{units.map(unit=>{const hoursByDay=new Map((receptionHoursByUnit.get(unit.id)??[]).map(item=>[item.day_of_week,item]));return <details key={unit.id} className="admin-hours-unit"><summary><span>{unit.name}</span><strong>Editar horários</strong></summary><form className="reception-hours-form" action={updateReceptionHoursAction}><input type="hidden" name="unit_id" value={unit.id}/>{dayNames.map((name,day)=>{const item=hoursByDay.get(day);return <div key={day}><strong>{name}</strong><input name={`opens_${day}`} type="time" defaultValue={item?.opens_at?.slice(0,5)??"08:00"}/><input name={`closes_${day}`} type="time" defaultValue={item?.closes_at?.slice(0,5)??"18:00"}/><label><input name={`closed_${day}`} type="checkbox" defaultChecked={item?.is_closed??false}/> Fechado</label></div>})}<button type="submit">Salvar horários de {unit.name}</button></form></details>})}{!units.length&&<div className="admin-empty">Cadastre uma unidade para configurar os horários.</div>}</div>
+      </article>
+
+      <article id="precos" className="admin-config-card admin-card-wide admin-pricing-card">
+        <div className="admin-card-heading"><div><span>06 · PREÇOS</span><h2>Regras comerciais</h2><p>Defina como cada espaço será precificado nas reservas.</p></div><strong>{pricingRules.length}</strong></div>
+        <div className="admin-pricing-layout">
+          <div className="admin-rule-list">{pricingRules.map(rule=><div key={rule.id}><div><strong>{rule.name}</strong><span>{modalityLabel[String(rule.rule_definition?.modality)]??"Regra comercial"}</span></div><small>Prioridade {rule.priority}</small></div>)}{!pricingRules.length&&<div className="admin-empty">Nenhuma regra de preço cadastrada.</div>}</div>
+          <details className="admin-editor admin-pricing-editor"><summary>Nova regra de preço</summary><form className="admin-form-grid" action={createPricingRuleAction}>
+            <label>Nome da tabela<input name="name" required placeholder="Ex.: Sala por hora"/></label>
+            <label>Unidade<select name="unit_id" defaultValue=""><option value="">Todas as unidades</option>{units.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+            <label>Categoria<select name="category_id" defaultValue=""><option value="">Todas as categorias</option>{categories.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+            <label>Modalidade<select name="modality" defaultValue="HOURLY" required><option value="HOURLY">Por hora</option><option value="PERIOD">Por período</option><option value="WEEKLY">Semanal</option><option value="MONTHLY">Mensal</option></select></label>
+            <label>Preço-base (R$)<input name="base_price_amount" inputMode="decimal" required placeholder="100.00"/></label>
+            <label>Hora excedente (R$)<input name="overtime_hourly_price_amount" inputMode="decimal" required placeholder="100.00"/></label>
+            <label>Proporcional até (min)<input name="proportional_until_minutes" type="number" min="0" defaultValue="29" required/></label>
+            <label>Hora cheia a partir de (min)<input name="full_hour_from_minutes" type="number" min="1" defaultValue="30" required/></label>
+            <label className="admin-check"><input name="forgiveness_allowed" type="checkbox"/> Permitir tolerância autorizada</label>
+            <details className="admin-advanced"><summary>Opções avançadas</summary><label>Prioridade<input name="priority" type="number" min="0" defaultValue="100" required/></label><label>Penalidade<select name="conflict_penalty_mode" defaultValue=""><option value="">Sem penalidade</option><option value="FIXED_AMOUNT">Valor fixo</option><option value="PERCENTAGE">Percentual</option></select></label><label>Valor<input name="conflict_penalty_value" inputMode="decimal"/></label><label>Válida a partir de<input name="valid_from" type="datetime-local"/></label><label>Válida até<input name="valid_until" type="datetime-local"/></label></details>
+            <div className="admin-form-action"><button type="submit">Criar regra de preço</button></div>
+          </form></details>
+        </div>
+      </article>
     </section>
   </main>;
 }
