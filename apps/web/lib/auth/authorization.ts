@@ -1,6 +1,5 @@
 import "server-only";
 
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { getAccessResolution, type AccessTenant } from "../bcos-api";
@@ -23,14 +22,10 @@ export async function requireTenantRole(allowedRoles: readonly TenantRole[]): Pr
     redirect("/acesso");
   }
 
-  const cookieStore = await cookies();
-  const selectedTenantId = cookieStore.get("bcos_tenant_id")?.value;
-  const selectedTenant = selectedTenantId
-    ? access.tenants.find((candidate) => candidate.tenant_id === selectedTenantId)
-    : access.tenants.length === 1
-      ? access.tenants[0]
-      : undefined;
+  const selectedTenant = access.tenants.find(
+    (candidate) => candidate.destination === "/" && allowedRoles.includes(candidate.role),
+  );
 
-  if (!selectedTenant || !allowedRoles.includes(selectedTenant.role)) redirect("/acesso");
+  if (!selectedTenant) redirect("/acesso");
   return selectedTenant;
 }
