@@ -44,6 +44,7 @@ export async function BcosShell({
         <div className="bcos-sidebar-foot">
           <span>{roleLabel[tenant.role]}</span>
           <strong>{identity}</strong>
+          <span>Produto HPTECH PLATFORM</span>
         </div>
       </aside>
       <div className="bcos-content">
