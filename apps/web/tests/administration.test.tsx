@@ -61,7 +61,10 @@ describe("tenant administration", () => {
     expect(screen.getAllByRole("button", { name: "Salvar unidade" })).toHaveLength(2);
     expect(screen.getByRole("button", { name: "Salvar espaço" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar profissional" })).toBeInTheDocument();
-    expect(screen.getByText("Livre")).toBeInTheDocument();
+    expect(screen.getByText("Sala 01")).toBeInTheDocument();
+    expect(screen.getByText("Cristiana")).toBeInTheDocument();
+    expect(screen.getAllByText("Ativa", { selector: "span" })).toHaveLength(2);
+    expect(screen.getByText("Ativo", { selector: "span" })).toBeInTheDocument();
   });
 
   it("renders users as administration content without a legacy product shell", async () => {
