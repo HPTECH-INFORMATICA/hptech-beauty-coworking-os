@@ -38,8 +38,8 @@ describe("tenant administration", () => {
       { id: "unit-2", name: "Centro", timezone: "America/Sao_Paulo", active: true, created_at: "", updated_at: "" },
     ]);
     vi.mocked(getResourceCategories).mockResolvedValue([]);
-    vi.mocked(getResources).mockResolvedValue([]);
-    vi.mocked(getProfessionals).mockResolvedValue([]);
+    vi.mocked(getResources).mockResolvedValue([{ id: "resource-1", unit_id: "unit-1", category_id: "category-1", name: "Sala 01", operational_status: "AVAILABLE", buffer_before_minutes: 0, buffer_after_minutes: 0, active: true }]);
+    vi.mocked(getProfessionals).mockResolvedValue([{ id: "professional-1", external_user_id: null, name: "Cristiana", email: "cris@example.com", phone: null, status: "ACTIVE" }]);
     vi.mocked(getPricingRules).mockResolvedValue([]);
     mockedGetReceptionHours.mockImplementation(async (unitId) => unitId === "unit-1"
       ? [{ day_of_week: 0, opens_at: "08:00:00", closes_at: "18:00:00", is_closed: false }]
@@ -58,6 +58,10 @@ describe("tenant administration", () => {
     expect(screen.getByRole("link", { name: /Usuários.*Acessos e permissões/i })).toHaveAttribute("href", "/administracao/usuarios");
     expect(screen.getByText("Regras comerciais")).toBeInTheDocument();
     expect(screen.getAllByText("Editar horários", { selector: "strong" })).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Salvar unidade" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Salvar espaço" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Salvar profissional" })).toBeInTheDocument();
+    expect(screen.getByText("Livre")).toBeInTheDocument();
   });
 
   it("renders users as administration content without a legacy product shell", async () => {
