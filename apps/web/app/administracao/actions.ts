@@ -12,6 +12,7 @@ import {
   updateReceptionHours,
   updateTenantProfile,
 } from "../../lib/bcos-api";
+import { pricingRuleDefinitionFromForm } from "./pricing-form";
 
 function value(formData: FormData, name: string): string {
   return String(formData.get(name) ?? "").trim();
@@ -71,39 +72,12 @@ export async function updateReceptionHoursAction(formData: FormData) {
 }
 
 export async function createPricingRuleAction(formData: FormData) {
-  const modality = value(formData, "modality");
-  if (!["HOURLY", "PERIOD", "WEEKLY", "MONTHLY"].includes(modality)) throw new Error("Modalidade de preço inválida.");
-
-  const basePriceAmount = value(formData, "base_price_amount");
-  const overtimeHourlyPriceAmount = value(formData, "overtime_hourly_price_amount");
-  const proportionalUntilMinutes = Number(value(formData, "proportional_until_minutes"));
-  const fullHourFromMinutes = Number(value(formData, "full_hour_from_minutes"));
-
-  const ruleDefinition: Record<string, unknown> = {
-    schema_version: 1,
-    modality,
-    base_price_amount: basePriceAmount,
-    overtime: {
-      hourly_price_amount: overtimeHourlyPriceAmount,
-      proportional_until_minutes: proportionalUntilMinutes,
-      full_hour_from_minutes: fullHourFromMinutes,
-      forgiveness_allowed: formData.get("forgiveness_allowed") === "on",
-    },
-  };
-
-  const penaltyMode = value(formData, "conflict_penalty_mode");
-  const penaltyValue = value(formData, "conflict_penalty_value");
-  if (penaltyMode && penaltyValue) {
-    if (!["FIXED_AMOUNT", "PERCENTAGE"].includes(penaltyMode)) throw new Error("Tipo de penalidade inválido.");
-    ruleDefinition.conflict_penalty = { mode: penaltyMode, value: penaltyValue };
-  }
-
   await createPricingRule({
     name: value(formData, "name"),
     unitId: value(formData, "unit_id") || undefined,
     categoryId: value(formData, "category_id") || undefined,
     priority: Number(value(formData, "priority") || "100"),
-    ruleDefinition,
+    ruleDefinition: pricingRuleDefinitionFromForm(formData),
     validFrom: value(formData, "valid_from") ? new Date(value(formData, "valid_from")).toISOString() : undefined,
     validUntil: value(formData, "valid_until") ? new Date(value(formData, "valid_until")).toISOString() : undefined,
   });
