@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function POST() {
   const response = NextResponse.json({ ok: true });
   response.cookies.set("bcos_tenant_id", "", {
     httpOnly: true,
