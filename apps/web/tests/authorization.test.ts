@@ -1,22 +1,24 @@
 import { describe, expect, it, vi } from "vitest";
 
-const redirect = vi.fn((path: string) => { throw new Error(`REDIRECT:${path}`); });
-const getSession = vi.fn();
-const getAccessResolution = vi.fn();
-const cookieGet = vi.fn();
+const mocks = vi.hoisted(() => ({
+  redirect: vi.fn((path: string) => { throw new Error(`REDIRECT:${path}`); }),
+  getSession: vi.fn(),
+  getAccessResolution: vi.fn(),
+  cookieGet: vi.fn(),
+}));
 
-vi.mock("next/navigation", () => ({ redirect }));
-vi.mock("next/headers", () => ({ cookies: vi.fn(async () => ({ get: cookieGet })) }));
-vi.mock("../lib/auth/server", () => ({ auth: { getSession } }));
-vi.mock("../lib/bcos-api", () => ({ getAccessResolution }));
+vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
+vi.mock("next/headers", () => ({ cookies: vi.fn(async () => ({ get: mocks.cookieGet })) }));
+vi.mock("../lib/auth/server", () => ({ auth: { getSession: mocks.getSession } }));
+vi.mock("../lib/bcos-api", () => ({ getAccessResolution: mocks.getAccessResolution }));
 
 import { requireTenantRole } from "../lib/auth/authorization";
 
 describe("selected tenant authorization", () => {
   it("returns the tenant selected by the authenticated customer", async () => {
-    getSession.mockResolvedValue({ data: { session: {}, user: { id: "user-1" } } });
-    cookieGet.mockReturnValue({ value: "tenant-b" });
-    getAccessResolution.mockResolvedValue({
+    mocks.getSession.mockResolvedValue({ data: { session: {}, user: { id: "user-1" } } });
+    mocks.cookieGet.mockReturnValue({ value: "tenant-b" });
+    mocks.getAccessResolution.mockResolvedValue({
       platform_destination: null,
       tenants: [
         { tenant_id: "tenant-a", tenant_name: "Outro cliente", role: "OWNER", destination: "/" },
@@ -32,9 +34,9 @@ describe("selected tenant authorization", () => {
   });
 
   it("rejects a selected tenant when its role cannot enter the requested area", async () => {
-    getSession.mockResolvedValue({ data: { session: {}, user: { id: "user-1" } } });
-    cookieGet.mockReturnValue({ value: "tenant-b" });
-    getAccessResolution.mockResolvedValue({
+    mocks.getSession.mockResolvedValue({ data: { session: {}, user: { id: "user-1" } } });
+    mocks.cookieGet.mockReturnValue({ value: "tenant-b" });
+    mocks.getAccessResolution.mockResolvedValue({
       platform_destination: null,
       tenants: [{ tenant_id: "tenant-b", tenant_name: "LA BEAUTE", role: "PROFESSIONAL", destination: "/profissional" }],
     });
