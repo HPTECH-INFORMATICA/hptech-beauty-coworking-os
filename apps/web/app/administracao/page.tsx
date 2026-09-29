@@ -22,19 +22,18 @@ export default async function TenantAdministrationPage() {
 
   return <main className="admin-page admin-commercial">
     <header className="admin-page-head admin-hero">
-      <div><span>ADMINISTRAÇÃO</span><h1>Seu coworking, organizado.</h1><p>Configure a empresa, os espaços e as regras que sustentam a operação diária.</p></div>
+      <div><span>ADMINISTRAÇÃO</span><h1>Configurações do coworking</h1><p>Escolha uma área para revisar ou configurar. A operação diária continua separada deste ambiente administrativo.</p></div>
       <Link className="admin-users-action" href="/administracao/usuarios">Usuários e acessos →</Link>
     </header>
 
-    <nav className="admin-section-nav admin-section-tabs" aria-label="Administração">
-      <a href="#empresa">Empresa</a><a href="#unidades">Unidades</a><a href="#espacos">Espaços</a><a href="#profissionais">Profissionais</a><a href="#precos">Preços</a>
-    </nav>
-
-    <section className="admin-overview" aria-label="Resumo da configuração">
-      <div><span>UNIDADES</span><strong>{units.length}</strong><small>locais configurados</small></div>
-      <div><span>ESPAÇOS</span><strong>{resources.length}</strong><small>recursos cadastrados</small></div>
-      <div><span>PROFISSIONAIS</span><strong>{professionals.length}</strong><small>na operação</small></div>
-      <div><span>REGRAS DE PREÇO</span><strong>{pricingRules.length}</strong><small>configurações comerciais</small></div>
+    <section className="admin-control-center" aria-label="Áreas de configuração">
+      <a href="#empresa"><span>01</span><div><strong>Empresa</strong><small>Identidade e contato</small></div><b>→</b></a>
+      <a href="#unidades"><span>02</span><div><strong>Unidades</strong><small>{units.length} {units.length === 1 ? "local" : "locais"}</small></div><b>→</b></a>
+      <a href="#espacos"><span>03</span><div><strong>Espaços</strong><small>{resources.length} cadastrados</small></div><b>→</b></a>
+      <a href="#profissionais"><span>04</span><div><strong>Profissionais</strong><small>{professionals.length} cadastrados</small></div><b>→</b></a>
+      <a href="#funcionamento"><span>05</span><div><strong>Funcionamento</strong><small>Horários por unidade</small></div><b>→</b></a>
+      <a href="#precos"><span>06</span><div><strong>Preços</strong><small>{pricingRules.length} {pricingRules.length === 1 ? "regra" : "regras"}</small></div><b>→</b></a>
+      <Link href="/administracao/usuarios"><span>07</span><div><strong>Usuários</strong><small>Acessos e permissões</small></div><b>→</b></Link>
     </section>
 
     <section className="admin-content-grid">
