@@ -11,6 +11,8 @@ import {
   getUnits,
 } from "../lib/bcos-api";
 
+vi.mock("next/headers", () => ({ cookies: vi.fn(async () => ({ get: () => ({ value: "tenant-1" }) })) }));
+
 vi.mock("../lib/auth/server", () => ({ auth: { getSession: vi.fn().mockResolvedValue({ data: { session: {}, user: { id: "test-user" } } }) } }));
 
 vi.mock("../components/session-controls", () => ({
