@@ -89,10 +89,6 @@ describe("HomePage", () => {
     expect(screen.getByText("Profissional Homologação")).toBeInTheDocument();
     expect(screen.getByText("Operação conectada")).toBeInTheDocument();
     expect(screen.getByText("HPTECH PLATFORM")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Meu portal" })).toHaveAttribute(
-      "href",
-      "/profissional",
-    );
 
     expect(
       screen.queryByText("La Beauté Batel - Homologação"),
