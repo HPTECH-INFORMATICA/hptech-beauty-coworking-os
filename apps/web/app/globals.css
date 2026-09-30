@@ -1836,3 +1836,21 @@ svg {
 .admin-record>summary>span{padding:5px 8px;border-radius:999px;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
 .admin-record .status-active{background:#eef7f0;color:#2d6b3c}.admin-record .status-inactive{background:var(--surface-soft);color:var(--text-faint)}
 .admin-record-form{padding:14px;border-top:1px solid var(--line);background:var(--surface-soft)}
+
+.admin-subsection-help{margin:-4px 0 12px;color:var(--text-soft);font-size:10px;line-height:1.5}
+.admin-danger-zone{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 14px;border-top:1px solid #f0d8d8;background:#fffafa}
+.admin-danger-zone>div{display:flex;flex-direction:column;gap:2px}.admin-danger-zone strong{font-size:10px}.admin-danger-zone small{color:var(--text-soft);font-size:9px}
+.admin-danger-zone button{border:1px solid #d7a4a4;background:#fff;color:#9b2c2c}
+.admin-hours-unit>summary>div{display:flex;flex-direction:column;gap:3px}.admin-hours-unit>summary small{color:var(--text-soft);font-size:9px;font-weight:500}
+.reception-hours-form{display:grid;gap:0;padding:0 16px 16px}
+.hours-grid-head,.hours-grid-row{display:grid;grid-template-columns:minmax(110px,1fr) 130px 130px 110px;align-items:center;gap:12px}
+.hours-grid-head{padding:12px 10px 8px;color:var(--text-faint);font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.hours-grid-row{min-height:54px;padding:8px 10px;border-top:1px solid var(--line)}
+.hours-grid-row>strong{font-size:10px}.hours-grid-row input[type="time"]{width:100%;min-height:38px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:#fff}
+.hours-closed{display:flex;align-items:center;gap:7px;font-size:9px;font-weight:700}.hours-closed input{width:16px;height:16px;margin:0}
+.hours-actions{display:flex;align-items:center;gap:14px;padding:14px 10px 0}.hours-actions small{color:var(--text-soft);font-size:9px}
+@media(max-width:760px){
+ .hours-grid-head{display:none}.hours-grid-row{grid-template-columns:1fr 1fr;gap:8px;padding:12px 4px}.hours-grid-row>strong{grid-column:1/-1}
+ .hours-grid-row input[type="time"]{min-width:0}.hours-closed{grid-column:1/-1}.hours-actions{align-items:flex-start;flex-direction:column}
+ .admin-danger-zone{align-items:flex-start;flex-direction:column}
+}

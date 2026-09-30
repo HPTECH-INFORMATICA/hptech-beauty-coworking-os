@@ -195,3 +195,28 @@ async def update_unit(
         return None
 
     return _unit_from_row(dict(row))
+
+
+async def soft_delete_unit(session: AsyncSession, *, tenant_id: UUID, unit_id: UUID) -> bool:
+    """Soft-delete an unused unit while preserving historical referential integrity."""
+    dependencies = await session.execute(
+        text("""
+            SELECT
+                EXISTS (SELECT 1 FROM resources WHERE tenant_id=:tenant_id AND unit_id=:unit_id AND deleted_at IS NULL)
+                OR EXISTS (SELECT 1 FROM bookings WHERE tenant_id=:tenant_id AND unit_id=:unit_id)
+                OR EXISTS (SELECT 1 FROM pricing_rules WHERE tenant_id=:tenant_id AND unit_id=:unit_id AND deleted_at IS NULL)
+                AS blocked
+        """),
+        {"tenant_id": tenant_id, "unit_id": unit_id},
+    )
+    if bool(dependencies.scalar_one()):
+        return False
+    result = await session.execute(
+        text("""
+            UPDATE units SET active=FALSE, deleted_at=now(), updated_at=now()
+            WHERE id=:unit_id AND tenant_id=:tenant_id AND deleted_at IS NULL
+            RETURNING id
+        """),
+        {"tenant_id": tenant_id, "unit_id": unit_id},
+    )
+    return result.scalar_one_or_none() is not None

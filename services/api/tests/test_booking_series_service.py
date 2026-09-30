@@ -90,6 +90,9 @@ def professional_for(
         name="Cristiana Valente",
         email="contato@example.com",
         phone="41999999999",
+        profession=None,
+        council_type=None,
+        council_number=None,
         status=ProfessionalStatus.ACTIVE,
     )
 

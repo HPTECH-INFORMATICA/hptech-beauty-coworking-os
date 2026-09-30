@@ -28,6 +28,9 @@ class Professional:
     name: str
     email: str | None
     phone: str | None
+    profession: str | None
+    council_type: str | None
+    council_number: str | None
     status: ProfessionalStatus
 
 

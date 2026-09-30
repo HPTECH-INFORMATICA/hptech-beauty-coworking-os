@@ -237,3 +237,28 @@ async def update_resource(
         return None
 
     return _resource_from_row(dict(row))
+
+
+async def soft_delete_resource(session: AsyncSession, *, tenant_id: UUID, resource_id: UUID) -> bool:
+    """Soft-delete an unused resource while preserving operational history."""
+    dependencies = await session.execute(
+        text("""
+            SELECT
+                EXISTS (SELECT 1 FROM bookings WHERE tenant_id=:tenant_id AND resource_id=:resource_id)
+                OR EXISTS (SELECT 1 FROM usages WHERE tenant_id=:tenant_id AND resource_id=:resource_id)
+                OR EXISTS (SELECT 1 FROM resource_occupancies WHERE tenant_id=:tenant_id AND resource_id=:resource_id)
+                AS blocked
+        """),
+        {"tenant_id": tenant_id, "resource_id": resource_id},
+    )
+    if bool(dependencies.scalar_one()):
+        return False
+    result = await session.execute(
+        text("""
+            UPDATE resources SET active=FALSE, deleted_at=now(), updated_at=now()
+            WHERE id=:resource_id AND tenant_id=:tenant_id AND deleted_at IS NULL
+            RETURNING id
+        """),
+        {"tenant_id": tenant_id, "resource_id": resource_id},
+    )
+    return result.scalar_one_or_none() is not None

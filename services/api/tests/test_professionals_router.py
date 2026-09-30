@@ -52,6 +52,9 @@ async def test_patch_integrity_conflict_returns_409_and_rolls_back(
         name="Cristiana Valente",
         email="contato@example.com",
         phone="41999999999",
+        profession="Enfermeira Esteta",
+        council_type="COREN",
+        council_number="PR 451.408",
         status=ProfessionalStatus.ACTIVE,
     )
     session = FakeSession()

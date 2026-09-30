@@ -9,6 +9,8 @@ import {
   createResource,
   createResourceCategory,
   createUnit,
+  deleteResource,
+  deleteUnit,
   updateReceptionHours,
   updateResource,
   updateProfessional,
@@ -40,7 +42,7 @@ export async function createResourceAction(formData: FormData) {
 }
 
 export async function createProfessionalAction(formData: FormData) {
-  await createProfessional({ name: value(formData, "name"), email: value(formData, "email") || undefined, phone: value(formData, "phone") || undefined });
+  await createProfessional({ name: value(formData, "name"), email: value(formData, "email") || undefined, phone: value(formData, "phone") || undefined, profession: value(formData, "profession") || undefined, councilType: value(formData, "council_type") || undefined, councilNumber: value(formData, "council_number") || undefined });
   revalidatePath("/administracao");
   redirect("/administracao?created=professional");
 }
@@ -115,8 +117,23 @@ export async function updateProfessionalAction(formData: FormData) {
     name: value(formData, "name"),
     email: value(formData, "email") || null,
     phone: value(formData, "phone") || null,
+    profession: value(formData, "profession") || null,
+    council_type: value(formData, "council_type") || null,
+    council_number: value(formData, "council_number") || null,
     status: value(formData, "status"),
   });
   revalidatePath("/administracao");
   redirect("/administracao?updated=professional#profissionais");
+}
+
+export async function deleteUnitAction(formData: FormData) {
+  await deleteUnit(value(formData, "unit_id"));
+  revalidatePath("/administracao");
+  redirect("/administracao?deleted=unit#unidades");
+}
+
+export async function deleteResourceAction(formData: FormData) {
+  await deleteResource(value(formData, "resource_id"));
+  revalidatePath("/administracao");
+  redirect("/administracao?deleted=resource#espacos");
 }

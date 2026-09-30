@@ -75,7 +75,7 @@ const mockedGetInvoices = vi.mocked(getInvoices);
 const mockedGetInvoice = vi.mocked(getInvoice);
 
 const activeResource = { id: "resource-1", unit_id: "unit-1", category_id: "category-1", name: "Sala 01", operational_status: "AVAILABLE", buffer_before_minutes: 0, buffer_after_minutes: 0, active: true };
-const activeProfessional = { id: "professional-1", external_user_id: null, name: "Profissional Homologação", email: null, phone: null, status: "ACTIVE" };
+const activeProfessional = { id: "professional-1", external_user_id: null, name: "Profissional Homologação", email: null, phone: null, profession: null, council_type: null, council_number: null, status: "ACTIVE" };
 const confirmedBooking = { id: "booking-1", unit_id: "unit-1", resource_id: "resource-1", professional_id: "professional-1", series_id: null, status: "CONFIRMED", starts_at: "2026-09-15T16:00:00Z", ends_at: "2026-09-15T17:00:00Z", buffer_before_minutes: 0, buffer_after_minutes: 0, pricing_snapshot: {} };
 const usageInvoice = { id: "invoice-1", professional_id: "professional-1", source_usage_id: "usage-1", professional_billing_contract_id: null, billing_cycle_start: null, billing_cycle_end: null, manual_closed_at: null, status: "OPEN", currency: "BRL", subtotal_amount: "100.00", discount_amount: "0.00", total_amount: "100.00", created_at: "2026-09-15T17:00:00Z", updated_at: "2026-09-15T17:00:00Z" };
 

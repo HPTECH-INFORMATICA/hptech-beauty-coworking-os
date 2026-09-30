@@ -26,6 +26,7 @@ from bcos_api.resources.schemas import (
 )
 from bcos_api.resources.service import (
     ResourceCategoryNotFound,
+    ResourceDeleteConflict,
     ResourceNotFound,
     ResourceUnitNotFound,
     create_tenant_resource,
@@ -218,3 +219,22 @@ async def update_resource(
 
     return _to_response(resource)
 
+
+
+@router.delete(
+    "/{resource_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=error_responses(status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND, status.HTTP_409_CONFLICT),
+)
+async def delete_resource_endpoint(resource_id: UUID, session: SessionDependency, context: TenantContextDependency) -> None:
+    """Safely remove an unused physical space from the tenant catalog."""
+    from bcos_api.resources.service import delete_tenant_resource
+    try:
+        await delete_tenant_resource(session, context=context, resource_id=resource_id)
+        await session.commit()
+    except ResourceNotFound as exc:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ResourceDeleteConflict as exc:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc

@@ -17,6 +17,7 @@ from bcos_api.units.repository import (
     create_unit,
     get_unit,
     list_units,
+    soft_delete_unit,
     update_unit,
 )
 
@@ -115,3 +116,14 @@ async def update_tenant_unit(
         raise UnitNotFound("Unit was not found.")
 
     return unit
+
+
+class UnitDeleteConflict(Exception):
+    """Raised when an operationally referenced unit cannot be removed."""
+
+async def delete_tenant_unit(session: AsyncSession, *, context: TenantContext, unit_id: UUID) -> None:
+    require_permission(context, Permission.OPERATIONS)
+    if await get_unit(session, tenant_id=context.tenant_id, unit_id=unit_id) is None:
+        raise UnitNotFound("Unit was not found.")
+    if not await soft_delete_unit(session, tenant_id=context.tenant_id, unit_id=unit_id):
+        raise UnitDeleteConflict("A unidade possui vínculos operacionais. Inative-a em vez de excluir.")

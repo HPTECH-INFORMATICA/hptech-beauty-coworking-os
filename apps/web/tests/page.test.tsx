@@ -90,6 +90,9 @@ describe("HomePage", () => {
         name: "Profissional Homologação",
         email: "homologacao@hptechinformatica.com",
         phone: null,
+        profession: null,
+        council_type: null,
+        council_number: null,
         status: "ACTIVE",
       },
     ]);
