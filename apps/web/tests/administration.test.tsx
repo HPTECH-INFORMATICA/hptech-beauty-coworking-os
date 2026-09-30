@@ -52,8 +52,12 @@ describe("tenant administration", () => {
     expect(mockedGetReceptionHours).toHaveBeenCalledWith("unit-1");
     expect(mockedGetReceptionHours).toHaveBeenCalledWith("unit-2");
     expect(screen.getAllByRole("button", { name: "Salvar horários" })).toHaveLength(2);
-    expect(screen.getByLabelText("Segunda abre")).toHaveValue("08:00");
-    expect(screen.getByLabelText("Segunda fecha")).toHaveValue("18:00");
+    const mondayOpens = screen.getAllByLabelText("Segunda abre");
+    const mondayCloses = screen.getAllByLabelText("Segunda fecha");
+    expect(mondayOpens).toHaveLength(2);
+    expect(mondayCloses).toHaveLength(2);
+    expect(mondayOpens[0]).toHaveValue("08:00");
+    expect(mondayCloses[0]).toHaveValue("18:00");
     
     expect(screen.getByRole("heading", { level: 1, name: "Configurações do coworking" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Áreas de configuração" })).toBeInTheDocument();
