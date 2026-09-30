@@ -69,6 +69,8 @@ describe("tenant administration", () => {
     expect(screen.getByText("Cristiana")).toBeInTheDocument();
     expect(screen.getByText(/Enfermeira Esteta/)).toBeInTheDocument();
     expect(screen.getByText("1. Tipos de espaço")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Salvar tipo" })).toBeInTheDocument();
+    expect(screen.getByText("Excluir tipo de espaço")).toBeInTheDocument();
     expect(screen.getByText("2. Espaços da unidade")).toBeInTheDocument();
     expect(screen.getAllByText("Configurar semana")).toHaveLength(2);
     expect(screen.getAllByText("Ativa", { selector: "span" })).toHaveLength(2);
