@@ -11,8 +11,11 @@ from bcos_api.resource_categories.domain import (
     ResourceCategory,
 )
 from bcos_api.resource_categories.service import (
+    ResourceCategoryDeleteConflict,
     create_tenant_resource_category,
+    delete_tenant_resource_category,
     list_tenant_resource_categories,
+    update_tenant_resource_category,
 )
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.membership import MembershipRole
@@ -260,3 +263,42 @@ async def test_professional_role_cannot_create_resource_category(
         )
 
     assert repository_called is False
+
+
+@pytest.mark.asyncio
+async def test_update_category_is_tenant_scoped_and_normalizes_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    context = owner_context()
+    category_id = uuid4()
+
+    async def fake_update(session: object, *, tenant_id: UUID, category_id: UUID, name: str, active: bool) -> ResourceCategory:
+        del session
+        assert tenant_id == context.tenant_id
+        assert name == "Sala Premium"
+        assert active is True
+        return category_for(tenant_id=tenant_id, name=name, active=active)
+
+    monkeypatch.setattr("bcos_api.resource_categories.service.update_resource_category", fake_update)
+    result = await update_tenant_resource_category(
+        object(), context=context, category_id=category_id, name="  Sala Premium  ", active=True  # type: ignore[arg-type]
+    )
+    assert result.name == "Sala Premium"
+
+
+@pytest.mark.asyncio
+async def test_delete_category_blocks_when_resource_uses_it(monkeypatch: pytest.MonkeyPatch) -> None:
+    context = owner_context()
+    category = category_for(tenant_id=context.tenant_id)
+
+    async def fake_get(*args: object, **kwargs: object) -> ResourceCategory:
+        return category
+
+    async def fake_delete(*args: object, **kwargs: object) -> bool:
+        return False
+
+    monkeypatch.setattr("bcos_api.resource_categories.service.get_resource_category", fake_get)
+    monkeypatch.setattr("bcos_api.resource_categories.service.soft_delete_resource_category", fake_delete)
+
+    with pytest.raises(ResourceCategoryDeleteConflict):
+        await delete_tenant_resource_category(
+            object(), context=context, category_id=category.id  # type: ignore[arg-type]
+        )
