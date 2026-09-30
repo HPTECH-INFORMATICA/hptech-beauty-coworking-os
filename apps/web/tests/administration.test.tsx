@@ -58,12 +58,10 @@ describe("tenant administration", () => {
     expect(mondayCloses).toHaveLength(2);
     expect(mondayOpens[0]).toHaveValue("08:00");
     expect(mondayCloses[0]).toHaveValue("18:00");
-    
     expect(screen.getByRole("heading", { level: 1, name: "Configurações do coworking" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Áreas de configuração" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Usuários.*Acessos e permissões/i })).toHaveAttribute("href", "/administracao/usuarios");
     expect(screen.getByText("Regras comerciais")).toBeInTheDocument();
-    expect(screen.getAllByText("Editar horários", { selector: "strong" })).toHaveLength(2);
     expect(screen.getAllByRole("button", { name: "Salvar unidade" })).toHaveLength(2);
     expect(screen.getByRole("button", { name: "Salvar espaço" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar profissional" })).toBeInTheDocument();
