@@ -129,3 +129,42 @@ async def create_resource_category(
     row = result.mappings().one()
 
     return _resource_category_from_row(dict(row))
+
+
+async def update_resource_category(session: AsyncSession, *, tenant_id: UUID, category_id: UUID, name: str, active: bool) -> ResourceCategory | None:
+    """Update one category without crossing tenant boundaries."""
+    result = await session.execute(
+        text("""
+            UPDATE resource_categories
+            SET name=:name, active=:active, updated_at=now()
+            WHERE id=:category_id AND tenant_id=:tenant_id AND deleted_at IS NULL
+            RETURNING id, tenant_id, name, active
+        """),
+        {"tenant_id": tenant_id, "category_id": category_id, "name": name, "active": active},
+    )
+    row = result.mappings().one_or_none()
+    return None if row is None else _resource_category_from_row(dict(row))
+
+
+async def soft_delete_resource_category(session: AsyncSession, *, tenant_id: UUID, category_id: UUID) -> bool:
+    """Soft-delete a category only while no live resource uses it."""
+    dependencies = await session.execute(
+        text("""
+            SELECT EXISTS (
+                SELECT 1 FROM resources
+                WHERE tenant_id=:tenant_id AND category_id=:category_id AND deleted_at IS NULL
+            )
+        """),
+        {"tenant_id": tenant_id, "category_id": category_id},
+    )
+    if bool(dependencies.scalar_one()):
+        return False
+    result = await session.execute(
+        text("""
+            UPDATE resource_categories SET active=FALSE, deleted_at=now(), updated_at=now()
+            WHERE id=:category_id AND tenant_id=:tenant_id AND deleted_at IS NULL
+            RETURNING id
+        """),
+        {"tenant_id": tenant_id, "category_id": category_id},
+    )
+    return result.scalar_one_or_none() is not None

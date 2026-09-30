@@ -22,3 +22,12 @@ class ResourceCategoryCreate(BaseModel):
 
     name: str = Field(min_length=1)
     active: bool = True
+
+
+class ResourceCategoryUpdate(BaseModel):
+    """Payload for maintaining a BCOS resource category."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1)
+    active: bool
