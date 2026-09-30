@@ -8,10 +8,12 @@ import {
   createProfessional,
   createResource,
   createResourceCategory,
+  deleteResourceCategory,
   createUnit,
   deleteResource,
   deleteUnit,
   updateReceptionHours,
+  updateResourceCategory,
   updateResource,
   updateProfessional,
   updateTenantProfile,
@@ -136,4 +138,20 @@ export async function deleteResourceAction(formData: FormData) {
   await deleteResource(value(formData, "resource_id"));
   revalidatePath("/administracao");
   redirect("/administracao?deleted=resource#espacos");
+}
+
+
+export async function updateCategoryAction(formData: FormData) {
+  await updateResourceCategory(value(formData, "category_id"), {
+    name: value(formData, "name"),
+    active: formData.get("active") === "on",
+  });
+  revalidatePath("/administracao");
+  redirect("/administracao?updated=category#espacos");
+}
+
+export async function deleteCategoryAction(formData: FormData) {
+  await deleteResourceCategory(value(formData, "category_id"));
+  revalidatePath("/administracao");
+  redirect("/administracao?deleted=category#espacos");
 }
