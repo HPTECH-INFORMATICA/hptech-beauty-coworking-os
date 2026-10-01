@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import {
   createPricingRule,
+  deletePricingRule,
   createProfessional,
   createResource,
   createResourceCategory,
@@ -13,6 +14,7 @@ import {
   deleteResource,
   deleteUnit,
   updateReceptionHours,
+  updatePricingRule,
   updateResourceCategory,
   updateResource,
   updateProfessional,
@@ -154,4 +156,26 @@ export async function deleteCategoryAction(formData: FormData) {
   await deleteResourceCategory(value(formData, "category_id"));
   revalidatePath("/administracao");
   redirect("/administracao?deleted=category#espacos");
+}
+
+
+export async function updatePricingRuleAction(formData: FormData) {
+  await updatePricingRule(value(formData, "pricing_rule_id"), {
+    name: value(formData, "name"),
+    unitId: value(formData, "unit_id") || undefined,
+    categoryId: value(formData, "category_id") || undefined,
+    status: value(formData, "status"),
+    priority: Number(value(formData, "priority") || "100"),
+    ruleDefinition: pricingRuleDefinitionFromForm(formData),
+    validFrom: value(formData, "valid_from") ? new Date(value(formData, "valid_from")).toISOString() : undefined,
+    validUntil: value(formData, "valid_until") ? new Date(value(formData, "valid_until")).toISOString() : undefined,
+  });
+  revalidatePath("/administracao");
+  redirect("/administracao?updated=pricing-rule#precos");
+}
+
+export async function deletePricingRuleAction(formData: FormData) {
+  await deletePricingRule(value(formData, "pricing_rule_id"));
+  revalidatePath("/administracao");
+  redirect("/administracao?deleted=pricing-rule#precos");
 }

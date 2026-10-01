@@ -77,6 +77,20 @@ describe("tenant administration", () => {
     expect(screen.getAllByText("Ativo", { selector: "span" })).toHaveLength(3);
   });
 
+  it("renders existing pricing rules with edit and safe removal controls", async () => {
+    vi.mocked(getPricingRules).mockResolvedValue([{
+      id: "rule-1", unit_id: "unit-1", resource_category_id: "category-1",
+      name: "SALA 01 - HORA", status: "ACTIVE", priority: 100, currency: "BRL",
+      rule_definition: { schema_version: 1, modality: "HOURLY", base_price_amount: "39.00", overtime: { hourly_price_amount: "39.00", proportional_until_minutes: 29, full_hour_from_minutes: 30, forgiveness_allowed: false } },
+      valid_from: null, valid_until: null,
+    }]);
+    render(await TenantAdministrationPage());
+    expect(screen.getByText("SALA 01 - HORA")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Salvar regra" })).toBeInTheDocument();
+    expect(screen.getByText("Excluir regra de preço")).toBeInTheDocument();
+    expect(screen.getByText(/Reservas já criadas preservam o snapshot de preço/)).toBeInTheDocument();
+  });
+
   it("renders users as administration content without a legacy product shell", async () => {
     render(await UsersAdminPage({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { level: 1, name: "Usuários e acessos" })).toBeInTheDocument();

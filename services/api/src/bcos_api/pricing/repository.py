@@ -215,3 +215,20 @@ async def resolve_pricing_rule(
         return None
 
     return _pricing_rule_from_row(dict(row))
+
+
+async def get_pricing_rule(session: AsyncSession, *, tenant_id: UUID, rule_id: UUID) -> PricingRule | None:
+    result = await session.execute(text("""SELECT id, tenant_id, unit_id, resource_category_id, name, status, priority, currency, rule_definition, valid_from, valid_until, created_at, updated_at, deleted_at FROM pricing_rules WHERE id=:rule_id AND tenant_id=:tenant_id AND deleted_at IS NULL"""), {"rule_id": rule_id, "tenant_id": tenant_id})
+    row = result.mappings().one_or_none()
+    return None if row is None else _pricing_rule_from_row(dict(row))
+
+
+async def update_pricing_rule(session: AsyncSession, *, tenant_id: UUID, rule_id: UUID, unit_id: UUID | None, resource_category_id: UUID | None, name: str, status: PricingRuleStatus, priority: int, currency: str, rule_definition: dict[str, Any], valid_from: datetime | None, valid_until: datetime | None) -> PricingRule | None:
+    result = await session.execute(text("""UPDATE pricing_rules SET unit_id=:unit_id, resource_category_id=:resource_category_id, name=:name, status=:status, priority=:priority, currency=:currency, rule_definition=CAST(:rule_definition AS JSONB), valid_from=:valid_from, valid_until=:valid_until, updated_at=now() WHERE id=:rule_id AND tenant_id=:tenant_id AND deleted_at IS NULL RETURNING id, tenant_id, unit_id, resource_category_id, name, status, priority, currency, rule_definition, valid_from, valid_until, created_at, updated_at, deleted_at"""), {"tenant_id":tenant_id,"rule_id":rule_id,"unit_id":unit_id,"resource_category_id":resource_category_id,"name":name,"status":status.value,"priority":priority,"currency":currency,"rule_definition":json.dumps(rule_definition),"valid_from":valid_from,"valid_until":valid_until})
+    row=result.mappings().one_or_none()
+    return None if row is None else _pricing_rule_from_row(dict(row))
+
+
+async def soft_delete_pricing_rule(session: AsyncSession, *, tenant_id: UUID, rule_id: UUID) -> bool:
+    result=await session.execute(text("""UPDATE pricing_rules SET status='INACTIVE', deleted_at=now(), updated_at=now() WHERE id=:rule_id AND tenant_id=:tenant_id AND deleted_at IS NULL RETURNING id"""), {"tenant_id":tenant_id,"rule_id":rule_id})
+    return result.scalar_one_or_none() is not None

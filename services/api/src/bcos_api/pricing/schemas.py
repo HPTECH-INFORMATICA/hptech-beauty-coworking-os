@@ -39,3 +39,9 @@ class PricingRuleCreate(BaseModel):
     rule_definition: dict[str, Any]
     valid_from: datetime | None = None
     valid_until: datetime | None = None
+
+
+class PricingRuleUpdate(PricingRuleCreate):
+    """Payload for maintaining a pricing rule without rewriting booking snapshots."""
+
+    status: PricingRuleStatus

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
@@ -22,11 +23,15 @@ from bcos_api.pricing.schemas import (
 from bcos_api.pricing.schemas import (
     PricingRuleCreate as PricingRuleCreateRequest,
 )
+from bcos_api.pricing.schemas import PricingRuleUpdate as PricingRuleUpdateRequest
 from bcos_api.pricing.service import (
+    PricingRuleNotFound,
     PricingRuleResourceCategoryNotFound,
     PricingRuleUnitNotFound,
     create_tenant_pricing_rule,
+    delete_tenant_pricing_rule,
     list_tenant_pricing_rules,
+    update_tenant_pricing_rule,
 )
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.dependencies import get_tenant_context
@@ -134,3 +139,27 @@ async def create_pricing_rule(
         raise
 
     return _to_response(rule)
+
+
+@router.patch("/{rule_id}", response_model=PricingRuleResponse)
+async def update_pricing_rule(rule_id: UUID, payload: PricingRuleUpdateRequest, session: SessionDependency, context: TenantContextDependency) -> PricingRuleResponse:
+    try:
+        rule=await update_tenant_pricing_rule(session, context=context, rule_id=rule_id, unit_id=payload.unit_id, resource_category_id=payload.resource_category_id, name=payload.name, status=payload.status, priority=payload.priority, currency=payload.currency, rule_definition=payload.rule_definition, valid_from=payload.valid_from, valid_until=payload.valid_until)
+        await session.commit()
+    except PricingRuleNotFound as exc:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except (InvalidPricingRule, PricingRuleUnitNotFound, PricingRuleResourceCategoryNotFound) as exc:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc
+    return _to_response(rule)
+
+
+@router.delete("/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_pricing_rule(rule_id: UUID, session: SessionDependency, context: TenantContextDependency) -> None:
+    try:
+        await delete_tenant_pricing_rule(session, context=context, rule_id=rule_id)
+        await session.commit()
+    except PricingRuleNotFound as exc:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
