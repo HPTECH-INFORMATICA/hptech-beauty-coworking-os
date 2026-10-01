@@ -13,7 +13,9 @@ from bcos_api.pricing.service import (
     PricingRuleResourceCategoryNotFound,
     PricingRuleUnitNotFound,
     create_tenant_pricing_rule,
+    delete_tenant_pricing_rule,
     list_tenant_pricing_rules,
+    update_tenant_pricing_rule,
 )
 from bcos_api.resource_categories.domain import ResourceCategory
 from bcos_api.tenancy.context import TenantContext
@@ -497,3 +499,69 @@ async def test_create_rejects_invalid_validity_window_before_repository(
         )
 
     assert repository_called is False
+
+
+@pytest.mark.asyncio
+async def test_update_pricing_rule_stays_inside_authorized_tenant(monkeypatch: pytest.MonkeyPatch) -> None:
+    context = context_for(MembershipRole.OWNER)
+    rule_id = uuid4()
+    captured: dict[str, object] = {}
+
+    async def fake_update(session: object, **kwargs: Any) -> PricingRule:
+        del session
+        captured.update(kwargs)
+        return pricing_rule_for(tenant_id=context.tenant_id)
+
+    monkeypatch.setattr("bcos_api.pricing.service.update_pricing_rule", fake_update)
+    rule = await update_tenant_pricing_rule(
+        object(),  # type: ignore[arg-type]
+        context=context,
+        rule_id=rule_id,
+        unit_id=None,
+        resource_category_id=None,
+        name="  Tabela atualizada  ",
+        status=PricingRuleStatus.INACTIVE,
+        priority=20,
+        currency="BRL",
+        rule_definition={
+            "schema_version": 1,
+            "modality": "HOURLY",
+            "base_price_amount": "120.00",
+            "overtime": {
+                "hourly_price_amount": "150.00",
+                "proportional_until_minutes": 29,
+                "full_hour_from_minutes": 30,
+                "forgiveness_allowed": False,
+            },
+        },
+        valid_from=None,
+        valid_until=None,
+    )
+    assert rule.tenant_id == context.tenant_id
+    assert captured["tenant_id"] == context.tenant_id
+    assert captured["rule_id"] == rule_id
+    assert captured["name"] == "Tabela atualizada"
+    assert captured["status"] == PricingRuleStatus.INACTIVE
+
+
+@pytest.mark.asyncio
+async def test_delete_pricing_rule_is_tenant_scoped_soft_removal(monkeypatch: pytest.MonkeyPatch) -> None:
+    context = context_for(MembershipRole.ADMIN)
+    rule_id = uuid4()
+    captured: dict[str, object] = {}
+
+    async def fake_get(session: object, *, tenant_id: UUID, rule_id: UUID) -> PricingRule:
+        del session
+        assert tenant_id == context.tenant_id
+        return pricing_rule_for(tenant_id=tenant_id)
+
+    async def fake_delete(session: object, *, tenant_id: UUID, rule_id: UUID) -> bool:
+        del session
+        captured["tenant_id"] = tenant_id
+        captured["rule_id"] = rule_id
+        return True
+
+    monkeypatch.setattr("bcos_api.pricing.service.get_pricing_rule", fake_get)
+    monkeypatch.setattr("bcos_api.pricing.service.soft_delete_pricing_rule", fake_delete)
+    await delete_tenant_pricing_rule(object(), context=context, rule_id=rule_id)  # type: ignore[arg-type]
+    assert captured == {"tenant_id": context.tenant_id, "rule_id": rule_id}
