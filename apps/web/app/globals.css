@@ -1854,3 +1854,13 @@ svg {
  .hours-grid-row input[type="time"]{min-width:0}.hours-closed{grid-column:1/-1}.hours-actions{align-items:flex-start;flex-direction:column}
  .admin-danger-zone{align-items:flex-start;flex-direction:column}
 }
+
+.admin-pricing-guide{margin:0 0 18px;padding:16px 18px;border:1px solid #dfe5ec;border-radius:14px;background:#f8fafc;color:#263243}
+.admin-pricing-guide>strong{display:block;margin-bottom:8px;font-size:14px}
+.admin-pricing-guide ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:13px;line-height:1.45}
+.admin-pricing-guide p{margin:10px 0 0;font-size:12px;line-height:1.45;color:#526071}
+.admin-advanced summary small{margin-left:8px;font-weight:400;color:#687587}
+.admin-field-help{grid-column:1/-1;margin:0;color:#687587;font-size:12px;line-height:1.45}
+.admin-form-grid label>small,.admin-check small{display:block;margin-top:3px;color:#687587;font-size:11px;font-weight:400;line-height:1.35}
+.admin-check small{margin-left:24px}
+@media(max-width:720px){.admin-pricing-guide{padding:14px}.admin-advanced summary small{display:block;margin:3px 0 0}}

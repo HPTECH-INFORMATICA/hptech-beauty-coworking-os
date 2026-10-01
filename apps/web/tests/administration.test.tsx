@@ -62,6 +62,9 @@ describe("tenant administration", () => {
     expect(screen.getByRole("region", { name: "Áreas de configuração" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Usuários.*Acessos e permissões/i })).toHaveAttribute("href", "/administracao/usuarios");
     expect(screen.getByText("Regras comerciais")).toBeInTheDocument();
+    expect(screen.getByText("Como configurar")).toBeInTheDocument();
+    expect(screen.getByText(/prioridade serve para desempatar regras aplicáveis/i)).toBeInTheDocument();
+    expect(screen.getByText(/dispensar a cobrança do excedente/i)).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Salvar unidade" })).toHaveLength(2);
     expect(screen.getByRole("button", { name: "Salvar espaço" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar profissional" })).toBeInTheDocument();
