@@ -11,6 +11,7 @@ from bcos_api.audit.repository import create_audit_log
 from bcos_api.auth.dependencies import get_authenticated_identity
 from bcos_api.auth.identity import AuthenticatedIdentity
 from bcos_api.db.session import get_async_session
+from bcos_api.notifications.email import send_professional_access_invitation
 from bcos_api.professional_invitations.schemas import (
     ProfessionalAccessInvitation,
     ProfessionalAccessInvitationCreated,
@@ -43,9 +44,10 @@ async def create_professional_invitation(
 ) -> ProfessionalAccessInvitationCreated:
     require_permission(context, Permission.TENANT_ADMIN)
     professional = await session.execute(
-        text("""SELECT id, email FROM professionals
-                WHERE id=:professional_id AND tenant_id=:tenant_id
-                  AND status='ACTIVE' AND deleted_at IS NULL"""),
+        text("""SELECT p.id, p.email, p.name, t.name AS tenant_name FROM professionals p
+                JOIN tenants t ON t.id=p.tenant_id
+                WHERE p.id=:professional_id AND p.tenant_id=:tenant_id
+                  AND p.status='ACTIVE' AND p.deleted_at IS NULL"""),
         {"professional_id": professional_id, "tenant_id": context.tenant_id},
     )
     row = professional.mappings().one_or_none()
@@ -69,10 +71,23 @@ async def create_professional_invitation(
         {"tenant_id": context.tenant_id, "professional_id": professional_id, "email": email, "actor": context.external_user_id},
     )
     invitation = result.mappings().one()
+    try:
+        send_professional_access_invitation(
+            to_email=email,
+            professional_name=str(row["name"]),
+            tenant_name=str(row["tenant_name"]),
+        )
+    except RuntimeError as exc:
+        await session.rollback()
+        raise HTTPException(status_code=503, detail="PROFESSIONAL_INVITATION_EMAIL_FAILED") from exc
     await create_audit_log(
-        session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id,
-        action="PROFESSIONAL_ACCESS_INVITED", entity_type="professional_access_invitation",
-        entity_id=invitation["id"], metadata={"professional_id": str(professional_id), "email": email},
+        session,
+        tenant_id=context.tenant_id,
+        actor_external_user_id=context.external_user_id,
+        action="PROFESSIONAL_ACCESS_INVITED",
+        entity_type="professional_access_invitation",
+        entity_id=invitation["id"],
+        metadata={"professional_id": str(professional_id), "email": email, "delivery": "EMAIL"},
     )
     await session.commit()
     return ProfessionalAccessInvitationCreated.model_validate(dict(invitation))
