@@ -10,6 +10,23 @@ function dateTime(value: string): string { return new Intl.DateTimeFormat("pt-BR
 function bookingStatus(status: string): string { const labels: Record<string, string> = { PENDING: "Pendente", CONFIRMED: "Confirmada", CANCELLED: "Cancelada", COMPLETED: "Concluída" }; return labels[status] ?? status.replaceAll("_", " "); }
 function invoiceStatus(status: string): string { const labels: Record<string, string> = { OPEN: "Em aberto", PARTIALLY_PAID: "Parcialmente paga", PAID: "Paga", CANCELLED: "Cancelada" }; return labels[status] ?? status.replaceAll("_", " "); }
 function pricingModality(value: string | null): string { const labels: Record<string, string> = { HOURLY: "por hora", PERIOD: "por período", WEEKLY: "semanal", MONTHLY: "mensal" }; return value ? (labels[value] ?? value) : ""; }
+function localDateTimeInZoneToIso(value: string, timeZone: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+  if (!match) throw new Error("Data e hora inválidas.");
+  const [, year, month, day, hour, minute] = match;
+  const wanted = Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
+  let instant = wanted;
+  const formatter = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const parts = Object.fromEntries(formatter.formatToParts(new Date(instant)).map((part) => [part.type, part.value]));
+    const represented = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute));
+    instant += wanted - represented;
+  }
+  const finalParts = Object.fromEntries(formatter.formatToParts(new Date(instant)).map((part) => [part.type, part.value]));
+  if (`${finalParts.year}-${finalParts.month}-${finalParts.day}T${finalParts.hour}:${finalParts.minute}` !== value) throw new Error("Horário local inválido para o fuso da unidade.");
+  return new Date(instant).toISOString();
+}
+
 
 export default async function ProfessionalPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
@@ -23,7 +40,7 @@ export default async function ProfessionalPage({ searchParams }: { searchParams:
   let bookings: Booking[] = [];
   let invoices: Invoice[] = [];
   let error: string | null = null;
-  try { [bookings, invoices, units, categories] = await Promise.all([getMyBookings(), getMyInvoices(), getUnits(), getResourceCategories()]); if (unitId && startsAt && endsAt) commercial = await getMyCommercialAvailability({ unitId, startsAt, endsAt, categoryId: categoryId || undefined }); } catch (caught) { console.error("BCOS professional portal load failed:", caught); error = "Não foi possível carregar seu portal neste momento."; }
+  try { [bookings, invoices, units, categories] = await Promise.all([getMyBookings(), getMyInvoices(), getUnits(), getResourceCategories()]); if (unitId && startsAt && endsAt) { const selectedUnit = units.find((unit) => unit.id === unitId && unit.active); if (!selectedUnit) throw new Error("Unidade selecionada não está disponível."); const startsAtIso = localDateTimeInZoneToIso(startsAt, selectedUnit.timezone); const endsAtIso = localDateTimeInZoneToIso(endsAt, selectedUnit.timezone); if (new Date(endsAtIso).getTime() <= new Date(startsAtIso).getTime()) throw new Error("O fim deve ser posterior ao início."); commercial = await getMyCommercialAvailability({ unitId, startsAt: startsAtIso, endsAt: endsAtIso, categoryId: categoryId || undefined }); } } catch (caught) { console.error("BCOS professional portal load failed:", caught); error = "Não foi possível carregar seu portal neste momento."; }
   const openInvoices = invoices.filter((invoice) => invoice.status === "OPEN" || invoice.status === "PARTIALLY_PAID");
   const upcomingBookings = bookings.filter((booking) => booking.status === "PENDING" || booking.status === "CONFIRMED");
   return (
