@@ -33,6 +33,30 @@ export type TenantMembershipInvite = { externalUserId: string; role: "ADMIN" | "
 export type AccessTenant = { tenant_id: string; tenant_name: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; destination: "/administracao" | "/" | "/profissional" };
 export type AccessResolution = { platform_destination: "/platform" | null; tenants: AccessTenant[] };
 export type PendingInvitation = TenantMembership;
+export type PublicProfessionalOnboarding = { tenant_name: string; documents: Array<{ id: string; document_type: string; version: string; title: string; content: string }> };
+export type ProfessionalOnboardingRequest = { id: string; tenant_id: string; tenant_name: string; name: string; email: string; phone: string | null; profession: string | null; council_type: string | null; council_number: string | null; status: string; created_at: string };
+export type ProfessionalOnboardingLink = { id: string; public_slug: string; public_path: string };
+
+export async function getPublicProfessionalOnboarding(slug: string): Promise<PublicProfessionalOnboarding> {
+  return publicApiRequest<PublicProfessionalOnboarding>(`/api/v1/professional-onboarding/public/${encodeURIComponent(slug)}`);
+}
+
+export async function submitPublicProfessionalOnboarding(slug: string, payload: Record<string, unknown>): Promise<ProfessionalOnboardingRequest> {
+  return publicApiPost<ProfessionalOnboardingRequest>(`/api/v1/professional-onboarding/public/${encodeURIComponent(slug)}`, payload);
+}
+
+export async function createProfessionalOnboardingLink(): Promise<ProfessionalOnboardingLink> {
+  return apiPost<ProfessionalOnboardingLink>("/api/v1/professional-onboarding/links", {});
+}
+
+export async function getProfessionalOnboardingRequests(): Promise<ProfessionalOnboardingRequest[]> {
+  return apiRequest<ProfessionalOnboardingRequest[]>("/api/v1/professional-onboarding/requests");
+}
+
+export async function approveProfessionalOnboardingRequest(requestId: string): Promise<ProfessionalOnboardingRequest> {
+  return apiPost<ProfessionalOnboardingRequest>(`/api/v1/professional-onboarding/requests/${encodeURIComponent(requestId)}/approve`, {});
+}
+
 export type ProfessionalAccessInvitation = { id: string; tenant_id: string; tenant_name: string; professional_id: string; professional_name: string; email: string; status: string; expires_at: string };
 export type ProfessionalAccessInvitationCreated = { id: string; professional_id: string; email: string; status: string; expires_at: string };
 export type TenantProfile = { legal_name: string; trade_name: string; tax_id: string | null; email: string; phone: string | null };
@@ -91,6 +115,22 @@ async function apiRequest<T>(pathName: string, init: RequestInit = {}): Promise<
   }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
+}
+
+async function publicApiRequest<T>(pathName: string, init: RequestInit = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+  headers.set("Accept", "application/json");
+  if (init.body !== undefined) headers.set("Content-Type", "application/json");
+  const response = await fetch(`${API_BASE_URL}${pathName}`, { ...init, headers, cache: "no-store" });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`BCOS Public API ${init.method ?? "GET"} ${pathName} falhou com HTTP ${response.status}: ${body}`);
+  }
+  return (await response.json()) as T;
+}
+
+async function publicApiPost<T>(pathName: string, body: Record<string, unknown>): Promise<T> {
+  return publicApiRequest<T>(pathName, { method: "POST", body: JSON.stringify(body) });
 }
 
 async function identityApiRequest<T>(pathName: string, init: RequestInit = {}): Promise<T> {

@@ -8,6 +8,8 @@ import {
   deletePricingRule,
   createProfessional,
   createProfessionalAccessInvitation,
+  createProfessionalOnboardingLink,
+  approveProfessionalOnboardingRequest,
   createResource,
   createResourceCategory,
   deleteResourceCategory,
@@ -52,6 +54,17 @@ export async function createProfessionalAction(formData: FormData) {
   redirect("/administracao?created=professional");
 }
 
+
+export async function createProfessionalRegistrationLinkAction() {
+  const link = await createProfessionalOnboardingLink();
+  redirect(`/administracao?cadastro_profissional=${encodeURIComponent(link.public_path)}#profissionais`);
+}
+
+export async function approveProfessionalRegistrationAction(formData: FormData) {
+  await approveProfessionalOnboardingRequest(value(formData, "request_id"));
+  revalidatePath("/administracao");
+  redirect("/administracao?aprovado=professional#profissionais");
+}
 
 export async function inviteProfessionalAccessAction(formData: FormData) {
   await createProfessionalAccessInvitation(value(formData, "professional_id"));
