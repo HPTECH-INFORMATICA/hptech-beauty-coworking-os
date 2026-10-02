@@ -15,7 +15,9 @@ from bcos_api.audit.repository import create_audit_log
 from bcos_api.db.session import get_async_session
 from bcos_api.notifications.email import send_professional_access_invitation
 from bcos_api.professional_onboarding.schemas import (
+    ManagedOnboardingDocument,
     OnboardingDocument,
+    OnboardingDocumentPublish,
     ProfessionalOnboardingLink,
     ProfessionalOnboardingRequest,
     ProfessionalOnboardingSubmit,
@@ -38,6 +40,53 @@ def _public_slug(tenant_name: str, tenant_id: UUID) -> str:
     normalized = re.sub(r"[^a-z0-9]+", "-", tenant_name.lower()).strip("-")
     return f"{normalized or 'coworking'}-{str(tenant_id)[:8]}"
 
+
+
+
+@router.get("/policy", response_model=ManagedOnboardingDocument | None)
+async def get_tenant_onboarding_policy(
+    session: SessionDependency, context: TenantContextDependency
+) -> ManagedOnboardingDocument | None:
+    require_permission(context, Permission.TENANT_ADMIN)
+    result = await session.execute(
+        text("""SELECT id, tenant_id, document_type, version, title, content, status, effective_at
+                FROM professional_onboarding_documents
+                WHERE tenant_id=:tenant_id AND document_type='UNIT_POLICY'
+                  AND status='ACTIVE' AND deleted_at IS NULL LIMIT 1"""),
+        {"tenant_id": context.tenant_id},
+    )
+    row = result.mappings().one_or_none()
+    return ManagedOnboardingDocument.model_validate(dict(row)) if row is not None else None
+
+
+@router.put("/policy", response_model=ManagedOnboardingDocument)
+async def publish_tenant_onboarding_policy(
+    payload: OnboardingDocumentPublish,
+    session: SessionDependency,
+    context: TenantContextDependency,
+) -> ManagedOnboardingDocument:
+    require_permission(context, Permission.TENANT_ADMIN)
+    await session.execute(
+        text("""UPDATE professional_onboarding_documents SET status='INACTIVE', updated_at=now()
+                WHERE tenant_id=:tenant_id AND document_type='UNIT_POLICY'
+                  AND status='ACTIVE' AND deleted_at IS NULL"""),
+        {"tenant_id": context.tenant_id},
+    )
+    result = await session.execute(
+        text("""INSERT INTO professional_onboarding_documents
+                (tenant_id, document_type, version, title, content, status, effective_at)
+                VALUES (:tenant_id, 'UNIT_POLICY', :version, :title, :content, 'ACTIVE', now())
+                RETURNING id, tenant_id, document_type, version, title, content, status, effective_at"""),
+        {"tenant_id": context.tenant_id, **payload.model_dump()},
+    )
+    row = dict(result.mappings().one())
+    await create_audit_log(
+        session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id,
+        action="PROFESSIONAL_ONBOARDING_POLICY_PUBLISHED", entity_type="professional_onboarding_document",
+        entity_id=row["id"], metadata={"version": payload.version},
+    )
+    await session.commit()
+    return ManagedOnboardingDocument.model_validate(row)
 
 @router.post("/links", response_model=ProfessionalOnboardingLink, status_code=status.HTTP_200_OK)
 async def create_onboarding_link(session: SessionDependency, context: TenantContextDependency) -> ProfessionalOnboardingLink:
