@@ -8,6 +8,7 @@ import UsersAdminPage from "../app/administracao/usuarios/page";
 import {
   getPricingRules,
   getProfessionalOnboardingRequests,
+  getTenantOnboardingPolicy,
   getProfessionals,
   getReceptionHours,
   getResourceCategories,
@@ -20,6 +21,7 @@ import {
 vi.mock("../lib/bcos-api", () => ({
   getPricingRules: vi.fn(),
   getProfessionalOnboardingRequests: vi.fn(),
+  getTenantOnboardingPolicy: vi.fn(),
   getProfessionals: vi.fn(),
   getReceptionHours: vi.fn(),
   getResourceCategories: vi.fn(),
@@ -44,6 +46,7 @@ describe("tenant administration", () => {
     vi.mocked(getProfessionals).mockResolvedValue([{ id: "professional-1", external_user_id: null, name: "Cristiana", email: "cris@example.com", phone: null, profession: "Enfermeira Esteta", council_type: "COREN", council_number: "PR 451.408", status: "ACTIVE" }]);
     vi.mocked(getPricingRules).mockResolvedValue([]);
     vi.mocked(getProfessionalOnboardingRequests).mockResolvedValue([]);
+    vi.mocked(getTenantOnboardingPolicy).mockResolvedValue(null);
     mockedGetReceptionHours.mockImplementation(async (unitId) => unitId === "unit-1"
       ? [{ day_of_week: 0, opens_at: "08:00:00", closes_at: "18:00:00", is_closed: false }]
       : [{ day_of_week: 0, opens_at: "09:00:00", closes_at: "17:00:00", is_closed: false }]);

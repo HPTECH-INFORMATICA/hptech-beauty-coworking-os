@@ -47,3 +47,19 @@ def test_alembic_revision_fits_production_version_column() -> None:
     migration = (Path(__file__).parents[3] / "database" / "migrations" / "versions" / "0012_professional_self_onboarding.py").read_text(encoding="utf-8")
     assert 'revision: str = "0012_prof_self_onboarding"' in migration
     assert len("0012_prof_self_onboarding") <= 32
+
+
+def test_document_authority_routes_are_exposed() -> None:
+    paths = create_app().openapi()["paths"]
+    assert "/api/v1/professional-onboarding/policy" in paths
+    assert "/api/v1/platform/professional-onboarding/terms" in paths
+
+
+def test_document_publication_preserves_authority_boundaries() -> None:
+    tenant_router = (Path(__file__).parents[1] / "src" / "bcos_api" / "professional_onboarding" / "router.py").read_text(encoding="utf-8")
+    platform_router = (Path(__file__).parents[1] / "src" / "bcos_api" / "platform" / "router.py").read_text(encoding="utf-8")
+    assert "require_permission(context, Permission.TENANT_ADMIN)" in tenant_router
+    assert "document_type='UNIT_POLICY'" in tenant_router
+    assert "document_type='PLATFORM_TERMS'" in platform_router
+    assert "PROFESSIONAL_ONBOARDING_POLICY_PUBLISHED" in tenant_router
+    assert "PROFESSIONAL_ONBOARDING_TERMS_PUBLISHED" in platform_router

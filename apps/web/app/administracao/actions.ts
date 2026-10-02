@@ -10,6 +10,7 @@ import {
   createProfessionalAccessInvitation,
   createProfessionalOnboardingLink,
   approveProfessionalOnboardingRequest,
+  publishTenantOnboardingPolicy,
   createResource,
   createResourceCategory,
   deleteResourceCategory,
@@ -54,6 +55,16 @@ export async function createProfessionalAction(formData: FormData) {
   redirect("/administracao?created=professional");
 }
 
+
+export async function publishProfessionalPolicyAction(formData: FormData) {
+  await publishTenantOnboardingPolicy({
+    version: value(formData, "version"),
+    title: value(formData, "title"),
+    content: value(formData, "content"),
+  });
+  revalidatePath("/administracao");
+  redirect("/administracao?policyPublished=1#profissionais");
+}
 
 export async function createProfessionalRegistrationLinkAction() {
   const link = await createProfessionalOnboardingLink();
