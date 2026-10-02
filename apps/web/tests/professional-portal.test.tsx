@@ -32,7 +32,7 @@ describe("Professional Portal", () => {
     expect(screen.getByRole("link", { name: "Voltar para a central" })).toHaveAttribute("href", "/");
   });
   it("converts the selected unit local time to UTC before commercial availability", async () => {
-    mockedGetUnits.mockResolvedValue([{ id: "unit-1", name: "Batel", timezone: "America/Sao_Paulo", active: true }]);
+    mockedGetUnits.mockResolvedValue([{ id: "unit-1", name: "Batel", timezone: "America/Sao_Paulo", active: true, created_at: "2026-10-01T12:00:00Z", updated_at: "2026-10-01T12:00:00Z" }]);
     mockedGetResourceCategories.mockResolvedValue([]);
     mockedGetMyCommercialAvailability.mockResolvedValue({ unit_id: "unit-1", starts_at: "2026-10-02T16:00:00.000Z", ends_at: "2026-10-02T17:00:00.000Z", resources: [{ resource_id: "resource-1", resource_name: "Sala 01", resource_category_id: "category-1", available: true, unavailable_reason: null, pricing_snapshot: {}, price_amount: "120.00", price_currency: "BRL", price_modality: "HOURLY" }] });
 
