@@ -170,7 +170,7 @@ describe("operational navigation", () => {
   it("links a confirmed reservation directly to its check-in", async () => {
     mockedGetReceptionAgenda.mockResolvedValue([{ booking: confirmedBooking, usage: null }]);
     render(await AgendaPage());
-    expect(screen.getByRole("link", { name: "Ir para check-in" })).toHaveAttribute("href", "/check-in?booking=booking-1");
+    expect(screen.getByRole("link", { name: "Ir para check-in" })).toHaveAttribute("href", "/check-in?booking=booking-1&unit_id=unit-1");
   });
 
   it("prioritizes the reservation selected by the agenda on check-in", async () => {

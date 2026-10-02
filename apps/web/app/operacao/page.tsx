@@ -14,7 +14,7 @@ import { checkOutAction } from "../operations/actions";
 export const dynamic = "force-dynamic";
 
 type OperationPageProps = {
-  searchParams: Promise<{ usage?: string }>;
+  searchParams: Promise<{ usage?: string; unit_id?: string }>;
 };
 
 function formatDateTime(value: string, timeZone: string): string {
@@ -26,7 +26,7 @@ function formatDateTime(value: string, timeZone: string): string {
 }
 
 export default async function OperationPage({ searchParams }: OperationPageProps) {
-  const { usage } = await searchParams;
+  const { usage, unit_id: requestedUnitId } = await searchParams;
   let entry: AgendaEntry | null = null;
   let professional: Professional | null = null;
   let resource: Resource | null = null;
@@ -36,7 +36,8 @@ export default async function OperationPage({ searchParams }: OperationPageProps
   if (usage) {
     try {
       const units = await getUnits();
-      const unit = units.find((item) => item.active) ?? units[0];
+      const activeUnits = units.filter((item) => item.active);
+      const unit = activeUnits.find((item) => item.id === requestedUnitId) ?? activeUnits[0] ?? units[0];
       if (unit) {
         timezone = unit.timezone;
         const now = new Date();
