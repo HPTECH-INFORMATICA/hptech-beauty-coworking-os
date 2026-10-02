@@ -51,3 +51,16 @@ class ProfessionalOnboardingLink(BaseModel):
     id: UUID
     public_slug: str
     public_path: str
+
+
+class OnboardingDocumentPublish(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    version: str = Field(min_length=1, max_length=40)
+    title: str = Field(min_length=1, max_length=200)
+    content: str = Field(min_length=1)
+
+
+class ManagedOnboardingDocument(OnboardingDocument):
+    tenant_id: UUID | None
+    status: str
+    effective_at: datetime
