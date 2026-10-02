@@ -1,0 +1,1 @@
+"""BCOS notification delivery."""
