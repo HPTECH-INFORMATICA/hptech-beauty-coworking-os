@@ -100,8 +100,9 @@ export async function confirmBookingAction(formData: FormData) {
 
 export async function checkInAction(formData: FormData) {
   const usage = await checkInBooking(required(formData, "booking_id"));
+  const unitId = required(formData, "unit_id");
   revalidatePath("/");
-  redirect(`/operacao?usage=${encodeURIComponent(usage.id)}`);
+  redirect(`/operacao?usage=${encodeURIComponent(usage.id)}&unit_id=${encodeURIComponent(unitId)}`);
 }
 
 export async function checkOutAction(formData: FormData) {
