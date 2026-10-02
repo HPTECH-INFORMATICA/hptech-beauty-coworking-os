@@ -17,7 +17,8 @@ def upgrade() -> None:
     op.execute("""
         CREATE TABLE professional_onboarding_links (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            tenant_id UUID NOT NULL,
+            tenant_id UUID NOT NULL UNIQUE,
+            public_slug VARCHAR(80) NOT NULL UNIQUE,
             token_hash CHAR(64) NOT NULL UNIQUE,
             status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
             expires_at TIMESTAMPTZ,
@@ -30,6 +31,8 @@ def upgrade() -> None:
             CONSTRAINT ck_professional_onboarding_link_status
                 CHECK (status IN ('ACTIVE','REVOKED'))
         );
+
+        CREATE INDEX ix_professional_onboarding_link_slug ON professional_onboarding_links (public_slug);
 
         CREATE TABLE professional_onboarding_documents (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
