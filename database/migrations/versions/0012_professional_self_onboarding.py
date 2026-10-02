@@ -1,13 +1,13 @@
 """Add tenant-controlled professional self-onboarding.
 
-Revision ID: 0012_professional_self_onboarding
+Revision ID: 0012_prof_self_onboarding
 Revises: 0011_professional_access_invites
 """
 from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0012_professional_self_onboarding"
+revision: str = "0012_prof_self_onboarding"
 down_revision: str | None = "0011_professional_access_invites"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
