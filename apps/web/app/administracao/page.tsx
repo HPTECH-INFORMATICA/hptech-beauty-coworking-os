@@ -15,7 +15,7 @@ const dayNames = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "
 const modalityLabel: Record<string,string> = { HOURLY:"Por hora", PERIOD:"Por período", WEEKLY:"Semanal", MONTHLY:"Mensal" };
 const resourceStatusLabel: Record<string,string> = { AVAILABLE:"Livre", OCCUPIED:"Ocupado", CLEANING:"Limpeza", MAINTENANCE:"Manutenção", BLOCKED:"Bloqueado" };
 
-export default async function TenantAdministrationPage({ searchParams }: { searchParams: Promise<{ cadastro_profissional?: string }> }) {
+export default async function TenantAdministrationPage({ searchParams = Promise.resolve({}) }: { searchParams?: Promise<{ cadastro_profissional?: string }> } = {}) {
   const query = await searchParams;
   const [units, categories, resources, professionals, pricingRules, profile, onboardingRequests] = await Promise.all([
     getUnits(), getResourceCategories(), getResources(), getProfessionals(), getPricingRules(), getTenantProfile(), getProfessionalOnboardingRequests(),
