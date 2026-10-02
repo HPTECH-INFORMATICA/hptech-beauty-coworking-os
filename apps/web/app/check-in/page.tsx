@@ -59,7 +59,7 @@ export default async function CheckInPage({
     timezone = unit?.timezone ?? timezone;
     if (unit) {
       [bookings, professionals, resources] = await Promise.all([
-        getBookings({ unitId: unit.id }),
+        getBookings(),
         getProfessionals(),
         getResources(unit.id),
       ]);
@@ -74,7 +74,7 @@ export default async function CheckInPage({
   );
   const resourceById = new Map(resources.map((resource) => [resource.id, resource]));
   const eligibleBookings = bookings
-    .filter((booking) => booking.status.toUpperCase() === "CONFIRMED")
+    .filter((booking) => booking.unit_id === unitId && booking.status.toUpperCase() === "CONFIRMED")
     .sort((left, right) => {
       if (left.id === requestedBookingId && right.id !== requestedBookingId) return -1;
       if (right.id === requestedBookingId && left.id !== requestedBookingId) return 1;
