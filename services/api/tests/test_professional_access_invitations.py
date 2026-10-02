@@ -24,3 +24,13 @@ def test_professional_invitation_never_changes_tenant_commercial_status() -> Non
     source = (Path(__file__).parents[1] / "src" / "bcos_api" / "professional_invitations" / "router.py").read_text(encoding="utf-8")
     assert "update_contracting_tenant_status" not in source
     assert "PENDING_ACTIVATION" not in source
+
+
+def test_professional_invitation_delivery_is_transactional() -> None:
+    source = (Path(__file__).parents[1] / "src" / "bcos_api" / "professional_invitations" / "router.py").read_text(encoding="utf-8")
+    delivery = source.index("send_professional_access_invitation(")
+    commit = source.index("await session.commit()", delivery)
+    rollback = source.index("await session.rollback()", delivery)
+    assert delivery < rollback < commit
+    assert "PROFESSIONAL_INVITATION_EMAIL_FAILED" in source
+    assert '"delivery": "EMAIL"' in source
