@@ -1,15 +1,20 @@
 """Email-first professional access invitation routes."""
 from typing import Annotated
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from bcos_api.audit.repository import create_audit_log
 from bcos_api.auth.dependencies import get_authenticated_identity
 from bcos_api.auth.identity import AuthenticatedIdentity
 from bcos_api.db.session import get_async_session
-from bcos_api.professional_invitations.schemas import ProfessionalAccessInvitation, ProfessionalAccessInvitationCreated
+from bcos_api.professional_invitations.schemas import (
+    ProfessionalAccessInvitation,
+    ProfessionalAccessInvitationCreated,
+)
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.dependencies import get_tenant_context
 from bcos_api.tenancy.rbac import Permission, require_permission
