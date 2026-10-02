@@ -15,10 +15,10 @@ from bcos_api.audit.repository import create_audit_log
 from bcos_api.db.session import get_async_session
 from bcos_api.notifications.email import send_professional_access_invitation
 from bcos_api.professional_onboarding.schemas import (
+    OnboardingDocument,
     ProfessionalOnboardingLink,
     ProfessionalOnboardingRequest,
     ProfessionalOnboardingSubmit,
-    OnboardingDocument,
     PublicOnboarding,
 )
 from bcos_api.tenancy.context import TenantContext
