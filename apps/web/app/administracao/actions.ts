@@ -7,6 +7,7 @@ import {
   createPricingRule,
   deletePricingRule,
   createProfessional,
+  createProfessionalAccessInvitation,
   createResource,
   createResourceCategory,
   deleteResourceCategory,
@@ -51,6 +52,12 @@ export async function createProfessionalAction(formData: FormData) {
   redirect("/administracao?created=professional");
 }
 
+
+export async function inviteProfessionalAccessAction(formData: FormData) {
+  await createProfessionalAccessInvitation(value(formData, "professional_id"));
+  revalidatePath("/administracao");
+  redirect("/administracao?invited=professional#profissionais");
+}
 
 export async function updateTenantProfileAction(formData: FormData) {
   await updateTenantProfile({
