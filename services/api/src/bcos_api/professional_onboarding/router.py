@@ -49,7 +49,7 @@ async def create_onboarding_link(session: SessionDependency, context: TenantCont
     current = existing.mappings().one_or_none()
     if current is not None:
         slug = str(current["public_slug"])
-        return ProfessionalOnboardingLink(id=current["id"], public_slug=slug, public_path=f"/cadastro-profissional/{slug}")
+        return ProfessionalOnboardingLink(id=UUID(str(current["id"])), public_slug=slug, public_path=f"/cadastro-profissional/{slug}")
     tenant = await session.execute(text("SELECT name FROM tenants WHERE id=:tenant_id"), {"tenant_id": context.tenant_id})
     tenant_name = str(tenant.scalar_one())
     slug = _public_slug(tenant_name, context.tenant_id)
@@ -67,7 +67,7 @@ async def create_onboarding_link(session: SessionDependency, context: TenantCont
         entity_id=link_id, metadata={"public_slug": slug},
     )
     await session.commit()
-    return ProfessionalOnboardingLink(id=link_id, public_slug=slug, public_path=f"/cadastro-profissional/{slug}")
+    return ProfessionalOnboardingLink(id=UUID(str(link_id)), public_slug=slug, public_path=f"/cadastro-profissional/{slug}")
 
 @router.get("/public/{slug}", response_model=PublicOnboarding)
 async def get_public_onboarding(slug: str, session: SessionDependency) -> PublicOnboarding:
