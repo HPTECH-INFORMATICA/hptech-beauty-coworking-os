@@ -23,8 +23,8 @@ from bcos_api.openapi import normalize_openapi_schema
 from bcos_api.payments.router import router as payments_router
 from bcos_api.platform.router import router as platform_router
 from bcos_api.pricing.router import router as pricing_router
-from bcos_api.professional_portal.router import router as professional_portal_router
 from bcos_api.professional_invitations.router import router as professional_invitations_router
+from bcos_api.professional_portal.router import router as professional_portal_router
 from bcos_api.professionals.router import router as professionals_router
 from bcos_api.resource_categories.router import router as resource_categories_router
 from bcos_api.resources.router import router as resources_router
