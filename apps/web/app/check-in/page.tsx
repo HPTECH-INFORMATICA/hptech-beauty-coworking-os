@@ -4,6 +4,7 @@ import {
   getBookings,
   getProfessionals,
   getResources,
+  getUnits,
   type Booking,
   type Professional,
   type Resource,
@@ -18,20 +19,20 @@ function first(value: string | string[] | undefined): string {
   return typeof value === "string" ? value : "";
 }
 
-function formatDate(value: string): string {
+function formatDate(value: string, timeZone: string): string {
   return new Intl.DateTimeFormat("pt-BR", {
     weekday: "long",
     day: "2-digit",
     month: "long",
-    timeZone: "America/Sao_Paulo",
+    timeZone,
   }).format(new Date(value));
 }
 
-function formatTime(value: string): string {
+function formatTime(value: string, timeZone: string): string {
   return new Intl.DateTimeFormat("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "America/Sao_Paulo",
+    timeZone,
   }).format(new Date(value));
 }
 
@@ -42,17 +43,27 @@ export default async function CheckInPage({
 } = {}) {
   const query = await searchParams;
   const requestedBookingId = first(query.booking);
+  const requestedUnitId = first(query.unit_id);
+  let timezone = "America/Sao_Paulo";
+  let unitId = "";
   let error: string | null = null;
   let bookings: Booking[] = [];
   let professionals: Professional[] = [];
   let resources: Resource[] = [];
 
   try {
-    [bookings, professionals, resources] = await Promise.all([
-      getBookings(),
-      getProfessionals(),
-      getResources(),
-    ]);
+    const units = await getUnits();
+    const activeUnits = units.filter((unit) => unit.active);
+    const unit = activeUnits.find((item) => item.id === requestedUnitId) ?? activeUnits[0] ?? units[0];
+    unitId = unit?.id ?? "";
+    timezone = unit?.timezone ?? timezone;
+    if (unit) {
+      [bookings, professionals, resources] = await Promise.all([
+        getBookings({ unitId: unit.id }),
+        getProfessionals(),
+        getResources(unit.id),
+      ]);
+    }
   } catch (caught) {
     console.error("BCOS check-in workspace load failed:", caught);
     error = "Não foi possível carregar as reservas neste momento.";
@@ -132,12 +143,12 @@ export default async function CheckInPage({
                 return (
                   <article className="checkin-card" key={booking.id} data-selected={selected || undefined}>
                     <div className="checkin-time">
-                      <strong>{formatTime(booking.starts_at)}</strong>
-                      <span>até {formatTime(booking.ends_at)}</span>
+                      <strong>{formatTime(booking.starts_at, timezone)}</strong>
+                      <span>até {formatTime(booking.ends_at, timezone)}</span>
                     </div>
                     <div className="checkin-person">
                       <span className="section-eyebrow">
-                        {selected ? "RESERVA SELECIONADA" : formatDate(booking.starts_at)}
+                        {selected ? "RESERVA SELECIONADA" : formatDate(booking.starts_at, timezone)}
                       </span>
                       <strong>
                         {professionalById.get(booking.professional_id)?.name ?? "Profissional"}
@@ -147,7 +158,7 @@ export default async function CheckInPage({
                     <div className="checkin-action">
                       <span className="status-pill status-positive">Confirmada</span>
                       <form action={checkInAction}>
-                        <input name="booking_id" type="hidden" value={booking.id} />
+                        <input name="booking_id" type="hidden" value={booking.id} /><input name="unit_id" type="hidden" value={unitId} />
                         <button className="primary-action" type="submit">Fazer check-in</button>
                       </form>
                     </div>
