@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import secrets
 from typing import Annotated
 from uuid import UUID
@@ -32,34 +33,50 @@ def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-@router.post("/links", response_model=ProfessionalOnboardingLink, status_code=status.HTTP_201_CREATED)
+def _public_slug(tenant_name: str, tenant_id: UUID) -> str:
+    normalized = re.sub(r"[^a-z0-9]+", "-", tenant_name.lower()).strip("-")
+    return f"{normalized or 'coworking'}-{str(tenant_id)[:8]}"
+
+
+@router.post("/links", response_model=ProfessionalOnboardingLink, status_code=status.HTTP_200_OK)
 async def create_onboarding_link(session: SessionDependency, context: TenantContextDependency) -> ProfessionalOnboardingLink:
     require_permission(context, Permission.TENANT_ADMIN)
+    existing = await session.execute(
+        text("""SELECT id, public_slug FROM professional_onboarding_links
+                WHERE tenant_id=:tenant_id AND status='ACTIVE' AND deleted_at IS NULL LIMIT 1"""),
+        {"tenant_id": context.tenant_id},
+    )
+    current = existing.mappings().one_or_none()
+    if current is not None:
+        slug = str(current["public_slug"])
+        return ProfessionalOnboardingLink(id=current["id"], public_slug=slug, public_path=f"/cadastro-profissional/{slug}")
+    tenant = await session.execute(text("SELECT name FROM tenants WHERE id=:tenant_id"), {"tenant_id": context.tenant_id})
+    tenant_name = str(tenant.scalar_one())
+    slug = _public_slug(tenant_name, context.tenant_id)
     token = secrets.token_urlsafe(32)
     result = await session.execute(
         text("""INSERT INTO professional_onboarding_links
-                (tenant_id, token_hash, created_by_external_user_id)
-                VALUES (:tenant_id,:token_hash,:actor) RETURNING id"""),
-        {"tenant_id": context.tenant_id, "token_hash": _hash_token(token), "actor": context.external_user_id},
+                (tenant_id, public_slug, token_hash, created_by_external_user_id)
+                VALUES (:tenant_id,:public_slug,:token_hash,:actor) RETURNING id"""),
+        {"tenant_id": context.tenant_id, "public_slug": slug, "token_hash": _hash_token(token), "actor": context.external_user_id},
     )
     link_id = result.scalar_one()
     await create_audit_log(
         session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id,
         action="PROFESSIONAL_ONBOARDING_LINK_CREATED", entity_type="professional_onboarding_link",
-        entity_id=link_id, metadata={},
+        entity_id=link_id, metadata={"public_slug": slug},
     )
     await session.commit()
-    return ProfessionalOnboardingLink(id=link_id, token=token, public_path=f"/cadastro-profissional/{token}")
+    return ProfessionalOnboardingLink(id=link_id, public_slug=slug, public_path=f"/cadastro-profissional/{slug}")
 
-
-@router.get("/public/{token}", response_model=PublicOnboarding)
-async def get_public_onboarding(token: str, session: SessionDependency) -> PublicOnboarding:
+@router.get("/public/{slug}", response_model=PublicOnboarding)
+async def get_public_onboarding(slug: str, session: SessionDependency) -> PublicOnboarding:
     result = await session.execute(
         text("""SELECT l.tenant_id, t.name AS tenant_name
                 FROM professional_onboarding_links l JOIN tenants t ON t.id=l.tenant_id
-                WHERE l.token_hash=:token_hash AND l.status='ACTIVE' AND l.deleted_at IS NULL
+                WHERE l.public_slug=:public_slug AND l.status='ACTIVE' AND l.deleted_at IS NULL
                   AND (l.expires_at IS NULL OR l.expires_at > now()) AND t.status='ACTIVE' LIMIT 1"""),
-        {"token_hash": _hash_token(token)},
+        {"public_slug": slug},
     )
     link = result.mappings().one_or_none()
     if link is None:
@@ -79,14 +96,14 @@ async def get_public_onboarding(token: str, session: SessionDependency) -> Publi
     return PublicOnboarding(tenant_name=link["tenant_name"], documents=rows)
 
 
-@router.post("/public/{token}", response_model=ProfessionalOnboardingRequest, status_code=status.HTTP_201_CREATED)
+@router.post("/public/{slug}", response_model=ProfessionalOnboardingRequest, status_code=status.HTTP_201_CREATED)
 async def submit_onboarding(token: str, payload: ProfessionalOnboardingSubmit, session: SessionDependency) -> ProfessionalOnboardingRequest:
     link_result = await session.execute(
         text("""SELECT l.id, l.tenant_id, t.name AS tenant_name
                 FROM professional_onboarding_links l JOIN tenants t ON t.id=l.tenant_id
-                WHERE l.token_hash=:token_hash AND l.status='ACTIVE' AND l.deleted_at IS NULL
+                WHERE l.public_slug=:public_slug AND l.status='ACTIVE' AND l.deleted_at IS NULL
                   AND (l.expires_at IS NULL OR l.expires_at > now()) AND t.status='ACTIVE' LIMIT 1"""),
-        {"token_hash": _hash_token(token)},
+        {"public_slug": slug},
     )
     link = link_result.mappings().one_or_none()
     if link is None:
