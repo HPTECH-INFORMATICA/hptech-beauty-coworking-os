@@ -117,6 +117,22 @@ async function apiRequest<T>(pathName: string, init: RequestInit = {}): Promise<
   return (await response.json()) as T;
 }
 
+async function publicApiRequest<T>(pathName: string, init: RequestInit = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+  headers.set("Accept", "application/json");
+  if (init.body !== undefined) headers.set("Content-Type", "application/json");
+  const response = await fetch(`${API_BASE_URL}${pathName}`, { ...init, headers, cache: "no-store" });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`BCOS Public API ${init.method ?? "GET"} ${pathName} falhou com HTTP ${response.status}: ${body}`);
+  }
+  return (await response.json()) as T;
+}
+
+async function publicApiPost<T>(pathName: string, body: Record<string, unknown>): Promise<T> {
+  return publicApiRequest<T>(pathName, { method: "POST", body: JSON.stringify(body) });
+}
+
 async function identityApiRequest<T>(pathName: string, init: RequestInit = {}): Promise<T> {
   const token = await getBearerToken();
   const headers = new Headers(init.headers);
