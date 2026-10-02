@@ -1,6 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
-import { submitPublicProfessionalOnboarding } from "../../lib/bcos-api";
+import { submitPublicProfessionalOnboarding } from "../../../lib/bcos-api";
 
 export async function submitProfessionalRegistration(slug: string, formData: FormData) {
   const acceptedDocumentIds = formData.getAll("accepted_document_ids").map(String);
