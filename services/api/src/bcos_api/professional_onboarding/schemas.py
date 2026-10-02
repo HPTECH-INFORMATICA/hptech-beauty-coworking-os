@@ -49,5 +49,5 @@ class ProfessionalOnboardingRequest(BaseModel):
 class ProfessionalOnboardingLink(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: UUID
-    token: str
+    public_slug: str
     public_path: str
