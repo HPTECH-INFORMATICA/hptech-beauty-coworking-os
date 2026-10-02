@@ -33,6 +33,8 @@ export type TenantMembershipInvite = { externalUserId: string; role: "ADMIN" | "
 export type AccessTenant = { tenant_id: string; tenant_name: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; destination: "/administracao" | "/" | "/profissional" };
 export type AccessResolution = { platform_destination: "/platform" | null; tenants: AccessTenant[] };
 export type PendingInvitation = TenantMembership;
+export type ProfessionalAccessInvitation = { id: string; tenant_id: string; tenant_name: string; professional_id: string; professional_name: string; email: string; status: string; expires_at: string };
+export type ProfessionalAccessInvitationCreated = { id: string; professional_id: string; email: string; status: string; expires_at: string };
 export type TenantProfile = { legal_name: string; trade_name: string; tax_id: string | null; email: string; phone: string | null };
 export type ReceptionHour = { day_of_week: number; opens_at: string | null; closes_at: string | null; is_closed: boolean };
 
@@ -124,6 +126,14 @@ export async function persistSelectedTenant(tenantId: string): Promise<AccessTen
   return selected;
 }
 
+export async function getPendingProfessionalInvitations(): Promise<ProfessionalAccessInvitation[]> {
+  return identityApiRequest<ProfessionalAccessInvitation[]>("/api/v1/professional-invitations");
+}
+
+export async function acceptProfessionalInvitation(invitationId: string): Promise<ProfessionalAccessInvitation> {
+  return identityApiRequest<ProfessionalAccessInvitation>(`/api/v1/professional-invitations/${encodeURIComponent(invitationId)}/accept`, { method: "POST" });
+}
+
 export async function getPendingInvitations(): Promise<PendingInvitation[]> {
   return identityApiRequest<PendingInvitation[]>("/api/v1/invitations");
 }
@@ -164,6 +174,7 @@ export async function createResourceCategory(input: { name: string }): Promise<R
 export async function updateResourceCategory(categoryId: string, input: { name: string; active: boolean }): Promise<ResourceCategory> { return apiPatch<ResourceCategory>(`/api/v1/resource-categories/${encodeURIComponent(categoryId)}`, input); }
 export async function deleteResourceCategory(categoryId: string): Promise<void> { return apiRequest<void>(`/api/v1/resource-categories/${encodeURIComponent(categoryId)}`, { method: "DELETE" }); }
 export async function getResources(unitId?: string): Promise<Resource[]> { const search = new URLSearchParams(); if (unitId) search.set("unit_id", unitId); const query = search.toString(); return apiGet<Resource[]>(`/api/v1/resources${query ? `?${query}` : ""}`); }
+export async function createProfessionalAccessInvitation(professionalId: string): Promise<ProfessionalAccessInvitationCreated> { return apiPost<ProfessionalAccessInvitationCreated>(`/api/v1/professional-invitations/professionals/${encodeURIComponent(professionalId)}`, {}); }
 export async function getProfessionals(): Promise<Professional[]> { return apiGet<Professional[]>("/api/v1/professionals"); }
 export async function createProfessional(input: { name: string; email?: string; phone?: string; profession?: string; councilType?: string; councilNumber?: string }): Promise<Professional> { return apiPost<Professional>("/api/v1/professionals", { name: input.name, ...(input.email ? { email: input.email } : {}), ...(input.phone ? { phone: input.phone } : {}), ...(input.profession ? { profession: input.profession } : {}), ...(input.councilType ? { council_type: input.councilType } : {}), ...(input.councilNumber ? { council_number: input.councilNumber } : {}) }); }
 export async function updateProfessional(professionalId: string, input: { name: string; email: string | null; phone: string | null; profession: string | null; council_type: string | null; council_number: string | null; status: string }): Promise<Professional> { return apiPatch<Professional>(`/api/v1/professionals/${encodeURIComponent(professionalId)}`, input); }
