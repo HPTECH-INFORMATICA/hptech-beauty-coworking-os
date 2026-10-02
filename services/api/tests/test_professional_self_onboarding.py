@@ -7,7 +7,7 @@ from bcos_api.main import create_app
 def test_self_onboarding_routes_are_exposed() -> None:
     paths = create_app().openapi()["paths"]
     assert "/api/v1/professional-onboarding/links" in paths
-    assert "/api/v1/professional-onboarding/public/{token}" in paths
+    assert "/api/v1/professional-onboarding/public/{slug}" in paths
     assert "/api/v1/professional-onboarding/requests" in paths
     assert "/api/v1/professional-onboarding/requests/{request_id}/approve" in paths
 
@@ -33,3 +33,11 @@ def test_self_onboarding_never_activates_tenant_or_membership() -> None:
     source = (Path(__file__).parents[1] / "src" / "bcos_api" / "professional_onboarding" / "router.py").read_text(encoding="utf-8")
     assert "INSERT INTO tenant_memberships" not in source
     assert "UPDATE tenants SET status" not in source
+
+
+def test_professional_identity_can_have_multiple_tenant_relationships() -> None:
+    migration = (Path(__file__).parents[3] / "database" / "migrations" / "versions" / "0012_professional_self_onboarding.py").read_text(encoding="utf-8")
+    router = (Path(__file__).parents[1] / "src" / "bcos_api" / "professional_onboarding" / "router.py").read_text(encoding="utf-8")
+    assert "UNIQUE (external_user_id)" not in migration
+    assert "INSERT INTO tenant_memberships" not in router
+    assert "UPDATE tenants SET status" not in router
