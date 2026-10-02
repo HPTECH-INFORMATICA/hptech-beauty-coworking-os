@@ -1,7 +1,9 @@
 """Schemas for email-first professional access invitations."""
 from datetime import datetime
 from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict, EmailStr
+
 
 class ProfessionalAccessInvitation(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -13,6 +15,7 @@ class ProfessionalAccessInvitation(BaseModel):
     email: EmailStr
     status: str
     expires_at: datetime
+
 
 class ProfessionalAccessInvitationCreated(BaseModel):
     model_config = ConfigDict(extra="forbid")
