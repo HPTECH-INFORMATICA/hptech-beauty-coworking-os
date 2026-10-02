@@ -4,6 +4,7 @@ Revision ID: 0011_professional_access_invites
 Revises: 0010_admin_catalog
 """
 from collections.abc import Sequence
+
 from alembic import op
 
 revision: str = "0011_professional_access_invites"
