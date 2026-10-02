@@ -24,6 +24,7 @@ from bcos_api.payments.router import router as payments_router
 from bcos_api.platform.router import router as platform_router
 from bcos_api.pricing.router import router as pricing_router
 from bcos_api.professional_invitations.router import router as professional_invitations_router
+from bcos_api.professional_onboarding.router import router as professional_onboarding_router
 from bcos_api.professional_portal.router import router as professional_portal_router
 from bcos_api.professionals.router import router as professionals_router
 from bcos_api.resource_categories.router import router as resource_categories_router
@@ -72,6 +73,7 @@ def create_app() -> FastAPI:
     app.include_router(invitation_router)
     app.include_router(professional_portal_router)
     app.include_router(professional_invitations_router)
+    app.include_router(professional_onboarding_router)
 
     return app
 
