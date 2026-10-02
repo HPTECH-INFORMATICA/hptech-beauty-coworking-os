@@ -41,3 +41,9 @@ def test_professional_identity_can_have_multiple_tenant_relationships() -> None:
     assert "UNIQUE (external_user_id)" not in migration
     assert "INSERT INTO tenant_memberships" not in router
     assert "UPDATE tenants SET status" not in router
+
+
+def test_alembic_revision_fits_production_version_column() -> None:
+    migration = (Path(__file__).parents[3] / "database" / "migrations" / "versions" / "0012_professional_self_onboarding.py").read_text(encoding="utf-8")
+    assert 'revision: str = "0012_prof_self_onboarding"' in migration
+    assert len("0012_prof_self_onboarding") <= 32
