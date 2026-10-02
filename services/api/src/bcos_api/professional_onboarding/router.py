@@ -97,7 +97,7 @@ async def get_public_onboarding(slug: str, session: SessionDependency) -> Public
 
 
 @router.post("/public/{slug}", response_model=ProfessionalOnboardingRequest, status_code=status.HTTP_201_CREATED)
-async def submit_onboarding(token: str, payload: ProfessionalOnboardingSubmit, session: SessionDependency) -> ProfessionalOnboardingRequest:
+async def submit_onboarding(slug: str, payload: ProfessionalOnboardingSubmit, session: SessionDependency) -> ProfessionalOnboardingRequest:
     link_result = await session.execute(
         text("""SELECT l.id, l.tenant_id, t.name AS tenant_name
                 FROM professional_onboarding_links l JOIN tenants t ON t.id=l.tenant_id
