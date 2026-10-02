@@ -35,14 +35,14 @@ export type AccessResolution = { platform_destination: "/platform" | null; tenan
 export type PendingInvitation = TenantMembership;
 export type PublicProfessionalOnboarding = { tenant_name: string; documents: Array<{ id: string; document_type: string; version: string; title: string; content: string }> };
 export type ProfessionalOnboardingRequest = { id: string; tenant_id: string; tenant_name: string; name: string; email: string; phone: string | null; profession: string | null; council_type: string | null; council_number: string | null; status: string; created_at: string };
-export type ProfessionalOnboardingLink = { id: string; token: string; public_path: string };
+export type ProfessionalOnboardingLink = { id: string; public_slug: string; public_path: string };
 
-export async function getPublicProfessionalOnboarding(token: string): Promise<PublicProfessionalOnboarding> {
-  return publicApiRequest<PublicProfessionalOnboarding>(`/api/v1/professional-onboarding/public/${encodeURIComponent(token)}`);
+export async function getPublicProfessionalOnboarding(slug: string): Promise<PublicProfessionalOnboarding> {
+  return publicApiRequest<PublicProfessionalOnboarding>(`/api/v1/professional-onboarding/public/${encodeURIComponent(slug)}`);
 }
 
-export async function submitPublicProfessionalOnboarding(token: string, payload: Record<string, unknown>): Promise<ProfessionalOnboardingRequest> {
-  return publicApiPost<ProfessionalOnboardingRequest>(`/api/v1/professional-onboarding/public/${encodeURIComponent(token)}`, payload);
+export async function submitPublicProfessionalOnboarding(slug: string, payload: Record<string, unknown>): Promise<ProfessionalOnboardingRequest> {
+  return publicApiPost<ProfessionalOnboardingRequest>(`/api/v1/professional-onboarding/public/${encodeURIComponent(slug)}`, payload);
 }
 
 export async function createProfessionalOnboardingLink(): Promise<ProfessionalOnboardingLink> {
