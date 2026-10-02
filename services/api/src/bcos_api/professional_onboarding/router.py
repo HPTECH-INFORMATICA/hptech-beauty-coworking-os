@@ -18,6 +18,7 @@ from bcos_api.professional_onboarding.schemas import (
     ProfessionalOnboardingLink,
     ProfessionalOnboardingRequest,
     ProfessionalOnboardingSubmit,
+    OnboardingDocument,
     PublicOnboarding,
 )
 from bcos_api.tenancy.context import TenantContext
@@ -93,7 +94,7 @@ async def get_public_onboarding(slug: str, session: SessionDependency) -> Public
     types = {row["document_type"] for row in rows}
     if types != {"PLATFORM_TERMS", "UNIT_POLICY"}:
         raise HTTPException(status_code=409, detail="ONBOARDING_DOCUMENTS_NOT_CONFIGURED")
-    return PublicOnboarding(tenant_name=link["tenant_name"], documents=rows)
+    return PublicOnboarding(tenant_name=link["tenant_name"], documents=[OnboardingDocument.model_validate(row) for row in rows])
 
 
 @router.post("/public/{slug}", response_model=ProfessionalOnboardingRequest, status_code=status.HTTP_201_CREATED)
