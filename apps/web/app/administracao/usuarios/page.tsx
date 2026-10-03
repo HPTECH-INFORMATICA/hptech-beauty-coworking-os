@@ -1,3 +1,4 @@
+import { requireTenantPermission } from "../../../lib/auth/authorization";
 import Link from "next/link";
 
 import { getTenantMembershipPermissions, getTenantMemberships, type TenantPermission } from "../../../lib/bcos-api";
@@ -29,6 +30,7 @@ const permissionGroups: Array<{title:string; description:string; items:Array<{pe
 ];
 
 export default async function UsersAdminPage({ searchParams }: { searchParams: Promise<{ invited?: string }> }) {
+  await requireTenantPermission("USER_ADMIN");
   const [{ invited }, memberships] = await Promise.all([searchParams, getTenantMemberships()]);
   const permissionEntries = await Promise.all(memberships.map(async item => [item.id, await getTenantMembershipPermissions(item.id)] as const));
   const effectivePermissions = new Map(permissionEntries);
