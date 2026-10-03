@@ -47,7 +47,7 @@ async def list_memberships_endpoint(session: SessionDependency, context: TenantC
 
 @router.post("/invitations", response_model=TeamInvitationResponse, status_code=status.HTTP_201_CREATED)
 async def invite_membership_endpoint(payload: MembershipInvitationCreate, session: SessionDependency, context: TenantContextDependency) -> TeamInvitationResponse:
-    require_permission(context, Permission.TENANT_ADMIN)
+    require_permission(context, Permission.USER_ADMIN)
     validate_invited_role(actor_role=context.role, invited_role=payload.role)
     email=payload.email.strip().lower()
     name=payload.display_name.strip()
@@ -159,7 +159,7 @@ async def update_membership_permissions_endpoint(
 
 @profile_router.get("", response_model=TenantProfileResponse)
 async def get_profile_endpoint(session: SessionDependency, context: TenantContextDependency) -> TenantProfileResponse:
-    require_permission(context, Permission.TENANT_ADMIN)
+    require_permission(context, Permission.ADMIN_CONFIG)
     profile = await get_tenant_profile(session, context=context)
     if profile is None:
         raise HTTPException(status_code=404, detail="Tenant profile not found.")
@@ -168,7 +168,7 @@ async def get_profile_endpoint(session: SessionDependency, context: TenantContex
 
 @profile_router.put("", response_model=TenantProfileResponse)
 async def update_profile_endpoint(payload: TenantProfileUpdate, session: SessionDependency, context: TenantContextDependency) -> TenantProfileResponse:
-    require_permission(context, Permission.TENANT_ADMIN)
+    require_permission(context, Permission.ADMIN_CONFIG)
     values = {
         "legal_name": payload.legal_name.strip(),
         "trade_name": payload.trade_name.strip(),
