@@ -28,11 +28,12 @@ export type InvoiceDetail = Invoice & { items: InvoiceItem[]; confirmed_amount: 
 export type Payment = { id: string; invoice_id: string; idempotency_key: string; method: string; status: string; currency: string; amount: string; reference: string | null; metadata: Record<string, unknown>; paid_at: string | null; created_at: string; updated_at: string };
 export type ContractingTenant = { id: string; name: string; slug: string; status: "PENDING_ACTIVATION" | "ACTIVE" | "SUSPENDED" | "INACTIVE"; legal_name: string; trade_name: string; tax_id: string | null; email: string; phone: string | null; owner_external_user_id: string | null; owner_membership_status: "INVITED" | "ACTIVE" | "INACTIVE" | null; created_at: string };
 export type ContractingTenantCreate = { name: string; slug: string; legalName: string; tradeName: string; taxId?: string; email: string; phone?: string; ownerEmail?: string };
-export type TenantMembership = { id: string; tenant_id: string; external_user_id: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; status: "INVITED" | "ACTIVE" | "INACTIVE" };
-export type TenantMembershipInvite = { externalUserId: string; role: "ADMIN" | "RECEPTION" | "PROFESSIONAL" };
+export type TenantMembership = { id: string; tenant_id: string; external_user_id: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; status: "INVITED" | "ACTIVE" | "INACTIVE"; display_name: string | null; email: string | null };
+export type TenantMembershipInvite = { displayName: string; email: string; role: "ADMIN" | "RECEPTION" | "PROFESSIONAL" };
 export type AccessTenant = { tenant_id: string; tenant_name: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; destination: "/administracao" | "/" | "/profissional" };
 export type AccessResolution = { platform_destination: "/platform" | null; tenants: AccessTenant[] };
 export type PendingInvitation = TenantMembership;
+export type TeamInvitation = { id:string; tenant_id:string; tenant_name:string; display_name:string; email:string; role:"ADMIN"|"RECEPTION"|"PROFESSIONAL"; status:string; expires_at:string };
 export type PublicProfessionalOnboarding = { tenant_name: string; documents: Array<{ id: string; document_type: string; version: string; title: string; content: string }> };
 export type ProfessionalOnboardingRequest = { id: string; tenant_id: string; tenant_name: string; name: string; email: string; phone: string | null; profession: string | null; council_type: string | null; council_number: string | null; status: string; created_at: string };
 export type ManagedOnboardingDocument = { id: string; tenant_id: string | null; document_type: "PROFESSIONAL_TERMS" | "UNIT_POLICY" | "RESERVATION_POLICY" | "FINANCIAL_POLICY" | "OTHER"; version: string; title: string; content: string; status: string; effective_at: string };
@@ -182,6 +183,14 @@ export async function acceptProfessionalInvitation(invitationId: string): Promis
   return identityApiRequest<ProfessionalAccessInvitation>(`/api/v1/professional-invitations/${encodeURIComponent(invitationId)}/accept`, { method: "POST" });
 }
 
+export async function getPendingTeamInvitations(): Promise<TeamInvitation[]> {
+  return identityApiRequest<TeamInvitation[]>("/api/v1/invitations/team");
+}
+
+export async function acceptTeamInvitation(invitationId: string): Promise<TenantMembership> {
+  return identityApiRequest<TenantMembership>(`/api/v1/invitations/team/${encodeURIComponent(invitationId)}/accept`, { method: "POST" });
+}
+
 export async function getPendingInvitations(): Promise<PendingInvitation[]> {
   return identityApiRequest<PendingInvitation[]>("/api/v1/invitations");
 }
@@ -289,11 +298,8 @@ export async function getTenantMemberships(): Promise<TenantMembership[]> {
   return apiGet<TenantMembership[]>("/api/v1/admin/memberships");
 }
 
-export async function inviteTenantMembership(input: TenantMembershipInvite): Promise<TenantMembership> {
-  return apiPost<TenantMembership>("/api/v1/admin/memberships/invitations", {
-    external_user_id: input.externalUserId,
-    role: input.role,
-  });
+export async function inviteTenantMembership(input: TenantMembershipInvite): Promise<void> {
+  await apiPost("/api/v1/admin/memberships/invitations", { display_name: input.displayName, email: input.email, role: input.role });
 }
 
 export async function updateTenantMembershipStatus(
@@ -304,6 +310,18 @@ export async function updateTenantMembershipStatus(
     `/api/v1/admin/memberships/${encodeURIComponent(membershipId)}/status`,
     { method: "PATCH", body: JSON.stringify({ status }) },
   );
+}
+
+
+export async function updateTenantMembership(
+  membershipId: string,
+  input: { display_name: string; role: "ADMIN" | "RECEPTION" | "PROFESSIONAL" },
+): Promise<TenantMembership> {
+  return apiPatch<TenantMembership>(`/api/v1/admin/memberships/${encodeURIComponent(membershipId)}`, input);
+}
+
+export async function removeTenantMembership(membershipId: string): Promise<void> {
+  return apiRequest<void>(`/api/v1/admin/memberships/${encodeURIComponent(membershipId)}`, { method: "DELETE" });
 }
 
 export async function inviteContractingTenantOwner(tenantId: string, email: string): Promise<{ membership_id: string; tenant_id: string; external_user_id: string; role: string; status: string }> {

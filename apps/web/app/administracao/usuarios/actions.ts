@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { inviteTenantMembership, updateTenantMembershipStatus } from "../../../lib/bcos-api";
+import { inviteTenantMembership, removeTenantMembership, updateTenantMembership, updateTenantMembershipStatus } from "../../../lib/bcos-api";
 
 function required(formData: FormData, key: string) {
   const value=String(formData.get(key) ?? "").trim();
@@ -14,7 +14,7 @@ function required(formData: FormData, key: string) {
 export async function inviteUserAction(formData: FormData) {
   const role=required(formData,"role");
   if(!["ADMIN","RECEPTION","PROFESSIONAL"].includes(role)) throw new Error("Papel inválido.");
-  await inviteTenantMembership({externalUserId:required(formData,"external_user_id"),role:role as "ADMIN"|"RECEPTION"|"PROFESSIONAL"});
+  await inviteTenantMembership({displayName:required(formData,"display_name"),email:required(formData,"email"),role:role as "ADMIN"|"RECEPTION"|"PROFESSIONAL"});
   revalidatePath("/administracao/usuarios");
   redirect("/administracao/usuarios?invited=1");
 }
@@ -23,5 +23,21 @@ export async function updateUserStatusAction(formData: FormData) {
   const status=required(formData,"status");
   if(status!=="ACTIVE" && status!=="INACTIVE") throw new Error("Situação inválida.");
   await updateTenantMembershipStatus(required(formData,"membership_id"),status);
+  revalidatePath("/administracao/usuarios");
+}
+
+
+export async function updateUserAction(formData: FormData) {
+  const role=required(formData,"role");
+  if(!["ADMIN","RECEPTION","PROFESSIONAL"].includes(role)) throw new Error("Papel inválido.");
+  await updateTenantMembership(required(formData,"membership_id"), {
+    display_name: required(formData,"display_name"),
+    role: role as "ADMIN"|"RECEPTION"|"PROFESSIONAL",
+  });
+  revalidatePath("/administracao/usuarios");
+}
+
+export async function removeUserAction(formData: FormData) {
+  await removeTenantMembership(required(formData,"membership_id"));
   revalidatePath("/administracao/usuarios");
 }

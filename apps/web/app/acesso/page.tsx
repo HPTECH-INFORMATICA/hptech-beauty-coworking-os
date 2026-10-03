@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { getAccessResolution, getPendingInvitations, getPendingProfessionalInvitations } from "../../lib/bcos-api";
+import { getAccessResolution, getPendingInvitations, getPendingProfessionalInvitations, getPendingTeamInvitations } from "../../lib/bcos-api";
 import { auth } from "../../lib/auth/server";
 import { SessionControls } from "../../components/session-controls";
 
@@ -15,12 +15,14 @@ export default async function AccessPage({ searchParams }: { searchParams?: Prom
   let access;
   let invitations;
   let professionalInvitations;
+  let teamInvitations;
 
   try {
-    [access, invitations, professionalInvitations] = await Promise.all([
+    [access, invitations, professionalInvitations, teamInvitations] = await Promise.all([
       getAccessResolution(),
       getPendingInvitations(),
       getPendingProfessionalInvitations(),
+      getPendingTeamInvitations(),
     ]);
   } catch (error) {
     console.error(
@@ -56,7 +58,7 @@ export default async function AccessPage({ searchParams }: { searchParams?: Prom
     })),
   ];
 
-  if (destinations.length === 1 && invitations.length === 0 && professionalInvitations.length === 0) redirect(destinations[0].href);
+  if (destinations.length === 1 && invitations.length === 0 && professionalInvitations.length === 0 && teamInvitations.length === 0) redirect(destinations[0].href);
 
   return (
     <main className="auth-shell">
@@ -72,8 +74,8 @@ export default async function AccessPage({ searchParams }: { searchParams?: Prom
           {query.selectionError === "1" ? <div className="access-notice"><strong>Este ambiente não está disponível para entrada.</strong><span>Atualizamos seus acessos. Se o ambiente ainda estiver aguardando ativação ou sua permissão tiver mudado, ele não será aberto.</span></div> : null}
           <div className="access-heading"><span>SEUS ACESSOS</span><h2>Escolha onde deseja entrar.</h2><p>Ambientes liberados para a sua conta no Beauty Coworking OS.</p></div>
           {destinations.length > 0 && <div className="access-list">{destinations.map((item) => <Link className="access-item" key={item.label} href={item.href}><span>{item.label}</span><strong>Entrar →</strong></Link>)}</div>}
-          {destinations.length === 0 && invitations.length === 0 && professionalInvitations.length === 0 ? <div className="access-empty"><strong>Nenhum acesso disponível</strong><span>Quando um ambiente for liberado para sua conta, ele aparecerá aqui.</span></div> : null}
-          {invitations.length > 0 && <div className="invitation-block"><div><span>CONVITE PENDENTE</span><h3>Finalize seu acesso</h3><p>Você recebeu permissão para entrar em um ambiente BCOS.</p></div>{invitations.map((invitation) => <Link className="invitation-action" key={invitation.id} href={`/acesso/convites/${invitation.id}`}><span>Perfil {invitation.role}</span><strong>Revisar convite →</strong></Link>)}</div>}{professionalInvitations.length > 0 && <div className="invitation-block"><div><span>CONVITE PROFISSIONAL</span><h3>Seu portal profissional está disponível</h3><p>Revise o vínculo com a unidade antes de liberar seu acesso.</p></div>{professionalInvitations.map((invitation) => <Link className="invitation-action" key={invitation.id} href={`/acesso/profissionais/${invitation.id}`}><span>{invitation.tenant_name}</span><strong>{invitation.professional_name} · Revisar →</strong></Link>)}</div>}
+          {destinations.length === 0 && invitations.length === 0 && professionalInvitations.length === 0 && teamInvitations.length === 0 ? <div className="access-empty"><strong>Nenhum acesso disponível</strong><span>Quando um ambiente for liberado para sua conta, ele aparecerá aqui.</span></div> : null}
+          {teamInvitations.length > 0 && <div className="invitation-block"><div><span>CONVITE DA EQUIPE</span><h3>Você foi convidado para uma equipe</h3><p>Revise o negócio e o papel antes de liberar seu acesso.</p></div>{teamInvitations.map((invitation) => <Link className="invitation-action" key={invitation.id} href={`/acesso/equipe/${invitation.id}`}><span>{invitation.tenant_name}</span><strong>{invitation.display_name} · {invitation.role} →</strong></Link>)}</div>}{invitations.length > 0 && <div className="invitation-block"><div><span>CONVITE PENDENTE</span><h3>Finalize seu acesso</h3><p>Você recebeu permissão para entrar em um ambiente BCOS.</p></div>{invitations.map((invitation) => <Link className="invitation-action" key={invitation.id} href={`/acesso/convites/${invitation.id}`}><span>Perfil {invitation.role}</span><strong>Revisar convite →</strong></Link>)}</div>}{professionalInvitations.length > 0 && <div className="invitation-block"><div><span>CONVITE PROFISSIONAL</span><h3>Seu portal profissional está disponível</h3><p>Revise o vínculo com a unidade antes de liberar seu acesso.</p></div>{professionalInvitations.map((invitation) => <Link className="invitation-action" key={invitation.id} href={`/acesso/profissionais/${invitation.id}`}><span>{invitation.tenant_name}</span><strong>{invitation.professional_name} · Revisar →</strong></Link>)}</div>}
           
         </div>
       </section>

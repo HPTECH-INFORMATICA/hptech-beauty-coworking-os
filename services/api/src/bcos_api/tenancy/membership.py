@@ -33,6 +33,8 @@ class TenantMembership:
     external_user_id: str
     role: MembershipRole
     status: MembershipStatus
+    display_name: str | None = None
+    email: str | None = None
 
     @property
     def is_active(self) -> bool:
