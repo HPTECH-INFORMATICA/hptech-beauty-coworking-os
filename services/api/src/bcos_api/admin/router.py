@@ -11,6 +11,7 @@ from bcos_api.admin.domain import InvalidMembershipAdministration
 from bcos_api.admin.profile_repository import get_tenant_profile, update_tenant_profile
 from bcos_api.admin.profile_schemas import TenantProfileResponse, TenantProfileUpdate
 from bcos_api.admin.schemas import (
+    MembershipDetailsUpdate,
     MembershipInvitationCreate,
     MembershipResponse,
     MembershipStatusUpdate,
@@ -18,6 +19,8 @@ from bcos_api.admin.schemas import (
 from bcos_api.admin.service import (
     invite_tenant_membership,
     list_tenant_memberships,
+    remove_tenant_membership,
+    update_tenant_membership_details,
     update_tenant_membership_status,
 )
 from bcos_api.db.session import get_async_session
@@ -62,6 +65,28 @@ async def update_membership_status_endpoint(membership_id: UUID, payload: Member
         await session.rollback()
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return MembershipResponse.model_validate(item)
+
+
+@router.patch("/{membership_id}", response_model=MembershipResponse)
+async def update_membership_details_endpoint(membership_id: UUID, payload: MembershipDetailsUpdate, session: SessionDependency, context: TenantContextDependency) -> MembershipResponse:
+    try:
+        item=await update_tenant_membership_details(session, context=context, membership_id=membership_id, display_name=payload.display_name, email=payload.email, role=payload.role)
+        if item is None:
+            raise HTTPException(status_code=404, detail="Membership not found or protected.")
+        await session.commit()
+    except InvalidMembershipAdministration as exc:
+        await session.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return MembershipResponse.model_validate(item)
+
+
+@router.delete("/{membership_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_membership_endpoint(membership_id: UUID, session: SessionDependency, context: TenantContextDependency) -> None:
+    item=await remove_tenant_membership(session, context=context, membership_id=membership_id)
+    if item is None:
+        await session.rollback()
+        raise HTTPException(status_code=404, detail="Membership not found or protected.")
+    await session.commit()
 
 
 @profile_router.get("", response_model=TenantProfileResponse)
