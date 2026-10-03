@@ -4,10 +4,12 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bcos_api.admin.domain import InvalidMembershipAdministration
+from bcos_api.admin.domain import InvalidMembershipAdministration, validate_invited_role
+from bcos_api.audit.repository import create_audit_log
 from bcos_api.admin.profile_repository import get_tenant_profile, update_tenant_profile
 from bcos_api.admin.profile_schemas import TenantProfileResponse, TenantProfileUpdate
 from bcos_api.admin.schemas import (
@@ -15,6 +17,7 @@ from bcos_api.admin.schemas import (
     MembershipInvitationCreate,
     MembershipResponse,
     MembershipStatusUpdate,
+    TeamInvitationResponse,
 )
 from bcos_api.admin.service import (
     invite_tenant_membership,
@@ -40,18 +43,21 @@ async def list_memberships_endpoint(session: SessionDependency, context: TenantC
     return [MembershipResponse.model_validate(item) for item in items]
 
 
-@router.post("/invitations", response_model=MembershipResponse, status_code=status.HTTP_201_CREATED)
-async def invite_membership_endpoint(payload: MembershipInvitationCreate, session: SessionDependency, context: TenantContextDependency) -> MembershipResponse:
-    try:
-        item=await invite_tenant_membership(session, context=context, external_user_id=payload.external_user_id, role=payload.role)
-        await session.commit()
-    except (InvalidMembershipAdministration, ValueError) as exc:
-        await session.rollback()
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except IntegrityError as exc:
-        await session.rollback()
-        raise HTTPException(status_code=409, detail="Membership already exists for this identity.") from exc
-    return MembershipResponse.model_validate(item)
+@router.post("/invitations", response_model=TeamInvitationResponse, status_code=status.HTTP_201_CREATED)
+async def invite_membership_endpoint(payload: MembershipInvitationCreate, session: SessionDependency, context: TenantContextDependency) -> TeamInvitationResponse:
+    require_permission(context, Permission.TENANT_ADMIN)
+    validate_invited_role(actor_role=context.role, invited_role=payload.role)
+    email=payload.email.strip().lower()
+    name=payload.display_name.strip()
+    if not name or "@" not in email:
+        raise HTTPException(status_code=422, detail="Nome e e-mail válidos são obrigatórios.")
+    await session.execute(text("""UPDATE tenant_user_invitations SET status='REVOKED', updated_at=now() WHERE tenant_id=:tenant_id AND lower(email)=:email AND status='PENDING' AND deleted_at IS NULL"""), {"tenant_id":context.tenant_id,"email":email})
+    result=await session.execute(text("""INSERT INTO tenant_user_invitations (tenant_id,display_name,email,role,invited_by_external_user_id) VALUES (:tenant_id,:display_name,:email,CAST(:role AS membership_role),:actor) RETURNING id,tenant_id,display_name,email,role::text AS role,status,expires_at"""), {"tenant_id":context.tenant_id,"display_name":name,"email":email,"role":payload.role.value,"actor":context.external_user_id})
+    row=dict(result.mappings().one())
+    await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id, action="TENANT_USER_INVITED", entity_type="tenant_user_invitation", entity_id=row["id"], metadata={"display_name":name,"email":email,"role":payload.role.value})
+    await session.commit()
+    row["expires_at"]=row["expires_at"].isoformat()
+    return TeamInvitationResponse.model_validate(row)
 
 
 @router.patch("/{membership_id}/status", response_model=MembershipResponse)
