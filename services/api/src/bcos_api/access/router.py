@@ -20,6 +20,7 @@ from bcos_api.db.session import get_async_session
 from bcos_api.platform.domain import PlatformOperatorStatus
 from bcos_api.platform.repository import get_platform_operator
 from bcos_api.tenancy.membership import MembershipRole
+from bcos_api.tenancy.rbac import Permission, ROLE_PERMISSIONS
 
 router = APIRouter(prefix="/api/v1/access", tags=["Access"])
 SessionDependency = Annotated[AsyncSession, Depends(get_async_session)]
@@ -31,6 +32,7 @@ class TenantAccessOption(BaseModel):
     tenant_name: str
     role: MembershipRole
     destination: Literal["/administracao", "/", "/profissional"]
+    permissions: list[Permission]
 
 
 class AccessResolution(BaseModel):
@@ -57,7 +59,7 @@ async def resolve_access(
     )
     result = await session.execute(
         text(
-            """SELECT m.tenant_id, t.name AS tenant_name, m.role::text AS role
+            """SELECT m.id AS membership_id, m.tenant_id, t.name AS tenant_name, m.role::text AS role
             FROM tenant_memberships AS m
             JOIN tenants AS t ON t.id = m.tenant_id
             WHERE m.external_user_id = :external_user_id
@@ -68,15 +70,25 @@ async def resolve_access(
         ),
         {"external_user_id": identity.external_user_id},
     )
-    tenants = [
-        TenantAccessOption(
-            tenant_id=row["tenant_id"],
-            tenant_name=row["tenant_name"],
-            role=MembershipRole(row["role"]),
-            destination=_tenant_destination(MembershipRole(row["role"])),
+    tenants: list[TenantAccessOption] = []
+    for row in result.mappings().all():
+        role = MembershipRole(row["role"])
+        effective = set(ROLE_PERMISSIONS[role])
+        override_result = await session.execute(
+            text("""SELECT permission, granted FROM tenant_membership_permission_overrides
+                    WHERE tenant_id=:tenant_id AND membership_id=:membership_id"""),
+            {"tenant_id": row["tenant_id"], "membership_id": row["membership_id"]},
         )
-        for row in result.mappings().all()
-    ]
+        for override in override_result.mappings().all():
+            permission = Permission(override["permission"])
+            effective.add(permission) if override["granted"] else effective.discard(permission)
+        if role is MembershipRole.OWNER:
+            effective = set(ROLE_PERMISSIONS[MembershipRole.OWNER])
+        tenants.append(TenantAccessOption(
+            tenant_id=row["tenant_id"], tenant_name=row["tenant_name"], role=role,
+            destination=_tenant_destination(role),
+            permissions=sorted(effective, key=lambda item: item.value),
+        ))
     platform_destination: Literal["/platform"] | None = (
         "/platform"
         if operator is not None and operator.status is PlatformOperatorStatus.ACTIVE
