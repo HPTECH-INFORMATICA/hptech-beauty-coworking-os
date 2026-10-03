@@ -24,8 +24,6 @@ class MembershipDetailsUpdate(BaseModel):
 class MembershipStatusUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     status: MembershipStatus
-    display_name: str | None = None
-    email: str | None = None
 
 
 class MembershipResponse(BaseModel):
@@ -35,6 +33,8 @@ class MembershipResponse(BaseModel):
     external_user_id: str
     role: MembershipRole
     status: MembershipStatus
+    display_name: str | None = None
+    email: str | None = None
 
 
 class TeamInvitationResponse(BaseModel):
