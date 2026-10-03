@@ -58,8 +58,14 @@ async def test_active_membership_resolves_tenant_context(
         fake_get_membership,
     )
 
+    class FakeResult:
+        def mappings(self): return self
+        def all(self): return []
+    class FakeSession:
+        async def execute(self, *args, **kwargs): return FakeResult()
+
     context = await resolve_tenant_context(
-        cast(AsyncSession, object()),
+        cast(AsyncSession, FakeSession()),
         tenant_id=tenant_id,
         external_user_id=external_user_id,
     )
