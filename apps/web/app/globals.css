@@ -1905,3 +1905,18 @@ svg {
 @media(max-width:620px){.tenant-user-card-rich{grid-template-columns:1fr}.tenant-user-state{align-items:flex-start}.tenant-user-edit-form{grid-template-columns:1fr}}
 
 .tenant-user-readonly{display:grid;gap:5px;min-width:0}.tenant-user-readonly>span{font-size:9px;font-weight:700}.tenant-user-readonly>strong{min-height:38px;display:flex;align-items:center;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-soft);font-size:11px;overflow-wrap:anywhere}.tenant-user-readonly>small{font-size:8px;color:var(--text-faint)}
+
+
+/* Granular tenant access administration */
+.tenant-permission-overview{grid-column:1/-1;border-top:1px solid #e7e9ee;padding-top:16px;display:grid;gap:10px}
+.tenant-permission-overview>strong{font-size:13px;color:#20242c}
+.tenant-permission-editor{margin-top:18px;border-top:1px solid #e7e9ee;padding-top:18px;display:grid;gap:14px}
+.permission-editor-head{display:grid;gap:4px}.permission-editor-head strong{font-size:15px}.permission-editor-head span{font-size:12px;color:#697180}
+.tenant-permission-editor fieldset{border:1px solid #e2e5ea;border-radius:12px;padding:14px;margin:0;display:grid;gap:8px;background:#fafbfc}
+.tenant-permission-editor legend{font-weight:700;font-size:13px;padding:0 6px}
+.tenant-permission-editor fieldset>p{margin:0 0 4px;font-size:11px;color:#737b89}
+.permission-check{display:flex!important;align-items:center;gap:9px;font-size:12px;font-weight:600;cursor:pointer}
+.permission-check input{width:16px!important;height:16px;margin:0;accent-color:#15181d}
+.tenant-permission-editor>button{justify-self:start}
+.tenant-user-card-rich{align-items:start}
+.tenant-user-card-rich .tenant-user-permissions{display:flex;flex-wrap:wrap;gap:6px}
