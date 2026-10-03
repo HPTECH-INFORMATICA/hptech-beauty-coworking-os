@@ -109,7 +109,7 @@ describe("tenant administration", () => {
 
   it("renders users as administration content without a legacy product shell", async () => {
     render(await UsersAdminPage({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByRole("heading", { level: 1, name: "Usuários, papéis e permissões" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Usuários e acessos" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Configurações" })).toHaveAttribute("href", "/administracao");
     expect(document.querySelector(".tenant-admin-shell")).not.toBeInTheDocument();
   });
@@ -123,14 +123,17 @@ describe("tenant administration", () => {
     expect(screen.getByText("Pessoa Proprietária")).toBeInTheDocument();
     expect(screen.getByText("owner@example.com")).toBeInTheDocument();
     expect(screen.getByText("Pessoa Recepção")).toBeInTheDocument();
-    expect(screen.getByText("Acesso integral do proprietário")).toBeInTheDocument();
+    expect(screen.getByText("Acesso integral protegido")).toBeInTheDocument();
     expect(screen.getAllByText("Visualizar agenda").length).toBeGreaterThan(0);
-    expect(screen.getByText("Proprietário protegido")).toBeInTheDocument();
-    expect(screen.getByText("Bloquear acesso")).toBeInTheDocument();
+    expect(screen.getByText("Proprietário do ambiente")).toBeInTheDocument();
     expect(screen.getByText("Remover acesso")).toBeInTheDocument();
     expect(screen.getByText("E-mail de acesso")).toBeInTheDocument();
-    expect(screen.getByText("Permissões deste usuário")).toBeInTheDocument();
+    expect(screen.getByText("Telas e permissões")).toBeInTheDocument();
     expect(screen.getByText("Salvar permissões")).toBeInTheDocument();
+    expect(screen.getByText("Dados e papel")).toBeInTheDocument();
+    expect(screen.getByText("Controle de acesso")).toBeInTheDocument();
+    expect(screen.getByText("Bloquear usuário")).toBeInTheDocument();
+    expect(screen.getByText("Remover acesso")).toBeInTheDocument();
     expect(screen.queryByDisplayValue("owner@example.com")).not.toBeInTheDocument();
   });
 
