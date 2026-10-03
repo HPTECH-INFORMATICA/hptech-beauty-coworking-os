@@ -43,7 +43,7 @@ async def get_tenant_availability(
 ) -> list[Availability]:
     """Calculate preventive availability inside the authorized tenant."""
 
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.AVAILABILITY_VIEW)
 
     validated_starts_at, validated_ends_at = validate_availability_interval(
         starts_at,
