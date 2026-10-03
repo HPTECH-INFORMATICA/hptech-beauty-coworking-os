@@ -13,9 +13,18 @@ class MembershipInvitationCreate(BaseModel):
     role: MembershipRole
 
 
+class MembershipDetailsUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    display_name: str = Field(min_length=1, max_length=160)
+    email: str | None = Field(default=None, max_length=255)
+    role: MembershipRole
+
+
 class MembershipStatusUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     status: MembershipStatus
+    display_name: str | None = None
+    email: str | None = None
 
 
 class MembershipResponse(BaseModel):
