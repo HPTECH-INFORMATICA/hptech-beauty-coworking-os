@@ -1,3 +1,4 @@
+import { requireTenantPermission } from "../../lib/auth/authorization";
 import Link from "next/link";
 
 import { getInvoice, getInvoices, getProfessionals, type Invoice, type InvoiceDetail, type Professional } from "../../lib/bcos-api";
@@ -27,6 +28,8 @@ function invoiceContainsUsage(invoice: Invoice, detail: InvoiceDetail | undefine
 }
 
 export default async function FinancePage({ searchParams }: { searchParams?: SearchParams }) {
+  const tenant = await requireTenantPermission("FINANCE_VIEW");
+  const canManageFinance = tenant.permissions.includes("FINANCE_MANAGE");
   const query = searchParams ? await searchParams : {};
   const requestedUsageId = first(query.usage);
   let invoices: Invoice[] = [];
@@ -87,7 +90,7 @@ export default async function FinancePage({ searchParams }: { searchParams?: Sea
         <section className="finance-invoices">
           {sortedInvoices.map((invoice) => {
             const detail = details.get(invoice.id);
-            const canReceive = invoice.status === "OPEN" || invoice.status === "PARTIALLY_PAID";
+            const canReceive = canManageFinance && (invoice.status === "OPEN" || invoice.status === "PARTIALLY_PAID");
             const canClose = canReceive && invoice.source_usage_id === null && !invoice.manual_closed_at;
             const professionalName = professionalById.get(invoice.professional_id)?.name ?? "Profissional";
             const selected = invoiceContainsUsage(invoice, detail, requestedUsageId);
