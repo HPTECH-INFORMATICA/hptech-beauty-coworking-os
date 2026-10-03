@@ -72,3 +72,40 @@ def send_professional_access_invitation(
                 raise RuntimeError("Transactional email provider rejected the invitation.")
     except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as exc:
         raise RuntimeError("Professional invitation email could not be delivered.") from exc
+
+
+def send_team_access_invitation(
+    *,
+    to_email: str,
+    display_name: str,
+    tenant_name: str,
+    role_label: str,
+    settings: EmailSettings | None = None,
+) -> None:
+    config = settings or EmailSettings.from_env()
+    access_url = f"{config.frontend_public_url}/auth/sign-in"
+    payload = {
+        "from": config.email_from,
+        "to": [to_email],
+        "subject": f"{tenant_name} convidou você para o BCOS",
+        "html": (
+            f"<h1>Olá, {escape(display_name)}.</h1>"
+            f"<p>A {escape(tenant_name)} convidou você para acessar o BCOS como {escape(role_label)}.</p>"
+            "<p>Use este mesmo e-mail para entrar ou criar sua conta. "
+            "Após a autenticação, confirme o vínculo apresentado pelo BCOS.</p>"
+            f'<p><a href="{escape(access_url, quote=True)}">Acessar meu convite</a></p>'
+            "<p>Este convite é pessoal e expira em 7 dias.</p>"
+        ),
+    }
+    request = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Authorization": f"Bearer {config.api_key}", "Content-Type": "application/json", "User-Agent": "BCOS/1.0"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            if response.status < 200 or response.status >= 300:
+                raise RuntimeError("Transactional email provider rejected the team invitation.")
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as exc:
+        raise RuntimeError("Team invitation email could not be delivered.") from exc
