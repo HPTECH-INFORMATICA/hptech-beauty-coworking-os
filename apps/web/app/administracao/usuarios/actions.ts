@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { inviteTenantMembership, updateTenantMembershipStatus } from "../../../lib/bcos-api";
+import { inviteTenantMembership, removeTenantMembership, updateTenantMembership, updateTenantMembershipStatus } from "../../../lib/bcos-api";
 
 function required(formData: FormData, key: string) {
   const value=String(formData.get(key) ?? "").trim();
@@ -23,5 +23,22 @@ export async function updateUserStatusAction(formData: FormData) {
   const status=required(formData,"status");
   if(status!=="ACTIVE" && status!=="INACTIVE") throw new Error("Situação inválida.");
   await updateTenantMembershipStatus(required(formData,"membership_id"),status);
+  revalidatePath("/administracao/usuarios");
+}
+
+
+export async function updateUserAction(formData: FormData) {
+  const role=required(formData,"role");
+  if(!["ADMIN","RECEPTION","PROFESSIONAL"].includes(role)) throw new Error("Papel inválido.");
+  await updateTenantMembership(required(formData,"membership_id"), {
+    display_name: required(formData,"display_name"),
+    email: String(formData.get("email") ?? "").trim() || null,
+    role: role as "ADMIN"|"RECEPTION"|"PROFESSIONAL",
+  });
+  revalidatePath("/administracao/usuarios");
+}
+
+export async function removeUserAction(formData: FormData) {
+  await removeTenantMembership(required(formData,"membership_id"));
   revalidatePath("/administracao/usuarios");
 }
