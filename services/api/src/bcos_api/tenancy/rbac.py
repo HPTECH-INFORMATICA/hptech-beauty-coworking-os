@@ -32,7 +32,7 @@ class PermissionDenied(Exception):
 
 
 ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
-    MembershipRole.OWNER: frozenset(Permission),
+    MembershipRole.OWNER: frozenset(permission for permission in Permission if permission is not Permission.PROFESSIONAL_OWN),
     MembershipRole.ADMIN: frozenset({
         Permission.TENANT_ADMIN, Permission.OPERATIONS,
         Permission.DASHBOARD_VIEW, Permission.AGENDA_VIEW, Permission.AGENDA_MANAGE,
