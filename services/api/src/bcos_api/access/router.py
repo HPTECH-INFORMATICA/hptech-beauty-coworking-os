@@ -20,7 +20,7 @@ from bcos_api.db.session import get_async_session
 from bcos_api.platform.domain import PlatformOperatorStatus
 from bcos_api.platform.repository import get_platform_operator
 from bcos_api.tenancy.membership import MembershipRole
-from bcos_api.tenancy.rbac import Permission, ROLE_PERMISSIONS
+from bcos_api.tenancy.rbac import ROLE_PERMISSIONS, Permission
 
 router = APIRouter(prefix="/api/v1/access", tags=["Access"])
 SessionDependency = Annotated[AsyncSession, Depends(get_async_session)]
