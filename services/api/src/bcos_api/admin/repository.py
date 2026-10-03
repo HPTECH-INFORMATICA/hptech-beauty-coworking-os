@@ -28,7 +28,7 @@ async def invite_membership(session: AsyncSession, *, tenant_id: UUID, external_
 
 
 async def set_membership_status(session: AsyncSession, *, tenant_id: UUID, membership_id: UUID, status: MembershipStatus) -> TenantMembership | None:
-    result = await session.execute(text("""UPDATE tenant_memberships SET status=CAST(:status AS membership_status), updated_at=now() WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL RETURNING id, tenant_id, external_user_id, role::text AS role, status::text AS status"""), {"tenant_id": tenant_id, "membership_id": membership_id, "status": status.value})
+    result = await session.execute(text("""UPDATE tenant_memberships SET status=CAST(:status AS membership_status), updated_at=now() WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL AND role <> 'OWNER' RETURNING id, tenant_id, external_user_id, role::text AS role, status::text AS status, display_name, email"""), {"tenant_id": tenant_id, "membership_id": membership_id, "status": status.value})
     row=result.mappings().one_or_none()
     return None if row is None else _membership(row)
 
