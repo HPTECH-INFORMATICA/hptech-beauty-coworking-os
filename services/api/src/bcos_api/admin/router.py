@@ -9,7 +9,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bcos_api.admin.domain import InvalidMembershipAdministration, validate_invited_role
-from bcos_api.audit.repository import create_audit_log
 from bcos_api.admin.profile_repository import get_tenant_profile, update_tenant_profile
 from bcos_api.admin.profile_schemas import TenantProfileResponse, TenantProfileUpdate
 from bcos_api.admin.schemas import (
@@ -26,6 +25,7 @@ from bcos_api.admin.service import (
     update_tenant_membership_details,
     update_tenant_membership_status,
 )
+from bcos_api.audit.repository import create_audit_log
 from bcos_api.db.session import get_async_session
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.dependencies import get_tenant_context
