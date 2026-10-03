@@ -9,7 +9,8 @@ from bcos_api.tenancy.membership import MembershipRole, MembershipStatus
 
 class MembershipInvitationCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    external_user_id: str = Field(min_length=1, max_length=255)
+    display_name: str = Field(min_length=1, max_length=160)
+    email: str = Field(min_length=3, max_length=255)
     role: MembershipRole
 
 
@@ -34,3 +35,13 @@ class MembershipResponse(BaseModel):
     external_user_id: str
     role: MembershipRole
     status: MembershipStatus
+
+
+class TeamInvitationResponse(BaseModel):
+    id: UUID
+    tenant_id: UUID
+    display_name: str
+    email: str
+    role: MembershipRole
+    status: str
+    expires_at: str
