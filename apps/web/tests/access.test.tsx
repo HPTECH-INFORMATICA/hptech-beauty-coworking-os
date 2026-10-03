@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getAccessResolution: vi.fn(),
   getPendingInvitations: vi.fn(),
   getPendingProfessionalInvitations: vi.fn(),
+  getPendingTeamInvitations: vi.fn(),
 }));
 
 vi.mock("../lib/auth/server", () => ({ auth: { getSession: mocks.getSession } }));
@@ -13,6 +14,7 @@ vi.mock("../lib/bcos-api", () => ({
   getAccessResolution: mocks.getAccessResolution,
   getPendingInvitations: mocks.getPendingInvitations,
   getPendingProfessionalInvitations: mocks.getPendingProfessionalInvitations,
+  getPendingTeamInvitations: mocks.getPendingTeamInvitations,
 }));
 vi.mock("../components/session-controls", () => ({
   SessionControls: ({ label }: { label: string }) => <div>{label}</div>,
@@ -26,6 +28,7 @@ describe("contracting customer access state", () => {
     mocks.getAccessResolution.mockResolvedValue({ platform_destination: null, tenants: [] });
     mocks.getPendingInvitations.mockResolvedValue([]);
     mocks.getPendingProfessionalInvitations.mockResolvedValue([]);
+    mocks.getPendingTeamInvitations.mockResolvedValue([]);
 
     render(await AccessPage({ searchParams: Promise.resolve({ invitationAccepted: "pendingActivation" }) }));
 
@@ -38,7 +41,7 @@ describe("contracting customer access state", () => {
     mocks.getSession.mockResolvedValue({ data: { session: {}, user: { id: "pro-1", email: "cris@example.com" } } });
     mocks.getAccessResolution.mockResolvedValue({ platform_destination: null, tenants: [] });
     mocks.getPendingInvitations.mockResolvedValue([]);
-    mocks.getPendingProfessionalInvitations.mockResolvedValue([{ id: "invite-1", tenant_id: "tenant-1", tenant_name: "LA BEAUTE", professional_id: "professional-1", professional_name: "Cristiana", email: "cris@example.com", status: "PENDING", expires_at: "2026-10-09T12:00:00Z" }]);
+    mocks.getPendingTeamInvitations.mockResolvedValue([]);\n    mocks.getPendingProfessionalInvitations.mockResolvedValue([{ id: "invite-1", tenant_id: "tenant-1", tenant_name: "LA BEAUTE", professional_id: "professional-1", professional_name: "Cristiana", email: "cris@example.com", status: "PENDING", expires_at: "2026-10-09T12:00:00Z" }]);
 
     render(await AccessPage({ searchParams: Promise.resolve({}) }));
 
