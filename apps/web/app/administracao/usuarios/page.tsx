@@ -78,7 +78,10 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
       <aside className="tenant-invite-card">
         <span>NOVO ACESSO</span>
         <h2>Adicionar usuário da equipe</h2>
-        <p>Informe nome, e-mail e papel. A pessoa criará ou acessará a própria conta e confirmará o vínculo com este negócio.</p>\n        <form action={inviteUserAction}>\n          <label>Nome<input name="display_name" required placeholder="Nome completo"/></label>\n          <label>E-mail<input name="email" type="email" required placeholder="usuario@empresa.com"/></label>
+        <p>Informe nome, e-mail e papel. A pessoa criará ou acessará a própria conta e confirmará o vínculo com este negócio.</p>
+        <form action={inviteUserAction}>
+          <label>Nome<input name="display_name" required placeholder="Nome completo"/></label>
+          <label>E-mail<input name="email" type="email" required placeholder="usuario@empresa.com"/></label>
           <label>Papel<select name="role" defaultValue="RECEPTION"><option value="ADMIN">Administrador</option><option value="RECEPTION">Recepção</option><option value="PROFESSIONAL">Profissional</option></select></label>
           <button type="submit">Enviar convite</button>
         </form>
