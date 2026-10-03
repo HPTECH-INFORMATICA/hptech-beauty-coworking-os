@@ -15,7 +15,7 @@ from bcos_api.audit.repository import create_audit_log
 from bcos_api.auth.dependencies import get_authenticated_identity
 from bcos_api.auth.identity import AuthenticatedIdentity
 from bcos_api.db.session import get_async_session
-from bcos_api.invitation.repository import accept_invited_membership, list_pending_invitations
+from bcos_api.invitation.repository import (\n    accept_invited_membership,\n    list_pending_invitations,\n)
 from bcos_api.tenancy.membership import MembershipRole
 
 router = APIRouter(prefix="/api/v1/invitations", tags=["Invitations"])
