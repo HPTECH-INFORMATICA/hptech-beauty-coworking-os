@@ -13,6 +13,7 @@ import {
   getReceptionHours,
   getResourceCategories,
   getResources,
+  getTenantMembershipPermissions,
   getTenantMemberships,
   getTenantProfile,
   getUnits,
@@ -26,6 +27,7 @@ vi.mock("../lib/bcos-api", () => ({
   getReceptionHours: vi.fn(),
   getResourceCategories: vi.fn(),
   getResources: vi.fn(),
+  getTenantMembershipPermissions: vi.fn(),
   getTenantMemberships: vi.fn(),
   getTenantProfile: vi.fn(),
   getUnits: vi.fn(),
@@ -51,6 +53,7 @@ describe("tenant administration", () => {
       ? [{ day_of_week: 0, opens_at: "08:00:00", closes_at: "18:00:00", is_closed: false }]
       : [{ day_of_week: 0, opens_at: "09:00:00", closes_at: "17:00:00", is_closed: false }]);
     vi.mocked(getTenantMemberships).mockResolvedValue([]);
+    vi.mocked(getTenantMembershipPermissions).mockResolvedValue([]);
   });
 
   it("presents administration as focused submodules instead of one long page", async () => {
@@ -117,11 +120,15 @@ describe("tenant administration", () => {
     expect(screen.getByText("Pessoa Proprietária")).toBeInTheDocument();
     expect(screen.getByText("owner@example.com")).toBeInTheDocument();
     expect(screen.getByText("Pessoa Recepção")).toBeInTheDocument();
-    expect(screen.getAllByText("Operação").length).toBeGreaterThan(0);
-    expect(screen.getByText("Acesso do proprietário protegido")).toBeInTheDocument();
+    vi.mocked(getTenantMembershipPermissions).mockImplementation(async (id) => id === "owner-1" ? ["DASHBOARD_VIEW","AGENDA_VIEW","AGENDA_MANAGE","AVAILABILITY_VIEW","CHECKIN_MANAGE","FINANCE_VIEW","FINANCE_MANAGE","ADMIN_CONFIG","USER_ADMIN"] : ["DASHBOARD_VIEW","AGENDA_VIEW","AGENDA_MANAGE","AVAILABILITY_VIEW","CHECKIN_MANAGE"]);
+    expect(screen.getByText("Acesso integral do proprietário")).toBeInTheDocument();
+    expect(screen.getAllByText("Visualizar agenda").length).toBeGreaterThan(0);
+    expect(screen.getByText("Proprietário protegido")).toBeInTheDocument();
     expect(screen.getByText("Bloquear acesso")).toBeInTheDocument();
     expect(screen.getByText("Remover acesso")).toBeInTheDocument();
     expect(screen.getByText("E-mail de acesso")).toBeInTheDocument();
+    expect(screen.getByText("Permissões deste usuário")).toBeInTheDocument();
+    expect(screen.getByText("Salvar permissões")).toBeInTheDocument();
     expect(screen.queryByDisplayValue("owner@example.com")).not.toBeInTheDocument();
   });
 
