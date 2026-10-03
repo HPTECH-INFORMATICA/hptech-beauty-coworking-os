@@ -50,7 +50,8 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
 
 def has_permission(context: TenantContext, permission: Permission) -> bool:
     """Return whether the authorized tenant context has a permission."""
-    return permission in context.permissions
+    effective = context.permissions if context.permissions is not None else ROLE_PERMISSIONS[context.role]
+    return permission in effective
 
 
 def require_permission(context: TenantContext, permission: Permission) -> None:
