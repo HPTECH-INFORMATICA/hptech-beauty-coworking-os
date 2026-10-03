@@ -24,7 +24,7 @@ class TenantContext:
     membership_id: UUID
     external_user_id: str
     role: MembershipRole
-    permissions: frozenset[object]
+    permissions: frozenset[object] | None = None
 
 
 async def resolve_tenant_context(
