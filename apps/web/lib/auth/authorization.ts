@@ -36,3 +36,18 @@ export async function requireTenantRole(allowedRoles: readonly TenantRole[]): Pr
   if (!selectedTenant || !allowedRoles.includes(selectedTenant.role)) redirect("/acesso");
   return selectedTenant;
 }
+
+
+export type TenantPermission = AccessTenant["permissions"][number];
+
+export async function requireTenantPermission(permission: TenantPermission): Promise<AccessTenant> {
+  const tenant = await requireTenantRole(["OWNER","ADMIN","RECEPTION","PROFESSIONAL"]);
+  if (!tenant.permissions.includes(permission)) redirect("/acesso");
+  return tenant;
+}
+
+export async function requireTenantAnyPermission(permissions: readonly TenantPermission[]): Promise<AccessTenant> {
+  const tenant = await requireTenantRole(["OWNER","ADMIN","RECEPTION","PROFESSIONAL"]);
+  if (!permissions.some(permission => tenant.permissions.includes(permission))) redirect("/acesso");
+  return tenant;
+}
