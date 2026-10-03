@@ -1,3 +1,4 @@
+import { requireTenantPermission } from "../../lib/auth/authorization";
 import Link from "next/link";
 
 import {
@@ -19,6 +20,7 @@ type AdminArea = "empresa" | "unidades" | "espacos" | "funcionamento" | "precos"
 const adminAreas = new Set<AdminArea>(["empresa","unidades","espacos","funcionamento","precos","profissionais"]);
 
 export default async function TenantAdministrationPage({ searchParams = Promise.resolve({}) }: { searchParams?: Promise<{ area?: string; cadastro_profissional?: string; documentPublished?: string }> } = {}) {
+  await requireTenantPermission("ADMIN_CONFIG");
   const query = await searchParams;
   const area: AdminArea = adminAreas.has(query.area as AdminArea) ? query.area as AdminArea : "empresa";
   const [units, categories, resources, professionals, pricingRules, profile, onboardingRequests, onboardingDocuments] = await Promise.all([
