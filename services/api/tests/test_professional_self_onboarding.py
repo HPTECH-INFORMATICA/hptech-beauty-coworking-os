@@ -12,9 +12,12 @@ def test_self_onboarding_routes_are_exposed() -> None:
     assert "/api/v1/professional-onboarding/requests/{request_id}/approve" in paths
 
 
-def test_public_registration_requires_current_platform_and_unit_documents() -> None:
+def test_public_registration_requires_all_current_tenant_documents() -> None:
     source = (Path(__file__).parents[1] / "src" / "bcos_api" / "professional_onboarding" / "router.py").read_text(encoding="utf-8")
-    assert '{"PLATFORM_TERMS", "UNIT_POLICY"}' in source
+    assert "AND tenant_id=:tenant_id" in source
+    assert "if not rows:" in source
+    assert "accepted != set(required)" in source
+    assert "PLATFORM_TERMS" not in source
     assert "ALL_CURRENT_ONBOARDING_DOCUMENTS_MUST_BE_ACCEPTED" in source
     assert "document_version" in source
 
