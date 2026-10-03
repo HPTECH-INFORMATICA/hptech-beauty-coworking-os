@@ -61,9 +61,9 @@ describe("tenant administration", () => {
     expect(screen.getByRole("link", { name: /Unidades.*2 locais/i })).toHaveAttribute("href", "/administracao?area=unidades");
     expect(screen.getByRole("link", { name: /Profissionais.*1 vinculados/i })).toHaveAttribute("href", "/administracao?area=profissionais");
     expect(screen.getByRole("link", { name: /Usuários.*Acessos e permissões/i })).toHaveAttribute("href", "/administracao/usuarios");
-    expect(screen.getByText("Dados do negócio")).toBeInTheDocument();
-    expect(screen.queryByText("Tipos e espaços da unidade")).not.toBeInTheDocument();
-    expect(screen.queryByText("Regras comerciais")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Dados do negócio" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "Tipos e espaços da unidade" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "Regras comerciais" })).not.toBeInTheDocument();
   });
 
   it("opens functioning as its own administration module", async () => {
@@ -73,7 +73,7 @@ describe("tenant administration", () => {
     expect(screen.getAllByRole("button", { name: "Salvar horários" })).toHaveLength(2);
     expect(screen.getAllByLabelText("Segunda abre")[0]).toHaveValue("08:00");
     expect(screen.getAllByLabelText("Segunda fecha")[0]).toHaveValue("18:00");
-    expect(screen.queryByText("Dados do negócio")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "Dados do negócio" })).not.toBeInTheDocument();
   });
 
   it("opens professionals with governed documents and self-onboarding together", async () => {
@@ -82,7 +82,7 @@ describe("tenant administration", () => {
     expect(screen.getByText("O profissional faz o próprio cadastro")).toBeInTheDocument();
     expect(screen.getByText("Profissionais vinculados")).toBeInTheDocument();
     expect(screen.getByText("Cristiana")).toBeInTheDocument();
-    expect(screen.queryByText("Dados do negócio")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "Dados do negócio" })).not.toBeInTheDocument();
   });
 
   it("renders existing pricing rules with edit and safe removal controls", async () => {
