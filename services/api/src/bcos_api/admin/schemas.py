@@ -35,7 +35,7 @@ class MembershipResponse(BaseModel):
     status: MembershipStatus
     display_name: str | None = None
     email: str | None = None
-    permissions: list[Permission] = []
+    permissions: list[Permission] = Field(default_factory=list)
 
 
 class MembershipPermissionsUpdate(BaseModel):
