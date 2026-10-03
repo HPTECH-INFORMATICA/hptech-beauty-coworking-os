@@ -19,6 +19,8 @@ import {
   getUnits,
 } from "../lib/bcos-api";
 
+vi.mock("../lib/auth/authorization", () => ({ requireTenantPermission: vi.fn().mockResolvedValue({}) }));
+
 vi.mock("../lib/bcos-api", () => ({
   getPricingRules: vi.fn(),
   getProfessionalOnboardingRequests: vi.fn(),
