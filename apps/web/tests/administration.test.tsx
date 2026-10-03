@@ -116,11 +116,11 @@ describe("tenant administration", () => {
       { id: "owner-1", tenant_id: "tenant-1", external_user_id: "auth-owner", role: "OWNER", status: "ACTIVE", display_name: "Pessoa Proprietária", email: "owner@example.com" },
       { id: "reception-1", tenant_id: "tenant-1", external_user_id: "auth-reception", role: "RECEPTION", status: "ACTIVE", display_name: "Pessoa Recepção", email: "recepcao@example.com" },
     ]);
+    vi.mocked(getTenantMembershipPermissions).mockImplementation(async (id) => id === "owner-1" ? ["DASHBOARD_VIEW","AGENDA_VIEW","AGENDA_MANAGE","AVAILABILITY_VIEW","CHECKIN_MANAGE","FINANCE_VIEW","FINANCE_MANAGE","ADMIN_CONFIG","USER_ADMIN"] : ["DASHBOARD_VIEW","AGENDA_VIEW","AGENDA_MANAGE","AVAILABILITY_VIEW","CHECKIN_MANAGE"]);
     render(await UsersAdminPage({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Pessoa Proprietária")).toBeInTheDocument();
     expect(screen.getByText("owner@example.com")).toBeInTheDocument();
     expect(screen.getByText("Pessoa Recepção")).toBeInTheDocument();
-    vi.mocked(getTenantMembershipPermissions).mockImplementation(async (id) => id === "owner-1" ? ["DASHBOARD_VIEW","AGENDA_VIEW","AGENDA_MANAGE","AVAILABILITY_VIEW","CHECKIN_MANAGE","FINANCE_VIEW","FINANCE_MANAGE","ADMIN_CONFIG","USER_ADMIN"] : ["DASHBOARD_VIEW","AGENDA_VIEW","AGENDA_MANAGE","AVAILABILITY_VIEW","CHECKIN_MANAGE"]);
     expect(screen.getByText("Acesso integral do proprietário")).toBeInTheDocument();
     expect(screen.getAllByText("Visualizar agenda").length).toBeGreaterThan(0);
     expect(screen.getByText("Proprietário protegido")).toBeInTheDocument();
