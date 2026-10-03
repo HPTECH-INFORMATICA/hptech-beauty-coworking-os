@@ -13,10 +13,12 @@ from bcos_api.admin.profile_schemas import TenantProfileResponse, TenantProfileU
 from bcos_api.admin.schemas import (
     MembershipDetailsUpdate,
     MembershipInvitationCreate,
+    MembershipPermissionsUpdate,
     MembershipResponse,
     MembershipStatusUpdate,
     TeamInvitationResponse,
 )
+from bcos_api.admin.repository import get_membership_permission_overrides, replace_membership_permission_overrides
 from bcos_api.admin.service import (
     list_tenant_memberships,
     remove_tenant_membership,
@@ -28,7 +30,8 @@ from bcos_api.db.session import get_async_session
 from bcos_api.notifications.email import send_team_access_invitation
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.dependencies import get_tenant_context
-from bcos_api.tenancy.rbac import Permission, require_permission
+from bcos_api.tenancy.membership import MembershipRole
+from bcos_api.tenancy.rbac import Permission, ROLE_PERMISSIONS, require_permission
 
 router=APIRouter(prefix="/api/v1/admin/memberships", tags=["Tenant Administration"])
 profile_router=APIRouter(prefix="/api/v1/admin/profile", tags=["Tenant Administration"])
@@ -100,6 +103,58 @@ async def remove_membership_endpoint(membership_id: UUID, session: SessionDepend
         await session.rollback()
         raise HTTPException(status_code=404, detail="Membership not found or protected.")
     await session.commit()
+
+
+@router.get("/{membership_id}/permissions")
+async def get_membership_permissions_endpoint(
+    membership_id: UUID, session: SessionDependency, context: TenantContextDependency
+) -> dict[str, object]:
+    require_permission(context, Permission.USER_ADMIN)
+    membership_result = await session.execute(text("""SELECT role::text AS role FROM tenant_memberships
+        WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL"""),
+        {"membership_id": membership_id, "tenant_id": context.tenant_id})
+    row = membership_result.mappings().one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Membership not found.")
+    role = MembershipRole(row["role"])
+    effective = set(ROLE_PERMISSIONS[role])
+    overrides = await get_membership_permission_overrides(session, tenant_id=context.tenant_id, membership_id=membership_id)
+    for name, granted in overrides.items():
+        permission = Permission(name)
+        effective.add(permission) if granted else effective.discard(permission)
+    return {"permissions": sorted(p.value for p in effective)}
+
+
+@router.put("/{membership_id}/permissions")
+async def update_membership_permissions_endpoint(
+    membership_id: UUID, payload: MembershipPermissionsUpdate,
+    session: SessionDependency, context: TenantContextDependency
+) -> dict[str, object]:
+    require_permission(context, Permission.USER_ADMIN)
+    membership_result = await session.execute(text("""SELECT role::text AS role FROM tenant_memberships
+        WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL"""),
+        {"membership_id": membership_id, "tenant_id": context.tenant_id})
+    row = membership_result.mappings().one_or_none()
+    if row is None or row["role"] == "OWNER":
+        raise HTTPException(status_code=404, detail="Membership not found or protected.")
+    role = MembershipRole(row["role"])
+    requested = set(payload.permissions)
+    # Aggregate legacy permissions are derived internally, never customer-editable.
+    editable = {p for p in Permission if p not in {Permission.TENANT_ADMIN, Permission.OPERATIONS}}
+    requested &= editable
+    defaults = set(ROLE_PERMISSIONS[role]) & editable
+    overrides = {p.value: (p in requested) for p in editable if (p in requested) != (p in defaults)}
+    if not await replace_membership_permission_overrides(
+        session, tenant_id=context.tenant_id, membership_id=membership_id, values=overrides
+    ):
+        await session.rollback()
+        raise HTTPException(status_code=404, detail="Membership not found or protected.")
+    await create_audit_log(session, tenant_id=context.tenant_id,
+        actor_external_user_id=context.external_user_id, action="TENANT_MEMBERSHIP_PERMISSIONS_CHANGED",
+        entity_type="tenant_membership", entity_id=membership_id,
+        metadata={"permissions": sorted(p.value for p in requested)})
+    await session.commit()
+    return {"permissions": sorted(p.value for p in requested)}
 
 
 @profile_router.get("", response_model=TenantProfileResponse)
