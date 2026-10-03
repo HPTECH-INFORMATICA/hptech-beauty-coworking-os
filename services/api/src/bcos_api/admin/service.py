@@ -4,7 +4,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bcos_api.admin.domain import validate_invited_role, validate_membership_status
+from bcos_api.admin.domain import InvalidMembershipAdministration, validate_invited_role, validate_membership_status
 from bcos_api.admin.repository import invite_membership, list_memberships, remove_membership, set_membership_status, update_membership_details
 from bcos_api.audit.repository import create_audit_log
 from bcos_api.tenancy.context import TenantContext
