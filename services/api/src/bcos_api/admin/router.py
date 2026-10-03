@@ -5,7 +5,6 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bcos_api.admin.domain import InvalidMembershipAdministration, validate_invited_role
@@ -19,7 +18,6 @@ from bcos_api.admin.schemas import (
     TeamInvitationResponse,
 )
 from bcos_api.admin.service import (
-    invite_tenant_membership,
     list_tenant_memberships,
     remove_tenant_membership,
     update_tenant_membership_details,
