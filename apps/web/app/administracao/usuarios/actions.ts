@@ -32,7 +32,6 @@ export async function updateUserAction(formData: FormData) {
   if(!["ADMIN","RECEPTION","PROFESSIONAL"].includes(role)) throw new Error("Papel inválido.");
   await updateTenantMembership(required(formData,"membership_id"), {
     display_name: required(formData,"display_name"),
-    email: String(formData.get("email") ?? "").trim() || null,
     role: role as "ADMIN"|"RECEPTION"|"PROFESSIONAL",
   });
   revalidatePath("/administracao/usuarios");
