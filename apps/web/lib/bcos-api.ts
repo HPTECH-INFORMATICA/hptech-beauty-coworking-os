@@ -30,7 +30,8 @@ export type ContractingTenant = { id: string; name: string; slug: string; status
 export type ContractingTenantCreate = { name: string; slug: string; legalName: string; tradeName: string; taxId?: string; email: string; phone?: string; ownerEmail?: string };
 export type TenantMembership = { id: string; tenant_id: string; external_user_id: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; status: "INVITED" | "ACTIVE" | "INACTIVE"; display_name: string | null; email: string | null };
 export type TenantMembershipInvite = { displayName: string; email: string; role: "ADMIN" | "RECEPTION" | "PROFESSIONAL" };
-export type AccessTenant = { tenant_id: string; tenant_name: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; destination: "/administracao" | "/" | "/profissional" };
+export type TenantPermission = "TENANT_ADMIN"|"OPERATIONS"|"PROFESSIONAL_OWN"|"DASHBOARD_VIEW"|"AGENDA_VIEW"|"AGENDA_MANAGE"|"AVAILABILITY_VIEW"|"CHECKIN_MANAGE"|"FINANCE_VIEW"|"FINANCE_MANAGE"|"ADMIN_CONFIG"|"USER_ADMIN";
+export type AccessTenant = { tenant_id: string; tenant_name: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; destination: "/administracao" | "/" | "/profissional"; permissions: TenantPermission[] };
 export type AccessResolution = { platform_destination: "/platform" | null; tenants: AccessTenant[] };
 export type PendingInvitation = TenantMembership;
 export type TeamInvitation = { id:string; tenant_id:string; tenant_name:string; display_name:string; email:string; role:"ADMIN"|"RECEPTION"|"PROFESSIONAL"; status:string; expires_at:string };
@@ -322,6 +323,18 @@ export async function updateTenantMembership(
 
 export async function removeTenantMembership(membershipId: string): Promise<void> {
   return apiRequest<void>(`/api/v1/admin/memberships/${encodeURIComponent(membershipId)}`, { method: "DELETE" });
+}
+
+export async function getTenantMembershipPermissions(membershipId: string): Promise<TenantPermission[]> {
+  const result = await apiGet<{permissions: TenantPermission[]}>(`/api/v1/admin/memberships/${encodeURIComponent(membershipId)}/permissions`);
+  return result.permissions;
+}
+
+export async function updateTenantMembershipPermissions(membershipId: string, permissions: TenantPermission[]): Promise<TenantPermission[]> {
+  const result = await apiRequest<{permissions: TenantPermission[]}>(`/api/v1/admin/memberships/${encodeURIComponent(membershipId)}/permissions`, {
+    method: "PUT", body: JSON.stringify({permissions}),
+  });
+  return result.permissions;
 }
 
 export async function inviteContractingTenantOwner(tenantId: string, email: string): Promise<{ membership_id: string; tenant_id: string; external_user_id: string; role: string; status: string }> {
