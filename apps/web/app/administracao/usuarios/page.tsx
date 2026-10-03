@@ -60,7 +60,7 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
               <form className="tenant-user-edit-form" action={updateUserAction}>
                 <input type="hidden" name="membership_id" value={item.id}/>
                 <label>Nome<input name="display_name" defaultValue={item.display_name ?? ""} required placeholder="Nome do usuário"/></label>
-                <label>E-mail<input name="email" type="email" defaultValue={item.email ?? ""} placeholder="usuario@empresa.com"/></label>
+                <div className="tenant-user-readonly"><span>E-mail de acesso</span><strong>{item.email || "Não disponível"}</strong><small>Gerenciado pela conta de autenticação do próprio usuário.</small></div>
                 <label>Papel<select name="role" defaultValue={item.role}><option value="ADMIN">Administrador</option><option value="RECEPTION">Recepção</option><option value="PROFESSIONAL">Profissional</option></select></label>
                 <div className="tenant-user-actions"><button type="submit">Salvar alterações</button></div>
               </form>
