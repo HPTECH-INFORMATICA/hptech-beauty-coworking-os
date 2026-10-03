@@ -1,9 +1,9 @@
 """Authenticated first-access invitation acceptance."""
 
 from typing import Annotated
+from uuid import UUID
 
 from pydantic import BaseModel
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
@@ -16,6 +16,7 @@ from bcos_api.auth.dependencies import get_authenticated_identity
 from bcos_api.auth.identity import AuthenticatedIdentity
 from bcos_api.db.session import get_async_session
 from bcos_api.invitation.repository import accept_invited_membership, list_pending_invitations
+from bcos_api.tenancy.membership import MembershipRole
 
 router = APIRouter(prefix="/api/v1/invitations", tags=["Invitations"])
 SessionDependency = Annotated[AsyncSession, Depends(get_async_session)]
