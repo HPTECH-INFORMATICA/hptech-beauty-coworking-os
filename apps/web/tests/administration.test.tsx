@@ -123,7 +123,7 @@ describe("tenant administration", () => {
     expect(screen.getByText("Pessoa Proprietária")).toBeInTheDocument();
     expect(screen.getByText("owner@example.com")).toBeInTheDocument();
     expect(screen.getByText("Pessoa Recepção")).toBeInTheDocument();
-    expect(screen.getByText("Acesso integral do proprietário")).toBeInTheDocument();
+    expect(screen.getByText("Acesso integral protegido")).toBeInTheDocument();
     expect(screen.getAllByText("Visualizar agenda").length).toBeGreaterThan(0);
     expect(screen.getByText("Proprietário protegido")).toBeInTheDocument();
     expect(screen.getByText("Bloquear acesso")).toBeInTheDocument();
