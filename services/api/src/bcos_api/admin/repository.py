@@ -34,6 +34,7 @@ async def set_membership_status(session: AsyncSession, *, tenant_id: UUID, membe
 
 
 async def update_membership_details(session: AsyncSession, *, tenant_id: UUID, membership_id: UUID, display_name: str, role: MembershipRole) -> TenantMembership | None:
+    await session.execute(text("""DELETE FROM tenant_membership_permission_overrides o WHERE o.membership_id=:membership_id AND o.tenant_id=:tenant_id AND EXISTS (SELECT 1 FROM tenant_memberships m WHERE m.id=o.membership_id AND m.role <> CAST(:role AS membership_role))"""), {"tenant_id": tenant_id, "membership_id": membership_id, "role": role.value})
     result = await session.execute(text("""UPDATE tenant_memberships SET display_name=:display_name, role=CAST(:role AS membership_role), updated_at=now() WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL AND role <> 'OWNER' RETURNING id, tenant_id, external_user_id, role::text AS role, status::text AS status, display_name, email"""), {"tenant_id": tenant_id, "membership_id": membership_id, "display_name": display_name.strip(), "role": role.value})
     row=result.mappings().one_or_none()
     return None if row is None else _membership(row)
