@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getProfessionals, getReceptionAgenda, getReceptionNow, getUnits, type AgendaEntry, type Professional, type ReceptionResourceState } from "../lib/bcos-api";
 import { BcosShell } from "../components/bcos-shell";
-import { requireTenantRole } from "../lib/auth/authorization";
+import { requireTenantPermission } from "../lib/auth/authorization";
 import { auth } from "../lib/auth/server";
 
 export const dynamic = "force-dynamic";
