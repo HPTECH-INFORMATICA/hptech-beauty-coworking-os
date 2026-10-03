@@ -43,24 +43,23 @@ def _public_slug(tenant_name: str, tenant_id: UUID) -> str:
 
 
 
-@router.get("/policy", response_model=ManagedOnboardingDocument | None)
-async def get_tenant_onboarding_policy(
+@router.get("/documents", response_model=list[ManagedOnboardingDocument])
+async def list_tenant_onboarding_documents(
     session: SessionDependency, context: TenantContextDependency
-) -> ManagedOnboardingDocument | None:
+) -> list[ManagedOnboardingDocument]:
     require_permission(context, Permission.TENANT_ADMIN)
     result = await session.execute(
         text("""SELECT id, tenant_id, document_type, version, title, content, status, effective_at
                 FROM professional_onboarding_documents
-                WHERE tenant_id=:tenant_id AND document_type='UNIT_POLICY'
-                  AND status='ACTIVE' AND deleted_at IS NULL LIMIT 1"""),
+                WHERE tenant_id=:tenant_id AND status='ACTIVE' AND deleted_at IS NULL
+                ORDER BY document_type, effective_at"""),
         {"tenant_id": context.tenant_id},
     )
-    row = result.mappings().one_or_none()
-    return ManagedOnboardingDocument.model_validate(dict(row)) if row is not None else None
+    return [ManagedOnboardingDocument.model_validate(dict(row)) for row in result.mappings().all()]
 
 
-@router.put("/policy", response_model=ManagedOnboardingDocument)
-async def publish_tenant_onboarding_policy(
+@router.put("/documents", response_model=ManagedOnboardingDocument)
+async def publish_tenant_onboarding_document(
     payload: OnboardingDocumentPublish,
     session: SessionDependency,
     context: TenantContextDependency,
@@ -68,25 +67,26 @@ async def publish_tenant_onboarding_policy(
     require_permission(context, Permission.TENANT_ADMIN)
     await session.execute(
         text("""UPDATE professional_onboarding_documents SET status='INACTIVE', updated_at=now()
-                WHERE tenant_id=:tenant_id AND document_type='UNIT_POLICY'
+                WHERE tenant_id=:tenant_id AND document_type=:document_type
                   AND status='ACTIVE' AND deleted_at IS NULL"""),
-        {"tenant_id": context.tenant_id},
+        {"tenant_id": context.tenant_id, "document_type": payload.document_type},
     )
     result = await session.execute(
         text("""INSERT INTO professional_onboarding_documents
                 (tenant_id, document_type, version, title, content, status, effective_at)
-                VALUES (:tenant_id, 'UNIT_POLICY', :version, :title, :content, 'ACTIVE', now())
+                VALUES (:tenant_id, :document_type, :version, :title, :content, 'ACTIVE', now())
                 RETURNING id, tenant_id, document_type, version, title, content, status, effective_at"""),
         {"tenant_id": context.tenant_id, **payload.model_dump()},
     )
     row = dict(result.mappings().one())
     await create_audit_log(
         session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id,
-        action="PROFESSIONAL_ONBOARDING_POLICY_PUBLISHED", entity_type="professional_onboarding_document",
-        entity_id=row["id"], metadata={"version": payload.version},
+        action="PROFESSIONAL_ONBOARDING_DOCUMENT_PUBLISHED", entity_type="professional_onboarding_document",
+        entity_id=row["id"], metadata={"document_type": payload.document_type, "version": payload.version},
     )
     await session.commit()
     return ManagedOnboardingDocument.model_validate(row)
+
 
 @router.post("/links", response_model=ProfessionalOnboardingLink, status_code=status.HTTP_200_OK)
 async def create_onboarding_link(session: SessionDependency, context: TenantContextDependency) -> ProfessionalOnboardingLink:
@@ -135,13 +135,12 @@ async def get_public_onboarding(slug: str, session: SessionDependency) -> Public
         text("""SELECT id, document_type, version, title, content
                 FROM professional_onboarding_documents
                 WHERE status='ACTIVE' AND deleted_at IS NULL
-                  AND (document_type='PLATFORM_TERMS' OR (document_type='UNIT_POLICY' AND tenant_id=:tenant_id))
+                  AND tenant_id=:tenant_id
                 ORDER BY document_type ASC"""),
         {"tenant_id": link["tenant_id"]},
     )
     rows = [dict(row) for row in documents.mappings().all()]
-    types = {row["document_type"] for row in rows}
-    if types != {"PLATFORM_TERMS", "UNIT_POLICY"}:
+    if not rows:
         raise HTTPException(status_code=409, detail="ONBOARDING_DOCUMENTS_NOT_CONFIGURED")
     return PublicOnboarding(tenant_name=link["tenant_name"], documents=[OnboardingDocument.model_validate(row) for row in rows])
 
@@ -161,12 +160,12 @@ async def submit_onboarding(slug: str, payload: ProfessionalOnboardingSubmit, se
     documents = await session.execute(
         text("""SELECT id, document_type, version FROM professional_onboarding_documents
                 WHERE status='ACTIVE' AND deleted_at IS NULL
-                  AND (document_type='PLATFORM_TERMS' OR (document_type='UNIT_POLICY' AND tenant_id=:tenant_id))"""),
+                  AND tenant_id=:tenant_id"""),
         {"tenant_id": link["tenant_id"]},
     )
     required = {row["id"]: dict(row) for row in documents.mappings().all()}
     accepted = set(payload.accepted_document_ids)
-    if len(required) != 2 or accepted != set(required):
+    if not required or accepted != set(required):
         raise HTTPException(status_code=422, detail="ALL_CURRENT_ONBOARDING_DOCUMENTS_MUST_BE_ACCEPTED")
     duplicate = await session.execute(
         text("""SELECT 1 FROM professional_onboarding_requests

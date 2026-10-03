@@ -12,9 +12,12 @@ def test_self_onboarding_routes_are_exposed() -> None:
     assert "/api/v1/professional-onboarding/requests/{request_id}/approve" in paths
 
 
-def test_public_registration_requires_current_platform_and_unit_documents() -> None:
+def test_public_registration_requires_all_current_tenant_documents() -> None:
     source = (Path(__file__).parents[1] / "src" / "bcos_api" / "professional_onboarding" / "router.py").read_text(encoding="utf-8")
-    assert '{"PLATFORM_TERMS", "UNIT_POLICY"}' in source
+    assert "AND tenant_id=:tenant_id" in source
+    assert "if not rows:" in source
+    assert "accepted != set(required)" in source
+    assert "PLATFORM_TERMS" not in source
     assert "ALL_CURRENT_ONBOARDING_DOCUMENTS_MUST_BE_ACCEPTED" in source
     assert "document_version" in source
 
@@ -51,15 +54,23 @@ def test_alembic_revision_fits_production_version_column() -> None:
 
 def test_document_authority_routes_are_exposed() -> None:
     paths = create_app().openapi()["paths"]
-    assert "/api/v1/professional-onboarding/policy" in paths
-    assert "/api/v1/platform/professional-onboarding/terms" in paths
+    assert "/api/v1/professional-onboarding/documents" in paths
+    assert "/api/v1/platform/professional-onboarding/terms" not in paths
 
 
 def test_document_publication_preserves_authority_boundaries() -> None:
     tenant_router = (Path(__file__).parents[1] / "src" / "bcos_api" / "professional_onboarding" / "router.py").read_text(encoding="utf-8")
     platform_router = (Path(__file__).parents[1] / "src" / "bcos_api" / "platform" / "router.py").read_text(encoding="utf-8")
     assert "require_permission(context, Permission.TENANT_ADMIN)" in tenant_router
-    assert "document_type='UNIT_POLICY'" in tenant_router
-    assert "document_type='PLATFORM_TERMS'" in platform_router
-    assert "PROFESSIONAL_ONBOARDING_POLICY_PUBLISHED" in tenant_router
-    assert "PROFESSIONAL_ONBOARDING_TERMS_PUBLISHED" in platform_router
+    assert "PROFESSIONAL_ONBOARDING_DOCUMENT_PUBLISHED" in tenant_router
+    assert "document_type='PLATFORM_TERMS'" not in tenant_router
+    assert "professional-onboarding/terms" not in platform_router
+
+
+def test_0013_moves_professional_documents_to_tenant_authority() -> None:
+    migration = (Path(__file__).parents[3] / "database" / "migrations" / "versions" / "0013_tenant_professional_documents.py").read_text(encoding="utf-8")
+    assert 'revision: str = "0013_tenant_prof_docs"' in migration
+    assert 'down_revision: str | None = "0012_prof_self_onboarding"' in migration
+    assert "PROFESSIONAL_TERMS" in migration
+    assert "CHECK (tenant_id IS NOT NULL)" in migration
+    assert len("0013_tenant_prof_docs") <= 32

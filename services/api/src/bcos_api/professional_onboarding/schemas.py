@@ -1,5 +1,6 @@
 """Contracts for professional self-onboarding."""
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -28,7 +29,7 @@ class ProfessionalOnboardingSubmit(BaseModel):
     profession: str | None = Field(default=None, max_length=120)
     council_type: str | None = Field(default=None, max_length=40)
     council_number: str | None = Field(default=None, max_length=80)
-    accepted_document_ids: list[UUID] = Field(min_length=2)
+    accepted_document_ids: list[UUID] = Field(min_length=1)
 
 
 class ProfessionalOnboardingRequest(BaseModel):
@@ -55,6 +56,7 @@ class ProfessionalOnboardingLink(BaseModel):
 
 class OnboardingDocumentPublish(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    document_type: Literal["PROFESSIONAL_TERMS", "UNIT_POLICY", "RESERVATION_POLICY", "FINANCIAL_POLICY", "OTHER"]
     version: str = Field(min_length=1, max_length=40)
     title: str = Field(min_length=1, max_length=200)
     content: str = Field(min_length=1)

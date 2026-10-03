@@ -31,10 +31,6 @@ from bcos_api.platform.onboarding.schemas import (
     OwnerInvitationCreate,
 )
 from bcos_api.platform.onboarding.service import onboard_contracting_tenant
-from bcos_api.professional_onboarding.schemas import (
-    ManagedOnboardingDocument,
-    OnboardingDocumentPublish,
-)
 
 router = APIRouter(prefix="/api/v1/platform", tags=["Platform Administration"])
 
@@ -201,47 +197,3 @@ async def create_owner_invitation_endpoint(
         tenant_id=tenant_id,
         external_user_id=external_user_id,
     )
-
-
-@router.get("/professional-onboarding/terms", response_model=ManagedOnboardingDocument | None)
-async def get_platform_onboarding_terms(
-    session: SessionDependency,
-    context: PlatformContextDependency,
-) -> ManagedOnboardingDocument | None:
-    del context
-    result = await session.execute(
-        text("""SELECT id, tenant_id, document_type, version, title, content, status, effective_at
-                FROM professional_onboarding_documents
-                WHERE tenant_id IS NULL AND document_type='PLATFORM_TERMS'
-                  AND status='ACTIVE' AND deleted_at IS NULL LIMIT 1""")
-    )
-    row = result.mappings().one_or_none()
-    return ManagedOnboardingDocument.model_validate(dict(row)) if row is not None else None
-
-
-@router.put("/professional-onboarding/terms", response_model=ManagedOnboardingDocument)
-async def publish_platform_onboarding_terms(
-    payload: OnboardingDocumentPublish,
-    session: SessionDependency,
-    context: PlatformContextDependency,
-) -> ManagedOnboardingDocument:
-    await session.execute(
-        text("""UPDATE professional_onboarding_documents SET status='INACTIVE', updated_at=now()
-                WHERE tenant_id IS NULL AND document_type='PLATFORM_TERMS'
-                  AND status='ACTIVE' AND deleted_at IS NULL""")
-    )
-    result = await session.execute(
-        text("""INSERT INTO professional_onboarding_documents
-                (tenant_id, document_type, version, title, content, status, effective_at)
-                VALUES (NULL, 'PLATFORM_TERMS', :version, :title, :content, 'ACTIVE', now())
-                RETURNING id, tenant_id, document_type, version, title, content, status, effective_at"""),
-        payload.model_dump(),
-    )
-    row = dict(result.mappings().one())
-    await create_platform_audit_log(
-        session, actor_external_user_id=context.external_user_id,
-        action="PROFESSIONAL_ONBOARDING_TERMS_PUBLISHED", entity_type="professional_onboarding_document",
-        entity_id=row["id"], tenant_id=None, metadata={"version": payload.version},
-    )
-    await session.commit()
-    return ManagedOnboardingDocument.model_validate(row)
