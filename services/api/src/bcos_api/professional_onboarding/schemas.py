@@ -55,6 +55,7 @@ class ProfessionalOnboardingLink(BaseModel):
 
 class OnboardingDocumentPublish(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    document_type: Literal["PROFESSIONAL_TERMS", "UNIT_POLICY", "RESERVATION_POLICY", "FINANCIAL_POLICY", "OTHER"]
     version: str = Field(min_length=1, max_length=40)
     title: str = Field(min_length=1, max_length=200)
     content: str = Field(min_length=1)
