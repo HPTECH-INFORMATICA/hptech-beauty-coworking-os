@@ -29,7 +29,7 @@ export type Payment = { id: string; invoice_id: string; idempotency_key: string;
 export type ContractingTenant = { id: string; name: string; slug: string; status: "PENDING_ACTIVATION" | "ACTIVE" | "SUSPENDED" | "INACTIVE"; legal_name: string; trade_name: string; tax_id: string | null; email: string; phone: string | null; owner_external_user_id: string | null; owner_membership_status: "INVITED" | "ACTIVE" | "INACTIVE" | null; created_at: string };
 export type ContractingTenantCreate = { name: string; slug: string; legalName: string; tradeName: string; taxId?: string; email: string; phone?: string; ownerEmail?: string };
 export type TenantMembership = { id: string; tenant_id: string; external_user_id: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; status: "INVITED" | "ACTIVE" | "INACTIVE"; display_name: string | null; email: string | null };
-export type TenantMembershipInvite = { externalUserId: string; role: "ADMIN" | "RECEPTION" | "PROFESSIONAL" };
+export type TenantMembershipInvite = { displayName: string; email: string; role: "ADMIN" | "RECEPTION" | "PROFESSIONAL" };
 export type AccessTenant = { tenant_id: string; tenant_name: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; destination: "/administracao" | "/" | "/profissional" };
 export type AccessResolution = { platform_destination: "/platform" | null; tenants: AccessTenant[] };
 export type PendingInvitation = TenantMembership;
@@ -289,11 +289,8 @@ export async function getTenantMemberships(): Promise<TenantMembership[]> {
   return apiGet<TenantMembership[]>("/api/v1/admin/memberships");
 }
 
-export async function inviteTenantMembership(input: TenantMembershipInvite): Promise<TenantMembership> {
-  return apiPost<TenantMembership>("/api/v1/admin/memberships/invitations", {
-    external_user_id: input.externalUserId,
-    role: input.role,
-  });
+export async function inviteTenantMembership(input: TenantMembershipInvite): Promise<void> {
+  await apiPost("/api/v1/admin/memberships/invitations", { display_name: input.displayName, email: input.email, role: input.role });
 }
 
 export async function updateTenantMembershipStatus(
