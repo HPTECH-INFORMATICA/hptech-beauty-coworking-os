@@ -10,7 +10,7 @@ import {
   createProfessionalAccessInvitation,
   createProfessionalOnboardingLink,
   approveProfessionalOnboardingRequest,
-  publishTenantOnboardingPolicy,
+  publishTenantOnboardingDocument,
   createResource,
   createResourceCategory,
   deleteResourceCategory,
@@ -56,14 +56,15 @@ export async function createProfessionalAction(formData: FormData) {
 }
 
 
-export async function publishProfessionalPolicyAction(formData: FormData) {
-  await publishTenantOnboardingPolicy({
+export async function publishProfessionalDocumentAction(formData: FormData) {
+  await publishTenantOnboardingDocument({
+    document_type: value(formData, "document_type") as "PROFESSIONAL_TERMS" | "UNIT_POLICY" | "RESERVATION_POLICY" | "FINANCIAL_POLICY" | "OTHER",
     version: value(formData, "version"),
     title: value(formData, "title"),
     content: value(formData, "content"),
   });
   revalidatePath("/administracao");
-  redirect("/administracao?policyPublished=1#profissionais");
+  redirect("/administracao?documentPublished=1#profissionais");
 }
 
 export async function createProfessionalRegistrationLinkAction() {
