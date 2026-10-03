@@ -23,7 +23,8 @@ export async function BcosShell({
 }>) {
   const { data: session } = await auth.getSession();
   const identity = session?.user?.name || session?.user?.email || "Usuário autenticado";
-  const canAdminister = tenant.role === "OWNER" || tenant.role === "ADMIN";
+  const can = (permission: AccessTenant["permissions"][number]) => tenant.permissions.includes(permission);
+  const canAdminister = can("ADMIN_CONFIG") || can("USER_ADMIN");
 
   return (
     <div className="bcos-shell">
@@ -34,11 +35,11 @@ export async function BcosShell({
             <div><strong>BCOS</strong><small>{tenant.tenant_name}</small></div>
           </div>
           <nav className="bcos-nav" aria-label="Navegação principal">
-            <Link className={active === "central" ? "active" : ""} href="/">Visão geral</Link>
-            <Link className={active === "agenda" ? "active" : ""} href="/agenda">Agenda</Link>
-            <Link className={active === "disponibilidade" ? "active" : ""} href="/disponibilidade">Disponibilidade</Link>
-            <Link className={active === "check-in" ? "active" : ""} href="/check-in">Check-in e uso</Link>
-            <Link className={active === "financeiro" ? "active" : ""} href="/financeiro">Financeiro</Link>
+            {can("DASHBOARD_VIEW") ? <Link className={active === "central" ? "active" : ""} href="/">Visão geral</Link> : null}
+            {can("AGENDA_VIEW") ? <Link className={active === "agenda" ? "active" : ""} href="/agenda">Agenda</Link> : null}
+            {can("AVAILABILITY_VIEW") ? <Link className={active === "disponibilidade" ? "active" : ""} href="/disponibilidade">Disponibilidade</Link> : null}
+            {can("CHECKIN_MANAGE") ? <Link className={active === "check-in" ? "active" : ""} href="/check-in">Check-in e uso</Link> : null}
+            {can("FINANCE_VIEW") ? <Link className={active === "financeiro" ? "active" : ""} href="/financeiro">Financeiro</Link> : null}
             {canAdminister ? <Link className={active === "administracao" ? "active" : ""} href="/administracao">Administração</Link> : null}
           </nav>
         </div>

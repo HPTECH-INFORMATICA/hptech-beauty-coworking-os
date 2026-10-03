@@ -10,6 +10,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh }),
 }));
 
+vi.mock("../lib/auth/authorization", () => ({ requireTenantPermission: vi.fn().mockResolvedValue({ permissions: ["AGENDA_VIEW","AGENDA_MANAGE","FINANCE_VIEW","FINANCE_MANAGE"] }) }));
 vi.mock("../lib/bcos-api", () => ({
   closeManualInvoice: vi.fn(),
   confirmPixPayment: vi.fn(),

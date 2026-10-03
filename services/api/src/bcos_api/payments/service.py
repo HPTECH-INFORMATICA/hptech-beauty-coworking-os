@@ -50,7 +50,7 @@ async def confirm_pix_payment(
 ) -> tuple[Payment, str, Decimal, Decimal, Decimal]:
     """Register one confirmed PIX and recompute Invoice payment state."""
 
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.FINANCE_MANAGE)
 
     normalized_key = idempotency_key.strip()
     if not normalized_key:

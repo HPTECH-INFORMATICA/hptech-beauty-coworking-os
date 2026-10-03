@@ -1,4 +1,4 @@
-﻿"""Server-side role-based access control for BCOS."""
+"""Server-side role-based access control for BCOS."""
 
 from __future__ import annotations
 
@@ -9,11 +9,22 @@ from bcos_api.tenancy.membership import MembershipRole
 
 
 class Permission(StrEnum):
-    """Core BCOS authorization capabilities."""
+    """BCOS authorization capabilities.
 
+    Legacy aggregate capabilities remain while routes migrate to granular gates.
+    """
     TENANT_ADMIN = "TENANT_ADMIN"
     OPERATIONS = "OPERATIONS"
     PROFESSIONAL_OWN = "PROFESSIONAL_OWN"
+    DASHBOARD_VIEW = "DASHBOARD_VIEW"
+    AGENDA_VIEW = "AGENDA_VIEW"
+    AGENDA_MANAGE = "AGENDA_MANAGE"
+    AVAILABILITY_VIEW = "AVAILABILITY_VIEW"
+    CHECKIN_MANAGE = "CHECKIN_MANAGE"
+    FINANCE_VIEW = "FINANCE_VIEW"
+    FINANCE_MANAGE = "FINANCE_MANAGE"
+    ADMIN_CONFIG = "ADMIN_CONFIG"
+    USER_ADMIN = "USER_ADMIN"
 
 
 class PermissionDenied(Exception):
@@ -21,48 +32,29 @@ class PermissionDenied(Exception):
 
 
 ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
-    MembershipRole.OWNER: frozenset(
-        {
-            Permission.TENANT_ADMIN,
-            Permission.OPERATIONS,
-        }
-    ),
-    MembershipRole.ADMIN: frozenset(
-        {
-            Permission.TENANT_ADMIN,
-            Permission.OPERATIONS,
-        }
-    ),
-    MembershipRole.RECEPTION: frozenset(
-        {
-            Permission.OPERATIONS,
-        }
-    ),
-    MembershipRole.PROFESSIONAL: frozenset(
-        {
-            Permission.PROFESSIONAL_OWN,
-        }
-    ),
+    MembershipRole.OWNER: frozenset(permission for permission in Permission if permission is not Permission.PROFESSIONAL_OWN),
+    MembershipRole.ADMIN: frozenset({
+        Permission.TENANT_ADMIN, Permission.OPERATIONS,
+        Permission.DASHBOARD_VIEW, Permission.AGENDA_VIEW, Permission.AGENDA_MANAGE,
+        Permission.AVAILABILITY_VIEW, Permission.CHECKIN_MANAGE,
+        Permission.FINANCE_VIEW, Permission.FINANCE_MANAGE,
+        Permission.ADMIN_CONFIG, Permission.USER_ADMIN,
+    }),
+    MembershipRole.RECEPTION: frozenset({
+        Permission.OPERATIONS, Permission.DASHBOARD_VIEW, Permission.AGENDA_VIEW,
+        Permission.AGENDA_MANAGE, Permission.AVAILABILITY_VIEW, Permission.CHECKIN_MANAGE,
+    }),
+    MembershipRole.PROFESSIONAL: frozenset({Permission.PROFESSIONAL_OWN}),
 }
 
 
-def has_permission(
-    context: TenantContext,
-    permission: Permission,
-) -> bool:
+def has_permission(context: TenantContext, permission: Permission) -> bool:
     """Return whether the authorized tenant context has a permission."""
+    effective = context.permissions if context.permissions is not None else ROLE_PERMISSIONS[context.role]
+    return permission in effective
 
-    return permission in ROLE_PERMISSIONS[context.role]
 
-
-def require_permission(
-    context: TenantContext,
-    permission: Permission,
-) -> None:
+def require_permission(context: TenantContext, permission: Permission) -> None:
     """Require one permission for the authorized tenant context."""
-
     if not has_permission(context, permission):
-        raise PermissionDenied(
-            "Authenticated identity does not have permission "
-            "to perform this operation."
-        )
+        raise PermissionDenied("Authenticated identity does not have permission to perform this operation.")

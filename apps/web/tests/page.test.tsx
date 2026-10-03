@@ -51,7 +51,7 @@ const mockedGetReceptionNow = vi.mocked(getReceptionNow);
 
 describe("HomePage", () => {
   beforeEach(() => {
-    mockedGetAccessResolution.mockResolvedValue({ platform_destination: null, tenants: [{ tenant_id: "tenant-1", tenant_name: "La Beauté Batel", role: "RECEPTION", destination: "/" }] });
+    mockedGetAccessResolution.mockResolvedValue({ platform_destination: null, tenants: [{ tenant_id: "tenant-1", tenant_name: "La Beauté Batel", role: "RECEPTION", destination: "/", permissions: ["DASHBOARD_VIEW"] }] });
     mockedGetUnits.mockResolvedValue([
       {
         id: "unit-1",

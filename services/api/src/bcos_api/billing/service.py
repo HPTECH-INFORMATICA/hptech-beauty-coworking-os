@@ -45,7 +45,7 @@ async def list_tenant_invoices(
     limit: int,
     offset: int,
 ) -> list[InvoiceSummary]:
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.FINANCE_VIEW)
     rows = await repository.list_invoices(
         session,
         tenant_id=context.tenant_id,

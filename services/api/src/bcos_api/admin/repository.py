@@ -34,6 +34,7 @@ async def set_membership_status(session: AsyncSession, *, tenant_id: UUID, membe
 
 
 async def update_membership_details(session: AsyncSession, *, tenant_id: UUID, membership_id: UUID, display_name: str, role: MembershipRole) -> TenantMembership | None:
+    await session.execute(text("""DELETE FROM tenant_membership_permission_overrides o WHERE o.membership_id=:membership_id AND o.tenant_id=:tenant_id AND EXISTS (SELECT 1 FROM tenant_memberships m WHERE m.id=o.membership_id AND m.role <> CAST(:role AS membership_role))"""), {"tenant_id": tenant_id, "membership_id": membership_id, "role": role.value})
     result = await session.execute(text("""UPDATE tenant_memberships SET display_name=:display_name, role=CAST(:role AS membership_role), updated_at=now() WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL AND role <> 'OWNER' RETURNING id, tenant_id, external_user_id, role::text AS role, status::text AS status, display_name, email"""), {"tenant_id": tenant_id, "membership_id": membership_id, "display_name": display_name.strip(), "role": role.value})
     row=result.mappings().one_or_none()
     return None if row is None else _membership(row)
@@ -42,3 +43,31 @@ async def remove_membership(session: AsyncSession, *, tenant_id: UUID, membershi
     result = await session.execute(text("""UPDATE tenant_memberships SET status='INACTIVE', deleted_at=now(), updated_at=now() WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL AND role <> 'OWNER' RETURNING id, tenant_id, external_user_id, role::text AS role, status::text AS status, display_name, email"""), {"tenant_id": tenant_id, "membership_id": membership_id})
     row=result.mappings().one_or_none()
     return None if row is None else _membership(row)
+
+
+async def get_membership_permission_overrides(session: AsyncSession, *, tenant_id: UUID, membership_id: UUID) -> dict[str, bool]:
+    result = await session.execute(text("""SELECT permission, granted
+        FROM tenant_membership_permission_overrides
+        WHERE tenant_id=:tenant_id AND membership_id=:membership_id"""),
+        {"tenant_id": tenant_id, "membership_id": membership_id})
+    return {str(row["permission"]): bool(row["granted"]) for row in result.mappings().all()}
+
+
+async def replace_membership_permission_overrides(
+    session: AsyncSession, *, tenant_id: UUID, membership_id: UUID, values: dict[str, bool]
+) -> bool:
+    target = await session.execute(text("""SELECT role::text AS role FROM tenant_memberships
+        WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL"""),
+        {"tenant_id": tenant_id, "membership_id": membership_id})
+    row = target.mappings().one_or_none()
+    if row is None or row["role"] == "OWNER":
+        return False
+    await session.execute(text("""DELETE FROM tenant_membership_permission_overrides
+        WHERE tenant_id=:tenant_id AND membership_id=:membership_id"""),
+        {"tenant_id": tenant_id, "membership_id": membership_id})
+    for permission, granted in values.items():
+        await session.execute(text("""INSERT INTO tenant_membership_permission_overrides
+            (tenant_id,membership_id,permission,granted)
+            VALUES (:tenant_id,:membership_id,:permission,:granted)"""),
+            {"tenant_id": tenant_id, "membership_id": membership_id, "permission": permission, "granted": granted})
+    return True

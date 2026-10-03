@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from bcos_api.tenancy.membership import MembershipRole, MembershipStatus
+from bcos_api.tenancy.rbac import Permission
 
 
 class MembershipInvitationCreate(BaseModel):
@@ -34,6 +35,12 @@ class MembershipResponse(BaseModel):
     status: MembershipStatus
     display_name: str | None = None
     email: str | None = None
+    permissions: list[Permission] = Field(default_factory=list)
+
+
+class MembershipPermissionsUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    permissions: list[Permission]
 
 
 class TeamInvitationResponse(BaseModel):

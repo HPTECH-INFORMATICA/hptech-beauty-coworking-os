@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bcos_api.tenancy.membership import MembershipRole
@@ -23,6 +24,7 @@ class TenantContext:
     membership_id: UUID
     external_user_id: str
     role: MembershipRole
+    permissions: frozenset[object] | None = None
 
 
 async def resolve_tenant_context(
@@ -48,9 +50,31 @@ async def resolve_tenant_context(
             "to the requested tenant."
         )
 
+    # Import here to avoid a module cycle: RBAC depends on TenantContext.
+    from bcos_api.tenancy.rbac import ROLE_PERMISSIONS, Permission
+
+    effective = set(ROLE_PERMISSIONS[membership.role])
+    overrides = await session.execute(
+        text("""SELECT permission, granted
+                FROM tenant_membership_permission_overrides
+                WHERE tenant_id=:tenant_id AND membership_id=:membership_id"""),
+        {"tenant_id": membership.tenant_id, "membership_id": membership.id},
+    )
+    for row in overrides.mappings().all():
+        permission = Permission(row["permission"])
+        if row["granted"]:
+            effective.add(permission)
+        else:
+            effective.discard(permission)
+
+    # OWNER authority is immutable from tenant-side permission overrides.
+    if membership.role is MembershipRole.OWNER:
+        effective = set(ROLE_PERMISSIONS[MembershipRole.OWNER])
+
     return TenantContext(
         tenant_id=membership.tenant_id,
         membership_id=membership.id,
         external_user_id=membership.external_user_id,
         role=membership.role,
+        permissions=frozenset(effective),
     )

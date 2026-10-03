@@ -170,7 +170,7 @@ async def list_bookings(
 ) -> list[Booking]:
     """List tenant bookings for an authorized operations user."""
 
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.AGENDA_VIEW)
 
     if (
         starts_from is not None
@@ -212,7 +212,7 @@ async def get_booking(
 ) -> Booking:
     """Load one tenant booking for an authorized operations user."""
 
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.AGENDA_VIEW)
 
     booking = await repository_get_booking(
         session,
@@ -240,7 +240,7 @@ async def create_booking(
 ) -> Booking:
     """Create one PENDING booking using trusted server-side pricing."""
 
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.AGENDA_MANAGE)
     validate_booking_period(starts_at, ends_at)
 
     creation = await _prepare_booking_creation(
@@ -350,7 +350,7 @@ async def create_booking_series(
 ) -> tuple[BookingSeries, list[Booking]]:
     """Create one finite series and all of its PENDING occurrences."""
 
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.AGENDA_MANAGE)
 
     occurrences = expand_booking_occurrences(
         starts_at=starts_at,
@@ -455,7 +455,7 @@ async def confirm_booking(
 ) -> Booking:
     """Confirm one PENDING booking and acquire canonical occupancy."""
 
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.AGENDA_MANAGE)
 
     booking = await repository_get_booking(
         session,
@@ -494,7 +494,7 @@ async def cancel_booking(
 ) -> Booking:
     """Cancel one PENDING or CONFIRMED booking and audit the operation."""
 
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.AGENDA_MANAGE)
 
     booking = await repository_get_booking(
         session,
@@ -554,7 +554,7 @@ async def extend_booking(
 ) -> Booking:
     """Extend one CONFIRMED booking while preserving its snapshot and buffers."""
 
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.AGENDA_MANAGE)
 
     booking = await repository_get_booking(
         session,
@@ -603,7 +603,7 @@ async def cancel_booking_series(
 ) -> BookingSeries:
     """Cancel one series and its future cancellable booking occurrences."""
 
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.AGENDA_MANAGE)
 
     series = await repository_get_booking_series(
         session,

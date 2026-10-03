@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { inviteTenantMembership, removeTenantMembership, updateTenantMembership, updateTenantMembershipStatus } from "../../../lib/bcos-api";
+import { inviteTenantMembership, removeTenantMembership, updateTenantMembership, updateTenantMembershipPermissions, updateTenantMembershipStatus, type TenantPermission } from "../../../lib/bcos-api";
 
 function required(formData: FormData, key: string) {
   const value=String(formData.get(key) ?? "").trim();
@@ -39,5 +39,16 @@ export async function updateUserAction(formData: FormData) {
 
 export async function removeUserAction(formData: FormData) {
   await removeTenantMembership(required(formData,"membership_id"));
+  revalidatePath("/administracao/usuarios");
+}
+
+const editablePermissions: TenantPermission[] = [
+  "DASHBOARD_VIEW","AGENDA_VIEW","AGENDA_MANAGE","AVAILABILITY_VIEW","CHECKIN_MANAGE",
+  "FINANCE_VIEW","FINANCE_MANAGE","ADMIN_CONFIG","USER_ADMIN","PROFESSIONAL_OWN",
+];
+
+export async function updateUserPermissionsAction(formData: FormData) {
+  const selected = editablePermissions.filter(permission => formData.get(permission) === "on");
+  await updateTenantMembershipPermissions(required(formData,"membership_id"), selected);
   revalidatePath("/administracao/usuarios");
 }
