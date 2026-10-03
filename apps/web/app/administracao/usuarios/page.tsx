@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getTenantMemberships, getTenantProfile } from "../../../lib/bcos-api";
+import { getTenantMemberships } from "../../../lib/bcos-api";
 import { inviteUserAction, removeUserAction, updateUserAction, updateUserStatusAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ const permissions = {
 } as const;
 
 export default async function UsersAdminPage({ searchParams }: { searchParams: Promise<{ invited?: string }> }) {
-  const [{ invited }, memberships, profile] = await Promise.all([searchParams, getTenantMemberships(), getTenantProfile()]);
+  const [{ invited }, memberships] = await Promise.all([searchParams, getTenantMemberships()]);
 
   return <main className="admin-page admin-users-page">
     <header className="admin-page-head">
@@ -42,8 +42,8 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
       <div className="tenant-user-list">
         {memberships.map((item) => {
           const owner=item.role==="OWNER";
-          const displayName=item.display_name || (owner ? profile.trade_name : null) || "Usuário sem nome cadastrado";
-          const email=item.email || (owner ? profile.email : null);
+          const displayName=item.display_name || (owner ? "Proprietário principal" : "Usuário sem nome cadastrado");
+          const email=item.email;
           return <article key={item.id} className="tenant-user-card tenant-user-card-rich">
             <div className="tenant-user-identity">
               <span className="tenant-user-role">{roleLabel[item.role]}</span>
