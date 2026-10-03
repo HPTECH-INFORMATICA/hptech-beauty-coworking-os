@@ -50,7 +50,7 @@ async def check_in(
 ) -> Usage:
     """Create the real Usage for one confirmed Booking."""
 
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.CHECKIN_MANAGE)
 
     booking = await get_booking(
         session,
@@ -97,7 +97,7 @@ async def check_out(
 ) -> Usage:
     """Complete one active Usage and emit USAGE_COMPLETED atomically."""
 
-    require_permission(context, Permission.OPERATIONS)
+    require_permission(context, Permission.CHECKIN_MANAGE)
 
     usage = await get_usage(
         session,
