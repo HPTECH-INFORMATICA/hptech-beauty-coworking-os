@@ -53,37 +53,36 @@ describe("tenant administration", () => {
     vi.mocked(getTenantMemberships).mockResolvedValue([]);
   });
 
-  it("loads and renders reception hours for every unit", async () => {
+  it("presents administration as focused submodules instead of one long page", async () => {
     render(await TenantAdministrationPage());
+    expect(screen.getByRole("heading", { level: 1, name: "Configurações do coworking" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Submenu da administração" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Empresa.*Dados do negócio/i })).toHaveAttribute("href", "/administracao?area=empresa");
+    expect(screen.getByRole("link", { name: /Unidades.*2 locais/i })).toHaveAttribute("href", "/administracao?area=unidades");
+    expect(screen.getByRole("link", { name: /Profissionais.*1 vinculados/i })).toHaveAttribute("href", "/administracao?area=profissionais");
+    expect(screen.getByRole("link", { name: /Usuários.*Acessos e permissões/i })).toHaveAttribute("href", "/administracao/usuarios");
+    expect(screen.getByRole("heading", { level: 2, name: "Dados do negócio" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "Tipos e espaços da unidade" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "Regras comerciais" })).not.toBeInTheDocument();
+  });
+
+  it("opens functioning as its own administration module", async () => {
+    render(await TenantAdministrationPage({ searchParams: Promise.resolve({ area: "funcionamento" }) }));
     expect(mockedGetReceptionHours).toHaveBeenCalledWith("unit-1");
     expect(mockedGetReceptionHours).toHaveBeenCalledWith("unit-2");
     expect(screen.getAllByRole("button", { name: "Salvar horários" })).toHaveLength(2);
-    const mondayOpens = screen.getAllByLabelText("Segunda abre");
-    const mondayCloses = screen.getAllByLabelText("Segunda fecha");
-    expect(mondayOpens).toHaveLength(2);
-    expect(mondayCloses).toHaveLength(2);
-    expect(mondayOpens[0]).toHaveValue("08:00");
-    expect(mondayCloses[0]).toHaveValue("18:00");
-    expect(screen.getByRole("heading", { level: 1, name: "Configurações do coworking" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Áreas de configuração" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Usuários.*Acessos e permissões/i })).toHaveAttribute("href", "/administracao/usuarios");
-    expect(screen.getByText("Regras comerciais")).toBeInTheDocument();
-    expect(screen.getByText("Como configurar")).toBeInTheDocument();
-    expect(screen.getByText(/prioridade serve para desempatar regras aplicáveis/i)).toBeInTheDocument();
-    expect(screen.getByText(/dispensar a cobrança do excedente/i)).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Salvar unidade" })).toHaveLength(2);
-    expect(screen.getByRole("button", { name: "Salvar espaço" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Salvar profissional" })).toBeInTheDocument();
-    expect(screen.getByText("Sala 01")).toBeInTheDocument();
+    expect(screen.getAllByLabelText("Segunda abre")[0]).toHaveValue("08:00");
+    expect(screen.getAllByLabelText("Segunda fecha")[0]).toHaveValue("18:00");
+    expect(screen.queryByRole("heading", { level: 2, name: "Dados do negócio" })).not.toBeInTheDocument();
+  });
+
+  it("opens professionals with governed documents and self-onboarding together", async () => {
+    render(await TenantAdministrationPage({ searchParams: Promise.resolve({ area: "profissionais" }) }));
+    expect(screen.getByText("Termos e políticas do seu negócio")).toBeInTheDocument();
+    expect(screen.getByText("O profissional faz o próprio cadastro")).toBeInTheDocument();
+    expect(screen.getByText("Profissionais vinculados")).toBeInTheDocument();
     expect(screen.getByText("Cristiana")).toBeInTheDocument();
-    expect(screen.getByText(/Enfermeira Esteta/)).toBeInTheDocument();
-    expect(screen.getByText("1. Tipos de espaço")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Salvar tipo" })).toBeInTheDocument();
-    expect(screen.getByText("Excluir tipo de espaço")).toBeInTheDocument();
-    expect(screen.getByText("2. Espaços da unidade")).toBeInTheDocument();
-    expect(screen.getAllByText("Configurar semana")).toHaveLength(2);
-    expect(screen.getAllByText("Ativa", { selector: "span" })).toHaveLength(2);
-    expect(screen.getAllByText("Ativo", { selector: "span" })).toHaveLength(3);
+    expect(screen.queryByRole("heading", { level: 2, name: "Dados do negócio" })).not.toBeInTheDocument();
   });
 
   it("renders existing pricing rules with edit and safe removal controls", async () => {
@@ -93,7 +92,7 @@ describe("tenant administration", () => {
       rule_definition: { schema_version: 1, modality: "HOURLY", base_price_amount: "39.00", overtime: { hourly_price_amount: "39.00", proportional_until_minutes: 29, full_hour_from_minutes: 30, forgiveness_allowed: false } },
       valid_from: null, valid_until: null,
     }]);
-    render(await TenantAdministrationPage());
+    render(await TenantAdministrationPage({ searchParams: Promise.resolve({ area: "precos" }) }));
     expect(screen.getByText("SALA 01 - HORA")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar regra" })).toBeInTheDocument();
     expect(screen.getByText("Excluir regra de preço")).toBeInTheDocument();
