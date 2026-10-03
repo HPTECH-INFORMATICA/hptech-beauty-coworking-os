@@ -5,6 +5,7 @@ import AgendaPage from "../app/agenda/page";
 import { getProfessionals, getReceptionAgenda, getResources, getUnits } from "../lib/bcos-api";
 
 vi.mock("../app/operations/actions", () => ({ confirmBookingAction: vi.fn(), createBookingAction: vi.fn() }));
+vi.mock("../lib/auth/authorization", () => ({ requireTenantPermission: vi.fn().mockResolvedValue({ permissions: ["AGENDA_VIEW","AGENDA_MANAGE","FINANCE_VIEW","FINANCE_MANAGE"] }) }));
 vi.mock("../lib/bcos-api", () => ({ getProfessionals: vi.fn(), getReceptionAgenda: vi.fn(), getResources: vi.fn(), getUnits: vi.fn() }));
 
 const mockedGetUnits = vi.mocked(getUnits);
