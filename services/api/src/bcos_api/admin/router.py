@@ -25,6 +25,7 @@ from bcos_api.admin.service import (
 )
 from bcos_api.audit.repository import create_audit_log
 from bcos_api.db.session import get_async_session
+from bcos_api.notifications.email import send_team_access_invitation
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.dependencies import get_tenant_context
 from bcos_api.tenancy.rbac import Permission, require_permission
@@ -52,7 +53,15 @@ async def invite_membership_endpoint(payload: MembershipInvitationCreate, sessio
     await session.execute(text("""UPDATE tenant_user_invitations SET status='REVOKED', updated_at=now() WHERE tenant_id=:tenant_id AND lower(email)=:email AND status='PENDING' AND deleted_at IS NULL"""), {"tenant_id":context.tenant_id,"email":email})
     result=await session.execute(text("""INSERT INTO tenant_user_invitations (tenant_id,display_name,email,role,invited_by_external_user_id) VALUES (:tenant_id,:display_name,:email,CAST(:role AS membership_role),:actor) RETURNING id,tenant_id,display_name,email,role::text AS role,status,expires_at"""), {"tenant_id":context.tenant_id,"display_name":name,"email":email,"role":payload.role.value,"actor":context.external_user_id})
     row=dict(result.mappings().one())
-    await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id, action="TENANT_USER_INVITED", entity_type="tenant_user_invitation", entity_id=row["id"], metadata={"display_name":name,"email":email,"role":payload.role.value})
+    tenant_result=await session.execute(text("SELECT name FROM tenants WHERE id=:tenant_id"), {"tenant_id":context.tenant_id})
+    tenant_name=str(tenant_result.scalar_one())
+    role_label={"ADMIN":"Administrador","RECEPTION":"Recepção","PROFESSIONAL":"Profissional"}[payload.role.value]
+    try:
+        send_team_access_invitation(to_email=email, display_name=name, tenant_name=tenant_name, role_label=role_label)
+    except RuntimeError as exc:
+        await session.rollback()
+        raise HTTPException(status_code=503, detail="TEAM_INVITATION_EMAIL_FAILED") from exc
+    await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id, action="TENANT_USER_INVITED", entity_type="tenant_user_invitation", entity_id=row["id"], metadata={"display_name":name,"email":email,"role":payload.role.value,"delivery":"EMAIL"})
     await session.commit()
     row["expires_at"]=row["expires_at"].isoformat()
     return TeamInvitationResponse.model_validate(row)
