@@ -41,7 +41,8 @@ describe("contracting customer access state", () => {
     mocks.getSession.mockResolvedValue({ data: { session: {}, user: { id: "pro-1", email: "cris@example.com" } } });
     mocks.getAccessResolution.mockResolvedValue({ platform_destination: null, tenants: [] });
     mocks.getPendingInvitations.mockResolvedValue([]);
-    mocks.getPendingTeamInvitations.mockResolvedValue([]);\n    mocks.getPendingProfessionalInvitations.mockResolvedValue([{ id: "invite-1", tenant_id: "tenant-1", tenant_name: "LA BEAUTE", professional_id: "professional-1", professional_name: "Cristiana", email: "cris@example.com", status: "PENDING", expires_at: "2026-10-09T12:00:00Z" }]);
+    mocks.getPendingTeamInvitations.mockResolvedValue([]);
+    mocks.getPendingProfessionalInvitations.mockResolvedValue([{ id: "invite-1", tenant_id: "tenant-1", tenant_name: "LA BEAUTE", professional_id: "professional-1", professional_name: "Cristiana", email: "cris@example.com", status: "PENDING", expires_at: "2026-10-09T12:00:00Z" }]);
 
     render(await AccessPage({ searchParams: Promise.resolve({}) }));
 
