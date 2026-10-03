@@ -33,6 +33,7 @@ export type TenantMembershipInvite = { displayName: string; email: string; role:
 export type AccessTenant = { tenant_id: string; tenant_name: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; destination: "/administracao" | "/" | "/profissional" };
 export type AccessResolution = { platform_destination: "/platform" | null; tenants: AccessTenant[] };
 export type PendingInvitation = TenantMembership;
+export type TeamInvitation = { id:string; tenant_id:string; tenant_name:string; display_name:string; email:string; role:"ADMIN"|"RECEPTION"|"PROFESSIONAL"; status:string; expires_at:string };
 export type PublicProfessionalOnboarding = { tenant_name: string; documents: Array<{ id: string; document_type: string; version: string; title: string; content: string }> };
 export type ProfessionalOnboardingRequest = { id: string; tenant_id: string; tenant_name: string; name: string; email: string; phone: string | null; profession: string | null; council_type: string | null; council_number: string | null; status: string; created_at: string };
 export type ManagedOnboardingDocument = { id: string; tenant_id: string | null; document_type: "PROFESSIONAL_TERMS" | "UNIT_POLICY" | "RESERVATION_POLICY" | "FINANCIAL_POLICY" | "OTHER"; version: string; title: string; content: string; status: string; effective_at: string };
@@ -180,6 +181,14 @@ export async function getPendingProfessionalInvitations(): Promise<ProfessionalA
 
 export async function acceptProfessionalInvitation(invitationId: string): Promise<ProfessionalAccessInvitation> {
   return identityApiRequest<ProfessionalAccessInvitation>(`/api/v1/professional-invitations/${encodeURIComponent(invitationId)}/accept`, { method: "POST" });
+}
+
+export async function getPendingTeamInvitations(): Promise<TeamInvitation[]> {
+  return identityApiRequest<TeamInvitation[]>("/api/v1/invitations/team");
+}
+
+export async function acceptTeamInvitation(invitationId: string): Promise<TenantMembership> {
+  return identityApiRequest<TenantMembership>(`/api/v1/invitations/team/${encodeURIComponent(invitationId)}/accept`, { method: "POST" });
 }
 
 export async function getPendingInvitations(): Promise<PendingInvitation[]> {
