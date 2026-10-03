@@ -22,7 +22,7 @@ def upgrade() -> None:
           updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
           PRIMARY KEY (membership_id, permission),
           CONSTRAINT fk_member_permission_membership
-            FOREIGN KEY (membership_id) REFERENCES tenant_memberships(id) ON DELETE CASCADE,
+            FOREIGN KEY (membership_id, tenant_id) REFERENCES tenant_memberships(id, tenant_id) ON DELETE CASCADE,
           CONSTRAINT fk_member_permission_tenant
             FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT,
           CONSTRAINT ck_member_permission_name CHECK (permission IN (
