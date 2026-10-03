@@ -109,7 +109,7 @@ describe("tenant administration", () => {
 
   it("renders users as administration content without a legacy product shell", async () => {
     render(await UsersAdminPage({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByRole("heading", { level: 1, name: "Usuários e acessos" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Usuários, papéis e permissões" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Configurações" })).toHaveAttribute("href", "/administracao");
     expect(document.querySelector(".tenant-admin-shell")).not.toBeInTheDocument();
   });
