@@ -96,6 +96,9 @@ describe("tenant administration", () => {
     expect(screen.getByText("SALA 01 - HORA")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar regra" })).toBeInTheDocument();
     expect(screen.getByText("Excluir regra de preço")).toBeInTheDocument();
+    expect(document.querySelector(".admin-pricing-layout")).toBeInTheDocument();
+    expect(document.querySelector(".admin-pricing-record")).toBeInTheDocument();
+    expect(document.querySelector(".admin-pricing-editor")).toBeInTheDocument();
     expect(screen.getByText(/Reservas já criadas preservam o snapshot de preço/)).toBeInTheDocument();
   });
 
