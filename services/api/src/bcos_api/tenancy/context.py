@@ -5,10 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bcos_api.tenancy.membership import MembershipRole
-from sqlalchemy import text
 from bcos_api.tenancy.repository import get_membership, tenant_is_active
 
 
@@ -51,7 +51,7 @@ async def resolve_tenant_context(
         )
 
     # Import here to avoid a module cycle: RBAC depends on TenantContext.
-    from bcos_api.tenancy.rbac import Permission, ROLE_PERMISSIONS
+    from bcos_api.tenancy.rbac import ROLE_PERMISSIONS, Permission
 
     effective = set(ROLE_PERMISSIONS[membership.role])
     overrides = await session.execute(
