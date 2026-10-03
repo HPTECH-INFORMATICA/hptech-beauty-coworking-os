@@ -18,7 +18,7 @@ def _membership(row: object) -> TenantMembership:
 
 
 async def list_memberships(session: AsyncSession, *, tenant_id: UUID) -> list[TenantMembership]:
-    result = await session.execute(text("""SELECT id, tenant_id, external_user_id, role::text AS role, status::text AS status, display_name, email FROM tenant_memberships WHERE tenant_id=:tenant_id AND deleted_at IS NULL ORDER BY created_at ASC, id ASC"""), {"tenant_id": tenant_id})
+    result = await session.execute(text("""SELECT m.id, m.tenant_id, m.external_user_id, m.role::text AS role, m.status::text AS status, COALESCE(m.display_name, NULLIF(to_jsonb(u)->>'name','')) AS display_name, COALESCE(m.email, NULLIF(to_jsonb(u)->>'email','')) AS email FROM tenant_memberships m LEFT JOIN neon_auth."user" u ON u.id::text=m.external_user_id WHERE m.tenant_id=:tenant_id AND m.deleted_at IS NULL ORDER BY m.created_at ASC, m.id ASC"""), {"tenant_id": tenant_id})
     return [_membership(row) for row in result.mappings().all()]
 
 
@@ -33,8 +33,8 @@ async def set_membership_status(session: AsyncSession, *, tenant_id: UUID, membe
     return None if row is None else _membership(row)
 
 
-async def update_membership_details(session: AsyncSession, *, tenant_id: UUID, membership_id: UUID, display_name: str, email: str | None, role: MembershipRole) -> TenantMembership | None:
-    result = await session.execute(text("""UPDATE tenant_memberships SET display_name=:display_name, email=:email, role=CAST(:role AS membership_role), updated_at=now() WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL AND role <> 'OWNER' RETURNING id, tenant_id, external_user_id, role::text AS role, status::text AS status, display_name, email"""), {"tenant_id": tenant_id, "membership_id": membership_id, "display_name": display_name.strip(), "email": email.strip().lower() if email else None, "role": role.value})
+async def update_membership_details(session: AsyncSession, *, tenant_id: UUID, membership_id: UUID, display_name: str, role: MembershipRole) -> TenantMembership | None:
+    result = await session.execute(text("""UPDATE tenant_memberships SET display_name=:display_name, role=CAST(:role AS membership_role), updated_at=now() WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL AND role <> 'OWNER' RETURNING id, tenant_id, external_user_id, role::text AS role, status::text AS status, display_name, email"""), {"tenant_id": tenant_id, "membership_id": membership_id, "display_name": display_name.strip(), "role": role.value})
     row=result.mappings().one_or_none()
     return None if row is None else _membership(row)
 
