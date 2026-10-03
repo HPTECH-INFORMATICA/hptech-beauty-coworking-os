@@ -83,7 +83,7 @@ async def update_membership_status_endpoint(membership_id: UUID, payload: Member
 @router.patch("/{membership_id}", response_model=MembershipResponse)
 async def update_membership_details_endpoint(membership_id: UUID, payload: MembershipDetailsUpdate, session: SessionDependency, context: TenantContextDependency) -> MembershipResponse:
     try:
-        item=await update_tenant_membership_details(session, context=context, membership_id=membership_id, display_name=payload.display_name, email=payload.email, role=payload.role)
+        item=await update_tenant_membership_details(session, context=context, membership_id=membership_id, display_name=payload.display_name, role=payload.role)
         if item is None:
             raise HTTPException(status_code=404, detail="Membership not found or protected.")
         await session.commit()
