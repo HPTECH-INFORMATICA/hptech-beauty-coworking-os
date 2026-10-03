@@ -108,6 +108,23 @@ describe("tenant administration", () => {
     expect(screen.getByRole("link", { name: "Configurações" })).toHaveAttribute("href", "/administracao");
     expect(document.querySelector(".tenant-admin-shell")).not.toBeInTheDocument();
   });
+  it("shows trusted user identity, role, permissions and protects the owner", async () => {
+    vi.mocked(getTenantMemberships).mockResolvedValue([
+      { id: "owner-1", tenant_id: "tenant-1", external_user_id: "auth-owner", role: "OWNER", status: "ACTIVE", display_name: "Pessoa Proprietária", email: "owner@example.com" },
+      { id: "reception-1", tenant_id: "tenant-1", external_user_id: "auth-reception", role: "RECEPTION", status: "ACTIVE", display_name: "Pessoa Recepção", email: "recepcao@example.com" },
+    ]);
+    render(await UsersAdminPage({ searchParams: Promise.resolve({}) }));
+    expect(screen.getByText("Pessoa Proprietária")).toBeInTheDocument();
+    expect(screen.getByText("owner@example.com")).toBeInTheDocument();
+    expect(screen.getByText("Pessoa Recepção")).toBeInTheDocument();
+    expect(screen.getAllByText("Operação").length).toBeGreaterThan(0);
+    expect(screen.getByText("Acesso do proprietário protegido")).toBeInTheDocument();
+    expect(screen.getByText("Bloquear acesso")).toBeInTheDocument();
+    expect(screen.getByText("Remover acesso")).toBeInTheDocument();
+    expect(screen.getByText("E-mail de acesso")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("owner@example.com")).not.toBeInTheDocument();
+  });
+
   it("maps the commercial pricing form to the frozen V1 definition", () => {
     const form = new FormData();
     form.set("modality", "HOURLY");
