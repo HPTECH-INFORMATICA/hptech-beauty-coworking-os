@@ -3,9 +3,8 @@
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel
-
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
