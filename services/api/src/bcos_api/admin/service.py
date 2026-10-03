@@ -46,12 +46,12 @@ async def update_tenant_membership_status(session: AsyncSession, *, context: Ten
     return membership
 
 
-async def update_tenant_membership_details(session: AsyncSession, *, context: TenantContext, membership_id: UUID, display_name: str, email: str | None, role: MembershipRole) -> TenantMembership | None:
+async def update_tenant_membership_details(session: AsyncSession, *, context: TenantContext, membership_id: UUID, display_name: str, role: MembershipRole) -> TenantMembership | None:
     require_permission(context, Permission.TENANT_ADMIN)
     validate_invited_role(actor_role=context.role, invited_role=role)
     if not display_name.strip():
         raise InvalidMembershipAdministration("User name must not be blank.")
-    membership = await update_membership_details(session, tenant_id=context.tenant_id, membership_id=membership_id, display_name=display_name, email=email, role=role)
+    membership = await update_membership_details(session, tenant_id=context.tenant_id, membership_id=membership_id, display_name=display_name, role=role)
     if membership is not None:
         await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id, action="TENANT_MEMBERSHIP_DETAILS_CHANGED", entity_type="tenant_membership", entity_id=membership.id, metadata={"display_name": membership.display_name, "email": membership.email, "role": membership.role.value})
     return membership
