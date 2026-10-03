@@ -35,7 +35,7 @@ export type AccessResolution = { platform_destination: "/platform" | null; tenan
 export type PendingInvitation = TenantMembership;
 export type PublicProfessionalOnboarding = { tenant_name: string; documents: Array<{ id: string; document_type: string; version: string; title: string; content: string }> };
 export type ProfessionalOnboardingRequest = { id: string; tenant_id: string; tenant_name: string; name: string; email: string; phone: string | null; profession: string | null; council_type: string | null; council_number: string | null; status: string; created_at: string };
-export type ManagedOnboardingDocument = { id: string; tenant_id: string | null; document_type: "PLATFORM_TERMS" | "UNIT_POLICY"; version: string; title: string; content: string; status: string; effective_at: string };
+export type ManagedOnboardingDocument = { id: string; tenant_id: string | null; document_type: "PROFESSIONAL_TERMS" | "UNIT_POLICY" | "RESERVATION_POLICY" | "FINANCIAL_POLICY" | "OTHER"; version: string; title: string; content: string; status: string; effective_at: string };
 export type ProfessionalOnboardingLink = { id: string; public_slug: string; public_path: string };
 
 export async function getPublicProfessionalOnboarding(slug: string): Promise<PublicProfessionalOnboarding> {
@@ -46,17 +46,11 @@ export async function submitPublicProfessionalOnboarding(slug: string, payload: 
   return publicApiPost<ProfessionalOnboardingRequest>(`/api/v1/professional-onboarding/public/${encodeURIComponent(slug)}`, payload);
 }
 
-export async function getTenantOnboardingPolicy(): Promise<ManagedOnboardingDocument | null> {
-  return apiGet<ManagedOnboardingDocument | null>("/api/v1/professional-onboarding/policy");
+export async function getTenantOnboardingDocuments(): Promise<ManagedOnboardingDocument[]> {
+  return apiGet<ManagedOnboardingDocument[]>("/api/v1/professional-onboarding/documents");
 }
-export async function publishTenantOnboardingPolicy(input: { version: string; title: string; content: string }): Promise<ManagedOnboardingDocument> {
-  return apiPut<ManagedOnboardingDocument>("/api/v1/professional-onboarding/policy", input);
-}
-export async function getPlatformOnboardingTerms(): Promise<ManagedOnboardingDocument | null> {
-  return platformApiRequest<ManagedOnboardingDocument | null>("/api/v1/platform/professional-onboarding/terms");
-}
-export async function publishPlatformOnboardingTerms(input: { version: string; title: string; content: string }): Promise<ManagedOnboardingDocument> {
-  return platformApiRequest<ManagedOnboardingDocument>("/api/v1/platform/professional-onboarding/terms", { method: "PUT", body: JSON.stringify(input) });
+export async function publishTenantOnboardingDocument(input: { document_type: ManagedOnboardingDocument["document_type"]; version: string; title: string; content: string }): Promise<ManagedOnboardingDocument> {
+  return apiPut<ManagedOnboardingDocument>("/api/v1/professional-onboarding/documents", input);
 }
 
 export async function createProfessionalOnboardingLink(): Promise<ProfessionalOnboardingLink> {
