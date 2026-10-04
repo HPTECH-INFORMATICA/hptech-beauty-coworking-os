@@ -107,5 +107,13 @@ def send_team_access_invitation(
         with urllib.request.urlopen(request, timeout=10) as response:
             if response.status < 200 or response.status >= 300:
                 raise RuntimeError("Transactional email provider rejected the team invitation.")
-    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as exc:
-        raise RuntimeError("Team invitation email could not be delivered.") from exc
+    except urllib.error.HTTPError as exc:
+        try:
+            provider_body = exc.read().decode("utf-8", errors="replace")[:1000]
+        except Exception:
+            provider_body = ""
+        raise RuntimeError(
+            f"Team invitation email provider rejected request: HTTP {exc.code}; {provider_body}"
+        ) from exc
+    except (urllib.error.URLError, TimeoutError) as exc:
+        raise RuntimeError(f"Team invitation email transport failed: {exc}") from exc
