@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { inviteTenantMembership, removeTenantMembership, updateTenantMembership, updateTenantMembershipPermissions, updateTenantMembershipStatus, type TenantPermission } from "../../../lib/bcos-api";
+import { assignTenantMembershipAccessRole, inviteTenantMembership, removeTenantMembership, updateTenantMembership, updateTenantMembershipPermissions, updateTenantMembershipStatus, type TenantPermission } from "../../../lib/bcos-api";
 
 function required(formData: FormData, key: string) {
   const value=String(formData.get(key) ?? "").trim();
@@ -34,6 +34,11 @@ export async function updateUserAction(formData: FormData) {
     display_name: required(formData,"display_name"),
     role: role as "ADMIN"|"RECEPTION"|"PROFESSIONAL",
   });
+  revalidatePath("/administracao/usuarios");
+}
+
+export async function assignUserRoleAction(formData: FormData) {
+  await assignTenantMembershipAccessRole(required(formData,"membership_id"),required(formData,"access_role_id"));
   revalidatePath("/administracao/usuarios");
 }
 
