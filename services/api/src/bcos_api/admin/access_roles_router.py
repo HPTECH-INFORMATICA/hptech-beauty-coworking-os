@@ -99,13 +99,13 @@ async def _replace_permissions(session: AsyncSession, *, tenant_id: UUID, role_i
 
 @router.get("/catalog")
 async def permission_catalog(context: TenantContextDependency) -> dict[str, object]:
-    require_permission(context, Permission.USER_ADMIN)
+    require_permission(context, Permission.ROLE_MANAGE)
     return {"permissions": PERMISSION_CATALOG}
 
 
 @router.get("", response_model=list[AccessRoleResponse])
 async def list_roles(session: SessionDependency, context: TenantContextDependency) -> list[AccessRoleResponse]:
-    require_permission(context, Permission.USER_ADMIN)
+    require_permission(context, Permission.ROLE_MANAGE)
     result = await session.execute(text("""SELECT r.id,r.tenant_id,r.name,r.description,r.active,
         COALESCE(array_agg(p.permission ORDER BY p.permission) FILTER (WHERE p.granted), '{}') AS permissions,
         COUNT(DISTINCT m.id) FILTER (WHERE m.deleted_at IS NULL) AS assigned_users
@@ -119,7 +119,7 @@ async def list_roles(session: SessionDependency, context: TenantContextDependenc
 
 @router.post("", response_model=AccessRoleResponse, status_code=status.HTTP_201_CREATED)
 async def create_role(payload: AccessRoleCreate, session: SessionDependency, context: TenantContextDependency) -> AccessRoleResponse:
-    require_permission(context, Permission.USER_ADMIN)
+    require_permission(context, Permission.ROLE_MANAGE)
     name = payload.name.strip()
     if not name:
         raise HTTPException(status_code=422, detail="Nome do papel é obrigatório.")
@@ -143,7 +143,7 @@ async def create_role(payload: AccessRoleCreate, session: SessionDependency, con
 
 @router.put("/{role_id}", response_model=AccessRoleResponse)
 async def update_role(role_id: UUID, payload: AccessRoleUpdate, session: SessionDependency, context: TenantContextDependency) -> AccessRoleResponse:
-    require_permission(context, Permission.USER_ADMIN)
+    require_permission(context, Permission.ROLE_MANAGE)
     permissions = _permissions(payload.permissions)
     try:
         result = await session.execute(text("""UPDATE tenant_access_roles
@@ -169,7 +169,7 @@ async def update_role(role_id: UUID, payload: AccessRoleUpdate, session: Session
 
 @router.delete("/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_role(role_id: UUID, session: SessionDependency, context: TenantContextDependency) -> None:
-    require_permission(context, Permission.USER_ADMIN)
+    require_permission(context, Permission.ROLE_MANAGE)
     assigned = await session.execute(text("""SELECT 1 FROM tenant_memberships
         WHERE tenant_id=:tenant_id AND access_role_id=:role_id AND deleted_at IS NULL LIMIT 1"""),
         {"tenant_id": context.tenant_id, "role_id": role_id})
