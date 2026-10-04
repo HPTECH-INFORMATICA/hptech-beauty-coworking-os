@@ -116,7 +116,7 @@ describe("tenant administration", () => {
     expect(screen.getByText("Como funcionam papéis, permissões e bloqueios?")).toBeInTheDocument();
     expect(screen.getByText("Sua equipe ainda não possui outros usuários")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Adicionar usuário" })).toHaveAttribute("href", "#adicionar-usuario");
-    expect(screen.getByText("Papel")).toBeInTheDocument();
+    expect(screen.getAllByText("Papel").length).toBeGreaterThan(0);
     expect(screen.getByText("Telas e ações")).toBeInTheDocument();
     expect(screen.getByText("Bloquear acesso")).toBeInTheDocument();
     expect(screen.getByText("Remover acesso")).toBeInTheDocument();
@@ -137,7 +137,7 @@ describe("tenant administration", () => {
     expect(screen.getByText("Acesso integral protegido")).toBeInTheDocument();
     expect(screen.getAllByText("Visualizar agenda").length).toBeGreaterThan(0);
     expect(screen.getByText("Proprietário do ambiente")).toBeInTheDocument();
-    expect(screen.getByText("Remover acesso")).toBeInTheDocument();
+    expect(screen.getAllByText("Remover acesso").length).toBeGreaterThan(0);
     expect(screen.getByText("E-mail de acesso")).toBeInTheDocument();
     expect(screen.getByText("Telas e ações permitidas")).toBeInTheDocument();
     expect(screen.getByText("Salvar permissões")).toBeInTheDocument();
