@@ -127,15 +127,18 @@ describe("tenant administration", () => {
     expect(screen.getByRole("link", { name: "Adicionar usuário" })).toHaveAttribute("href", "#adicionar-usuario");
     expect(screen.getByRole("button", { name: "Enviar convite de acesso" })).toBeInTheDocument();
   });
-  it("renders roles as a horizontal access matrix instead of a narrow side form", async () => {
+  it("renders roles as a self-explanatory capability configurator", async () => {
     render(await RolesPage());
     expect(screen.getByRole("heading", { level: 1, name: "Papéis e permissões" })).toBeInTheDocument();
     expect(screen.getByText("Seu negócio define os papéis da equipe")).toBeInTheDocument();
-    expect(document.querySelector(".role-permission-matrix")).toBeInTheDocument();
+    expect(document.querySelector(".role-capability-groups")).toBeInTheDocument();
+    expect(document.querySelector(".role-permission-matrix")).not.toBeInTheDocument();
     expect(document.querySelector(".tenant-invite-card-sticky")).not.toBeInTheDocument();
     expect(screen.getAllByLabelText("Agenda: Visualizar")).toHaveLength(2);
     expect(screen.getAllByLabelText("Agenda: Criar")).toHaveLength(2);
-    expect(screen.getByRole("link", { name: "+ Novo papel" })).toHaveAttribute("href", "#novo-papel");
+    expect(screen.queryByText("—")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "+ Novo papel" })).not.toBeInTheDocument();
+    expect(screen.getAllByText("Permitir esta ação em agenda.").length).toBeGreaterThan(0);
   });
 
   it("shows trusted user identity, role, permissions and protects the owner", async () => {
