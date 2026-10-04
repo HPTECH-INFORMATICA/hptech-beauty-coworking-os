@@ -138,6 +138,8 @@ describe("tenant administration", () => {
     expect(screen.getAllByLabelText("Agenda: Criar")).toHaveLength(2);
     expect(screen.queryByText("—")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "+ Novo papel" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Criar primeiro papel" })).not.toBeInTheDocument();
+    expect(screen.getByText("Adicionar papel")).toBeInTheDocument();
     expect(screen.getAllByText("Permitir esta ação em agenda.").length).toBeGreaterThan(0);
   });
 
