@@ -12,9 +12,7 @@ function required(formData: FormData, key: string) {
 }
 
 export async function inviteUserAction(formData: FormData) {
-  const role=required(formData,"role");
-  if(!["ADMIN","RECEPTION","PROFESSIONAL"].includes(role)) throw new Error("Papel inválido.");
-  await inviteTenantMembership({displayName:required(formData,"display_name"),email:required(formData,"email"),role:role as "ADMIN"|"RECEPTION"|"PROFESSIONAL"});
+  await inviteTenantMembership({displayName:required(formData,"display_name"),email:required(formData,"email"),accessRoleId:required(formData,"access_role_id")});
   revalidatePath("/administracao/usuarios");
   redirect("/administracao/usuarios?invited=1");
 }
