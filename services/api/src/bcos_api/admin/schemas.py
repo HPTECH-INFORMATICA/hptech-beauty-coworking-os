@@ -12,7 +12,8 @@ class MembershipInvitationCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     display_name: str = Field(min_length=1, max_length=160)
     email: str = Field(min_length=3, max_length=255)
-    role: MembershipRole
+    role: MembershipRole = MembershipRole.RECEPTION
+    access_role_id: UUID
 
 
 class MembershipDetailsUpdate(BaseModel):
