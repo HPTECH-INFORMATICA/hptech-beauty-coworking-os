@@ -113,8 +113,14 @@ describe("tenant administration", () => {
     expect(screen.getByRole("link", { name: "Configurações" })).toHaveAttribute("href", "/administracao");
     expect(document.querySelector(".tenant-admin-shell")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Gerenciador de acessos" })).toBeInTheDocument();
-    expect(screen.getByText("Nenhum usuário da equipe para gerenciar")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Adicionar primeiro usuário" })).toHaveAttribute("href", "#adicionar-usuario");
+    expect(screen.getByText("Gerenciamento liberado para o proprietário")).toBeInTheDocument();
+    expect(screen.getByText("Ainda não há usuários da equipe")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Adicionar usuário" })).toHaveAttribute("href", "#adicionar-usuario");
+    expect(screen.getByText("Papéis")).toBeInTheDocument();
+    expect(screen.getByText("Telas")).toBeInTheDocument();
+    expect(screen.getByText("Permissões")).toBeInTheDocument();
+    expect(screen.getByText("Bloqueio")).toBeInTheDocument();
+    expect(screen.getByText("Remoção")).toBeInTheDocument();
   });
   it("shows trusted user identity, role, permissions and protects the owner", async () => {
     vi.mocked(getTenantMemberships).mockResolvedValue([
@@ -126,7 +132,8 @@ describe("tenant administration", () => {
     expect(screen.getByText("Pessoa Proprietária")).toBeInTheDocument();
     expect(screen.getByText("owner@example.com")).toBeInTheDocument();
     expect(screen.getByText("Pessoa Recepção")).toBeInTheDocument();
-    expect(screen.queryByText("Nenhum usuário da equipe para gerenciar")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ainda não há usuários da equipe")).not.toBeInTheDocument();
+    expect(screen.getByText("Gerenciamento liberado para o proprietário")).toBeInTheDocument();
     expect(screen.getByText("Acesso integral protegido")).toBeInTheDocument();
     expect(screen.getAllByText("Visualizar agenda").length).toBeGreaterThan(0);
     expect(screen.getByText("Proprietário do ambiente")).toBeInTheDocument();
