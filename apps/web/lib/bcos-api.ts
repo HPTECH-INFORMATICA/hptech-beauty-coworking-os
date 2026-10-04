@@ -312,6 +312,10 @@ export async function deleteAccessRole(roleId:string): Promise<void> {
   return apiRequest<void>(`/api/v1/admin/access-roles/${encodeURIComponent(roleId)}`, {method:"DELETE"});
 }
 
+export async function assignTenantMembershipAccessRole(membershipId:string,accessRoleId:string): Promise<void> {
+  return apiRequest<void>(`/api/v1/admin/access-roles/memberships/${encodeURIComponent(membershipId)}/role`, {method:"PUT",body:JSON.stringify({access_role_id:accessRoleId})});
+}
+
 export async function getTenantMemberships(): Promise<TenantMembership[]> {
   return apiGet<TenantMembership[]>("/api/v1/admin/memberships");
 }
