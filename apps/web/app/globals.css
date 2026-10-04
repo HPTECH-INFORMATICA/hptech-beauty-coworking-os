@@ -1988,3 +1988,15 @@ svg {
 .role-empty{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px;border:1px dashed var(--line-strong);border-radius:14px;background:var(--surface-soft)}.role-empty strong{font-size:12px}.role-empty p{margin:4px 0 0;color:var(--text-soft);font-size:10px}.role-empty a{padding:10px 13px;border-radius:9px;background:var(--surface-deep);color:#fff;font-size:10px;font-weight:800}
 @media(max-width:900px){.role-governance-banner,.role-editor-heading,.role-editor-footer{align-items:flex-start;flex-direction:column}.role-governance-stats{width:100%}.role-governance-stats>span{flex:1}.role-identity-grid{grid-template-columns:1fr}.role-editor-footer>div:last-child{width:100%}.role-editor-footer button{flex:1}}
 @media(max-width:620px){.role-governance-stats{display:grid;grid-template-columns:repeat(3,1fr)}.role-record>summary{align-items:flex-start;flex-direction:column}.role-record-meta{flex-wrap:wrap}.role-directory,.role-create-card{padding:16px}.role-empty{align-items:flex-start;flex-direction:column}}
+
+
+/* Role permission configurator: show only real capabilities; no synthetic empty cells. */
+.role-capability-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.role-capability-group{min-width:0;padding:0;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.role-capability-group legend{margin-left:14px;padding:0 7px;color:var(--text);font-size:12px;font-weight:900}
+.role-capability-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;padding:10px}
+.role-capability-option{display:flex!important;align-items:flex-start!important;gap:10px!important;min-height:58px;padding:11px!important;border:1px solid var(--line);border-radius:10px;background:var(--surface-soft);cursor:pointer}
+.role-capability-option input{width:17px!important;min-width:17px!important;height:17px!important;min-height:17px!important;margin:2px 0 0}
+.role-capability-option>span{display:grid;gap:3px}.role-capability-option b{font-size:10px}.role-capability-option small{color:var(--text-soft);font-size:9px;line-height:1.35;font-weight:500}
+@media(max-width:900px){.role-capability-groups{grid-template-columns:1fr}}
+@media(max-width:560px){.role-capability-options{grid-template-columns:1fr}}
