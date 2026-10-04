@@ -66,6 +66,11 @@ class AccessRoleUpdate(AccessRoleCreate):
     active: bool = True
 
 
+class MembershipAccessRoleUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    access_role_id: UUID
+
+
 class AccessRoleResponse(BaseModel):
     id: UUID
     tenant_id: UUID
@@ -177,4 +182,29 @@ async def delete_role(role_id: UUID, session: SessionDependency, context: Tenant
         raise HTTPException(status_code=404, detail="Papel não encontrado.")
     await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id,
         action="TENANT_ACCESS_ROLE_REMOVED", entity_type="tenant_access_role", entity_id=role_id, metadata={})
+    await session.commit()
+
+
+@router.put("/memberships/{membership_id}/role", status_code=status.HTTP_204_NO_CONTENT)
+async def assign_membership_role(membership_id: UUID, payload: MembershipAccessRoleUpdate, session: SessionDependency, context: TenantContextDependency) -> None:
+    """Assign one customer-defined role to a non-owner membership."""
+    require_permission(context, Permission.USER_ADMIN)
+    role = await session.execute(text("""SELECT id FROM tenant_access_roles
+        WHERE id=:role_id AND tenant_id=:tenant_id AND active=TRUE AND deleted_at IS NULL"""),
+        {"role_id": payload.access_role_id, "tenant_id": context.tenant_id})
+    if role.first() is None:
+        raise HTTPException(status_code=404, detail="Papel ativo não encontrado.")
+    result = await session.execute(text("""UPDATE tenant_memberships
+        SET access_role_id=:role_id, updated_at=now()
+        WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL AND role <> 'OWNER'
+        RETURNING id"""), {"role_id": payload.access_role_id, "membership_id": membership_id, "tenant_id": context.tenant_id})
+    if result.first() is None:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado ou proprietário protegido.")
+    # Individual overrides must not silently survive a role reassignment.
+    await session.execute(text("""DELETE FROM tenant_membership_permission_overrides
+        WHERE tenant_id=:tenant_id AND membership_id=:membership_id"""),
+        {"tenant_id": context.tenant_id, "membership_id": membership_id})
+    await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id,
+        action="TENANT_MEMBERSHIP_ACCESS_ROLE_ASSIGNED", entity_type="tenant_membership", entity_id=membership_id,
+        metadata={"access_role_id": str(payload.access_role_id)})
     await session.commit()
