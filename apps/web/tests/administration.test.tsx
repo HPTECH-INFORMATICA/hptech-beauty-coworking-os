@@ -142,7 +142,7 @@ describe("tenant administration", () => {
     expect(screen.getAllByText("Remover acesso").length).toBeGreaterThan(0);
     expect(screen.getByText("E-mail de acesso")).toBeInTheDocument();
     expect(screen.getByText("Telas e ações permitidas")).toBeInTheDocument();
-    expect(screen.getByText("Salvar permissões")).toBeInTheDocument();
+    expect(screen.getByText("Salvar permissões individuais")).toBeInTheDocument();
     expect(screen.getByText("Dados e papel")).toBeInTheDocument();
     expect(screen.getByText("Papel cadastrado")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Atendimento")).toBeInTheDocument();
