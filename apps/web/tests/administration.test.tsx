@@ -133,8 +133,8 @@ describe("tenant administration", () => {
     expect(screen.getByText("Seu negócio define os papéis da equipe")).toBeInTheDocument();
     expect(document.querySelector(".role-permission-matrix")).toBeInTheDocument();
     expect(document.querySelector(".tenant-invite-card-sticky")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Agenda: Visualizar")).toBeInTheDocument();
-    expect(screen.getByLabelText("Agenda: Criar")).toBeInTheDocument();
+    expect(screen.getAllByLabelText("Agenda: Visualizar")).toHaveLength(2);
+    expect(screen.getAllByLabelText("Agenda: Criar")).toHaveLength(2);
     expect(screen.getByRole("link", { name: "+ Novo papel" })).toHaveAttribute("href", "#novo-papel");
   });
 
