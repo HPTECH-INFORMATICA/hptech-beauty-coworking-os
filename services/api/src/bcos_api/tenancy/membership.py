@@ -8,7 +8,12 @@ from uuid import UUID
 
 
 class MembershipRole(StrEnum):
-    """Roles supported by the BCOS tenant membership model."""
+    """Internal membership categories.
+
+    OWNER is the protected tenant authority. Non-owner values remain as
+    compatibility categories while business access is governed by the
+    tenant-managed access_role_id.
+    """
 
     OWNER = "OWNER"
     ADMIN = "ADMIN"
@@ -17,8 +22,6 @@ class MembershipRole(StrEnum):
 
 
 class MembershipStatus(StrEnum):
-    """Statuses supported by the BCOS tenant membership model."""
-
     INVITED = "INVITED"
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
@@ -26,8 +29,6 @@ class MembershipStatus(StrEnum):
 
 @dataclass(frozen=True)
 class TenantMembership:
-    """Authenticated user's membership within one BCOS tenant."""
-
     id: UUID
     tenant_id: UUID
     external_user_id: str
@@ -35,9 +36,8 @@ class TenantMembership:
     status: MembershipStatus
     display_name: str | None = None
     email: str | None = None
+    access_role_id: UUID | None = None
 
     @property
     def is_active(self) -> bool:
-        """Return whether this membership authorizes tenant access."""
-
         return self.status is MembershipStatus.ACTIVE

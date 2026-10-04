@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bcos_api.admin.domain import InvalidMembershipAdministration, validate_invited_role
+from bcos_api.admin.domain import InvalidMembershipAdministration
 from bcos_api.admin.profile_repository import get_tenant_profile, update_tenant_profile
 from bcos_api.admin.profile_schemas import TenantProfileResponse, TenantProfileUpdate
 from bcos_api.admin.repository import (
@@ -50,24 +50,29 @@ async def list_memberships_endpoint(session: SessionDependency, context: TenantC
 
 @router.post("/invitations", response_model=TeamInvitationResponse, status_code=status.HTTP_201_CREATED)
 async def invite_membership_endpoint(payload: MembershipInvitationCreate, session: SessionDependency, context: TenantContextDependency) -> TeamInvitationResponse:
-    require_permission(context, Permission.USER_ADMIN)
-    validate_invited_role(actor_role=context.role, invited_role=payload.role)
+    require_permission(context, Permission.USER_CREATE)
+    access_role = await session.execute(text("""SELECT id,name FROM tenant_access_roles
+        WHERE id=:role_id AND tenant_id=:tenant_id AND active=TRUE AND deleted_at IS NULL"""),
+        {"role_id": payload.access_role_id, "tenant_id": context.tenant_id})
+    access_role_row = access_role.mappings().one_or_none()
+    if access_role_row is None:
+        raise HTTPException(status_code=422, detail="Selecione um papel cadastrado e ativo.")
     email=payload.email.strip().lower()
     name=payload.display_name.strip()
     if not name or "@" not in email:
         raise HTTPException(status_code=422, detail="Nome e e-mail válidos são obrigatórios.")
     await session.execute(text("""UPDATE tenant_user_invitations SET status='REVOKED', updated_at=now() WHERE tenant_id=:tenant_id AND lower(email)=:email AND status='PENDING' AND deleted_at IS NULL"""), {"tenant_id":context.tenant_id,"email":email})
-    result=await session.execute(text("""INSERT INTO tenant_user_invitations (tenant_id,display_name,email,role,invited_by_external_user_id) VALUES (:tenant_id,:display_name,:email,CAST(:role AS membership_role),:actor) RETURNING id,tenant_id,display_name,email,role::text AS role,status,expires_at"""), {"tenant_id":context.tenant_id,"display_name":name,"email":email,"role":payload.role.value,"actor":context.external_user_id})
+    result=await session.execute(text("""INSERT INTO tenant_user_invitations (tenant_id,display_name,email,role,access_role_id,invited_by_external_user_id) VALUES (:tenant_id,:display_name,:email,'RECEPTION',:access_role_id,:actor) RETURNING id,tenant_id,display_name,email,role::text AS role,status,expires_at"""), {"tenant_id":context.tenant_id,"display_name":name,"email":email,"access_role_id":payload.access_role_id,"actor":context.external_user_id})
     row=dict(result.mappings().one())
     tenant_result=await session.execute(text("SELECT name FROM tenants WHERE id=:tenant_id"), {"tenant_id":context.tenant_id})
     tenant_name=str(tenant_result.scalar_one())
-    role_label={"ADMIN":"Administrador","RECEPTION":"Recepção","PROFESSIONAL":"Profissional"}[payload.role.value]
+    role_label=str(access_role_row["name"])
     try:
         send_team_access_invitation(to_email=email, display_name=name, tenant_name=tenant_name, role_label=role_label)
     except RuntimeError as exc:
         await session.rollback()
         raise HTTPException(status_code=503, detail="TEAM_INVITATION_EMAIL_FAILED") from exc
-    await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id, action="TENANT_USER_INVITED", entity_type="tenant_user_invitation", entity_id=row["id"], metadata={"display_name":name,"email":email,"role":payload.role.value,"delivery":"EMAIL"})
+    await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id, action="TENANT_USER_INVITED", entity_type="tenant_user_invitation", entity_id=row["id"], metadata={"display_name":name,"email":email,"access_role_id":str(payload.access_role_id),"access_role_name":access_role_row["name"],"delivery":"EMAIL"})
     await session.commit()
     row["expires_at"]=row["expires_at"].isoformat()
     return TeamInvitationResponse.model_validate(row)
@@ -89,7 +94,7 @@ async def update_membership_status_endpoint(membership_id: UUID, payload: Member
 @router.patch("/{membership_id}", response_model=MembershipResponse)
 async def update_membership_details_endpoint(membership_id: UUID, payload: MembershipDetailsUpdate, session: SessionDependency, context: TenantContextDependency) -> MembershipResponse:
     try:
-        item=await update_tenant_membership_details(session, context=context, membership_id=membership_id, display_name=payload.display_name, role=payload.role)
+        item=await update_tenant_membership_details(session, context=context, membership_id=membership_id, display_name=payload.display_name)
         if item is None:
             raise HTTPException(status_code=404, detail="Membership not found or protected.")
         await session.commit()
@@ -112,15 +117,23 @@ async def remove_membership_endpoint(membership_id: UUID, session: SessionDepend
 async def get_membership_permissions_endpoint(
     membership_id: UUID, session: SessionDependency, context: TenantContextDependency
 ) -> dict[str, object]:
-    require_permission(context, Permission.USER_ADMIN)
-    membership_result = await session.execute(text("""SELECT role::text AS role FROM tenant_memberships
+    require_permission(context, Permission.USER_VIEW)
+    membership_result = await session.execute(text("""SELECT role::text AS role, access_role_id FROM tenant_memberships
         WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL"""),
         {"membership_id": membership_id, "tenant_id": context.tenant_id})
     row = membership_result.mappings().one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="Membership not found.")
     role = MembershipRole(row["role"])
-    effective = set(ROLE_PERMISSIONS[role])
+    if role is MembershipRole.OWNER:
+        effective = set(ROLE_PERMISSIONS[role])
+    elif row["access_role_id"] is not None:
+        role_permissions = await session.execute(text("""SELECT permission FROM tenant_access_role_permissions
+            WHERE tenant_id=:tenant_id AND role_id=:role_id AND granted=TRUE"""),
+            {"tenant_id": context.tenant_id, "role_id": row["access_role_id"]})
+        effective = {Permission(item["permission"]) for item in role_permissions.mappings().all()}
+    else:
+        effective = set(ROLE_PERMISSIONS[role])
     overrides = await get_membership_permission_overrides(session, tenant_id=context.tenant_id, membership_id=membership_id)
     for name, granted in overrides.items():
         permission = Permission(name)
@@ -134,7 +147,7 @@ async def update_membership_permissions_endpoint(
     session: SessionDependency, context: TenantContextDependency
 ) -> dict[str, object]:
     require_permission(context, Permission.USER_ADMIN)
-    membership_result = await session.execute(text("""SELECT role::text AS role FROM tenant_memberships
+    membership_result = await session.execute(text("""SELECT role::text AS role, access_role_id FROM tenant_memberships
         WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL"""),
         {"membership_id": membership_id, "tenant_id": context.tenant_id})
     row = membership_result.mappings().one_or_none()
@@ -142,10 +155,27 @@ async def update_membership_permissions_endpoint(
         raise HTTPException(status_code=404, detail="Membership not found or protected.")
     role = MembershipRole(row["role"])
     requested = set(payload.permissions)
-    # Aggregate legacy permissions are derived internally, never customer-editable.
+    if context.role is not MembershipRole.OWNER:
+        actor_permissions = {
+            permission for permission in (context.permissions or frozenset())
+            if isinstance(permission, Permission)
+        }
+        if not requested.issubset(actor_permissions):
+            raise HTTPException(
+                status_code=403,
+                detail="Não é permitido conceder permissões que o próprio usuário não possui.",
+            )
+    # Aggregate legacy permissions are internal. Customer-defined role permissions
+    # are the baseline; per-user differences are stored only as overrides.
     editable = {p for p in Permission if p not in {Permission.TENANT_ADMIN, Permission.OPERATIONS}}
     requested &= editable
-    defaults = set(ROLE_PERMISSIONS[role]) & editable
+    if row["access_role_id"] is not None:
+        role_permissions = await session.execute(text("""SELECT permission FROM tenant_access_role_permissions
+            WHERE tenant_id=:tenant_id AND role_id=:role_id AND granted=TRUE"""),
+            {"tenant_id": context.tenant_id, "role_id": row["access_role_id"]})
+        defaults = {Permission(item["permission"]) for item in role_permissions.mappings().all()} & editable
+    else:
+        defaults = set(ROLE_PERMISSIONS[role]) & editable
     overrides = {p.value: (p in requested) for p in editable if (p in requested) != (p in defaults)}
     if not await replace_membership_permission_overrides(
         session, tenant_id=context.tenant_id, membership_id=membership_id, values=overrides
