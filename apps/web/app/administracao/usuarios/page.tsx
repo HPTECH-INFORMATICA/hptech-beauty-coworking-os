@@ -20,13 +20,15 @@ export default async function UsersAdminPage({searchParams}:{searchParams:Promis
  const [{invited},memberships]=await Promise.all([searchParams,getTenantMemberships()]);
  const entries=await Promise.all(memberships.map(async item=>[item.id,await getTenantMembershipPermissions(item.id)] as const));
  const effective=new Map(entries);
+ const manageableMemberships=memberships.filter(item=>item.role!=="OWNER");
  return <main className="admin-page admin-users-page">
   <header className="admin-page-head"><div><span>ADMINISTRAÇÃO / USUÁRIOS</span><h1>Usuários e acessos</h1><p>Cadastre a equipe, defina o papel e controle exatamente o que cada usuário pode acessar.</p></div>
    <nav className="admin-section-nav"><Link href="/administracao">Configurações</Link><Link className="active" href="/administracao/usuarios">Usuários</Link></nav></header>
   {invited?<div className="platform-success"><strong>Convite enviado</strong><span>O acesso ficará pendente até a pessoa aceitar o vínculo.</span></div>:null}
   <section className="tenant-user-summary"><div><strong>{memberships.length}</strong><span>Usuários</span></div><div><strong>{memberships.filter(x=>x.status==="ACTIVE").length}</strong><span>Ativos</span></div><div><strong>{memberships.filter(x=>x.status==="INACTIVE").length}</strong><span>Bloqueados</span></div></section>
   <section className="tenant-user-workspace">
-   <section className="tenant-user-directory"><div className="tenant-section-title"><div><span>EQUIPE</span><h2>Usuários cadastrados</h2></div><small>Selecione “Gerenciar acesso” para editar dados, permissões ou bloquear/remover um usuário.</small></div>
+   <section className="tenant-user-directory"><div className="tenant-section-title"><div><span>GESTÃO DE ACESSOS</span><h2>Gerenciador de acessos</h2></div>{manageableMemberships.length>0?<small>Abra “Gerenciar acesso” no usuário para editar dados, telas, permissões, bloqueio ou remoção.</small>:<small>O proprietário está protegido. Adicione um usuário da equipe para começar a gerenciar acessos.</small>}</div>
+    {manageableMemberships.length===0?<div className="tenant-access-empty"><div><strong>Nenhum usuário da equipe para gerenciar</strong><p>Hoje existe somente a conta protegida do proprietário. Cadastre uma pessoa da equipe para liberar o gerenciador de papel, telas, permissões, bloqueio e remoção.</p></div><a href="#adicionar-usuario">Adicionar primeiro usuário</a></div>:null}
     <div className="tenant-user-list">{memberships.map(item=>{const owner=item.role==="OWNER",granted=new Set(effective.get(item.id)??[]),name=item.display_name||(owner?"Proprietário principal":"Usuário sem nome");
      return <article key={item.id} className="tenant-user-card tenant-user-card-professional">
       <div className="tenant-user-row">
@@ -53,7 +55,7 @@ export default async function UsersAdminPage({searchParams}:{searchParams:Promis
        </div></details>}
      </article>})}</div>
    </section>
-   <aside className="tenant-invite-card tenant-invite-card-sticky"><span>NOVO USUÁRIO</span><h2>Adicionar à equipe</h2><p>Informe os dados e o papel inicial. Depois você poderá personalizar as permissões.</p>
+   <aside id="adicionar-usuario" className="tenant-invite-card tenant-invite-card-sticky"><span>NOVO USUÁRIO</span><h2>Adicionar à equipe</h2><p>Informe os dados e o papel inicial. Depois você poderá personalizar as permissões.</p>
     <form action={inviteUserAction}><label>Nome<input name="display_name" required placeholder="Nome completo"/></label><label>E-mail<input name="email" type="email" required placeholder="usuario@empresa.com"/></label><label>Papel<select name="role" defaultValue="RECEPTION"><option value="ADMIN">Administrador</option><option value="RECEPTION">Recepção</option><option value="PROFESSIONAL">Profissional</option></select></label><button type="submit">Enviar convite</button></form>
     <div className="tenant-password-policy"><strong>Senha protegida</strong><p>A senha pertence à conta de autenticação do próprio usuário e nunca é exibida nesta administração.</p></div>
    </aside>
