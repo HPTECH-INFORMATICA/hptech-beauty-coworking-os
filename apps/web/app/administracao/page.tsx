@@ -33,7 +33,6 @@ export default async function TenantAdministrationPage({ searchParams = Promise.
   return <main className="admin-page admin-commercial">
     <header className="admin-page-head admin-hero">
       <div><span>ADMINISTRAÇÃO</span><h1>Configurações do coworking</h1><p>Escolha uma área para revisar ou configurar. A operação diária continua separada deste ambiente administrativo.</p></div>
-      <Link className="admin-users-action" href="/administracao/usuarios">Usuários e acessos →</Link>
     </header>
 
     <nav className="admin-subnav" aria-label="Submenu da administração">
