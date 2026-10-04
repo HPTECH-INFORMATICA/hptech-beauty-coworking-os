@@ -19,7 +19,7 @@ from bcos_api.db.session import get_async_session
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.dependencies import get_tenant_context
 from bcos_api.tenancy.membership import MembershipRole
-from bcos_api.tenancy.rbac import Permission, require_permission
+from bcos_api.tenancy.rbac import Permission, PermissionDenied, has_permission, require_permission
 
 router = APIRouter(prefix="/api/v1/admin/access-roles", tags=["Tenant Access Roles"])
 SessionDependency = Annotated[AsyncSession, Depends(get_async_session)]
@@ -118,7 +118,11 @@ async def permission_catalog(context: TenantContextDependency) -> dict[str, obje
 
 @router.get("", response_model=list[AccessRoleResponse])
 async def list_roles(session: SessionDependency, context: TenantContextDependency) -> list[AccessRoleResponse]:
-    require_permission(context, Permission.ROLE_MANAGE)
+    if not any(
+        has_permission(context, permission)
+        for permission in (Permission.USER_VIEW, Permission.USER_CREATE, Permission.USER_ADMIN, Permission.ROLE_MANAGE)
+    ):
+        raise PermissionDenied("Authenticated identity cannot view tenant access roles.")
     result = await session.execute(text("""SELECT r.id,r.tenant_id,r.name,r.description,r.active,
         COALESCE(array_agg(p.permission ORDER BY p.permission) FILTER (WHERE p.granted), '{}') AS permissions,
         COUNT(DISTINCT m.id) FILTER (WHERE m.deleted_at IS NULL) AS assigned_users
