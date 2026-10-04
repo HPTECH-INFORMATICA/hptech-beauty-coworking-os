@@ -124,9 +124,20 @@ describe("tenant administration", () => {
     expect(screen.getByRole("link", { name: "Papéis e permissões" })).toHaveAttribute("href", "/administracao/usuarios/papeis");
     expect(screen.getByText("Gerenciador de acessos do proprietário")).toBeInTheDocument();
     expect(screen.getByText("Sua equipe ainda não possui outros usuários")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Adicionar usuário" })).toHaveAttribute("href", "#adicionar-usuario");
+    expect(screen.queryByRole("link", { name: "Adicionar usuário" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Convidar pessoa" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Enviar convite de acesso" })).toBeInTheDocument();
   });
+
+  it("keeps users navigation single-source without duplicate role or add-user CTAs", async () => {
+    render(await UsersAdminPage({ searchParams: Promise.resolve({}) }));
+    expect(screen.getAllByRole("link", { name: "Papéis e permissões" })).toHaveLength(1);
+    expect(screen.queryByText("Cadastrar ou editar papéis e permissões →")).not.toBeInTheDocument();
+    expect(screen.queryByText("Cadastrar e gerenciar papéis →")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Adicionar usuário" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Convidar pessoa" })).toBeInTheDocument();
+  });
+
   it("renders roles as a self-explanatory capability configurator", async () => {
     render(await RolesPage());
     expect(screen.getByRole("heading", { level: 1, name: "Papéis e permissões" })).toBeInTheDocument();
