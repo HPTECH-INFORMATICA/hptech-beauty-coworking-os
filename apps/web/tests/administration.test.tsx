@@ -110,17 +110,16 @@ describe("tenant administration", () => {
   it("renders users as administration content without a legacy product shell", async () => {
     render(await UsersAdminPage({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { level: 1, name: "Usuários e acessos" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Configurações" })).toHaveAttribute("href", "/administracao");
+    expect(screen.getByRole("link", { name: "← Configurações" })).toHaveAttribute("href", "/administracao");
     expect(document.querySelector(".tenant-admin-shell")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Gerenciador de acessos" })).toBeInTheDocument();
-    expect(screen.getByText("Gerenciamento liberado para o proprietário")).toBeInTheDocument();
+    expect(screen.getByText("Você administra os acessos da equipe")).toBeInTheDocument();
     expect(screen.getByText("Ainda não há usuários da equipe")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Adicionar usuário" })).toHaveAttribute("href", "#adicionar-usuario");
-    expect(screen.getByText("Papéis")).toBeInTheDocument();
-    expect(screen.getByText("Telas")).toBeInTheDocument();
-    expect(screen.getByText("Permissões")).toBeInTheDocument();
-    expect(screen.getByText("Bloqueio")).toBeInTheDocument();
-    expect(screen.getByText("Remoção")).toBeInTheDocument();
+    expect(screen.getByText("1. Papel")).toBeInTheDocument();
+    expect(screen.getByText("2. Telas e ações")).toBeInTheDocument();
+    expect(screen.getByText("3. Bloquear acesso")).toBeInTheDocument();
+    expect(screen.getByText("4. Remover acesso")).toBeInTheDocument();
   });
   it("shows trusted user identity, role, permissions and protects the owner", async () => {
     vi.mocked(getTenantMemberships).mockResolvedValue([
@@ -133,17 +132,17 @@ describe("tenant administration", () => {
     expect(screen.getByText("owner@example.com")).toBeInTheDocument();
     expect(screen.getByText("Pessoa Recepção")).toBeInTheDocument();
     expect(screen.queryByText("Ainda não há usuários da equipe")).not.toBeInTheDocument();
-    expect(screen.getByText("Gerenciamento liberado para o proprietário")).toBeInTheDocument();
+    expect(screen.getByText("Você administra os acessos da equipe")).toBeInTheDocument();
     expect(screen.getByText("Acesso integral protegido")).toBeInTheDocument();
     expect(screen.getAllByText("Visualizar agenda").length).toBeGreaterThan(0);
     expect(screen.getByText("Proprietário do ambiente")).toBeInTheDocument();
     expect(screen.getByText("Remover acesso")).toBeInTheDocument();
     expect(screen.getByText("E-mail de acesso")).toBeInTheDocument();
-    expect(screen.getByText("Telas e permissões")).toBeInTheDocument();
+    expect(screen.getByText("Telas e ações permitidas")).toBeInTheDocument();
     expect(screen.getByText("Salvar permissões")).toBeInTheDocument();
     expect(screen.getByText("Dados e papel")).toBeInTheDocument();
-    expect(screen.getByText("Controle de acesso")).toBeInTheDocument();
-    expect(screen.getByText("Bloquear usuário")).toBeInTheDocument();
+    expect(screen.getByText("Bloqueio e remoção")).toBeInTheDocument();
+    expect(screen.getByText("Bloquear acesso")).toBeInTheDocument();
     expect(screen.getByText("Remover acesso")).toBeInTheDocument();
     expect(screen.queryByDisplayValue("owner@example.com")).not.toBeInTheDocument();
   });
