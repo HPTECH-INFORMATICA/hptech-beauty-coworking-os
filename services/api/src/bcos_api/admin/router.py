@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bcos_api.admin.domain import InvalidMembershipAdministration, validate_invited_role
+from bcos_api.admin.domain import InvalidMembershipAdministration
 from bcos_api.admin.profile_repository import get_tenant_profile, update_tenant_profile
 from bcos_api.admin.profile_schemas import TenantProfileResponse, TenantProfileUpdate
 from bcos_api.admin.repository import (
@@ -62,11 +62,11 @@ async def invite_membership_endpoint(payload: MembershipInvitationCreate, sessio
     if not name or "@" not in email:
         raise HTTPException(status_code=422, detail="Nome e e-mail válidos são obrigatórios.")
     await session.execute(text("""UPDATE tenant_user_invitations SET status='REVOKED', updated_at=now() WHERE tenant_id=:tenant_id AND lower(email)=:email AND status='PENDING' AND deleted_at IS NULL"""), {"tenant_id":context.tenant_id,"email":email})
-    result=await session.execute(text("""INSERT INTO tenant_user_invitations (tenant_id,display_name,email,role,access_role_id,invited_by_external_user_id) VALUES (:tenant_id,:display_name,:email,CAST(:role AS membership_role),:access_role_id,:actor) RETURNING id,tenant_id,display_name,email,role::text AS role,status,expires_at"""), {"tenant_id":context.tenant_id,"display_name":name,"email":email,"role":payload.role.value,"access_role_id":payload.access_role_id,"actor":context.external_user_id})
+    result=await session.execute(text("""INSERT INTO tenant_user_invitations (tenant_id,display_name,email,role,access_role_id,invited_by_external_user_id) VALUES (:tenant_id,:display_name,:email,'RECEPTION',:access_role_id,:actor) RETURNING id,tenant_id,display_name,email,role::text AS role,status,expires_at"""), {"tenant_id":context.tenant_id,"display_name":name,"email":email,"access_role_id":payload.access_role_id,"actor":context.external_user_id})
     row=dict(result.mappings().one())
     tenant_result=await session.execute(text("SELECT name FROM tenants WHERE id=:tenant_id"), {"tenant_id":context.tenant_id})
     tenant_name=str(tenant_result.scalar_one())
-    role_label={"ADMIN":"Administrador","RECEPTION":"Recepção","PROFESSIONAL":"Profissional"}[payload.role.value]
+    role_label=str(access_role_row["name"])
     try:
         send_team_access_invitation(to_email=email, display_name=name, tenant_name=tenant_name, role_label=role_label)
     except RuntimeError as exc:
@@ -94,7 +94,7 @@ async def update_membership_status_endpoint(membership_id: UUID, payload: Member
 @router.patch("/{membership_id}", response_model=MembershipResponse)
 async def update_membership_details_endpoint(membership_id: UUID, payload: MembershipDetailsUpdate, session: SessionDependency, context: TenantContextDependency) -> MembershipResponse:
     try:
-        item=await update_tenant_membership_details(session, context=context, membership_id=membership_id, display_name=payload.display_name, role=payload.role)
+        item=await update_tenant_membership_details(session, context=context, membership_id=membership_id, display_name=payload.display_name)
         if item is None:
             raise HTTPException(status_code=404, detail="Membership not found or protected.")
         await session.commit()
@@ -155,6 +155,16 @@ async def update_membership_permissions_endpoint(
         raise HTTPException(status_code=404, detail="Membership not found or protected.")
     role = MembershipRole(row["role"])
     requested = set(payload.permissions)
+    if context.role is not MembershipRole.OWNER:
+        actor_permissions = {
+            permission for permission in (context.permissions or frozenset())
+            if isinstance(permission, Permission)
+        }
+        if not requested.issubset(actor_permissions):
+            raise HTTPException(
+                status_code=403,
+                detail="Não é permitido conceder permissões que o próprio usuário não possui.",
+            )
     # Aggregate legacy permissions are internal. Customer-defined role permissions
     # are the baseline; per-user differences are stored only as overrides.
     editable = {p for p in Permission if p not in {Permission.TENANT_ADMIN, Permission.OPERATIONS}}

@@ -339,7 +339,7 @@ export async function updateTenantMembershipStatus(
 
 export async function updateTenantMembership(
   membershipId: string,
-  input: { display_name: string; role: "ADMIN" | "RECEPTION" | "PROFESSIONAL" },
+  input: { display_name: string },
 ): Promise<TenantMembership> {
   return apiPatch<TenantMembership>(`/api/v1/admin/memberships/${encodeURIComponent(membershipId)}`, input);
 }

@@ -157,7 +157,7 @@ async def create_role(payload: AccessRoleCreate, session: SessionDependency, con
 @router.put("/{role_id}", response_model=AccessRoleResponse)
 async def update_role(role_id: UUID, payload: AccessRoleUpdate, session: SessionDependency, context: TenantContextDependency) -> AccessRoleResponse:
     require_permission(context, Permission.ROLE_MANAGE)
-    permissions = _permissions(payload.permissions)
+    permissions = _permissions(payload.permissions, context=context)
     try:
         result = await session.execute(text("""UPDATE tenant_access_roles
             SET name=:name,description=:description,active=:active,updated_at=now()
@@ -205,8 +205,20 @@ async def assign_membership_role(membership_id: UUID, payload: MembershipAccessR
     role = await session.execute(text("""SELECT id FROM tenant_access_roles
         WHERE id=:role_id AND tenant_id=:tenant_id AND active=TRUE AND deleted_at IS NULL"""),
         {"role_id": payload.access_role_id, "tenant_id": context.tenant_id})
-    if role.first() is None:
+    role_row = role.mappings().one_or_none()
+    if role_row is None:
         raise HTTPException(status_code=404, detail="Papel ativo não encontrado.")
+    if context.role is not MembershipRole.OWNER:
+        permission_result = await session.execute(text("""SELECT permission FROM tenant_access_role_permissions
+            WHERE tenant_id=:tenant_id AND role_id=:role_id AND granted=TRUE"""),
+            {"tenant_id": context.tenant_id, "role_id": payload.access_role_id})
+        target_permissions = {Permission(item["permission"]) for item in permission_result.mappings().all()}
+        actor_permissions = {
+            permission for permission in (context.permissions or frozenset())
+            if isinstance(permission, Permission)
+        }
+        if not target_permissions.issubset(actor_permissions):
+            raise HTTPException(status_code=403, detail="Não é permitido atribuir um papel com permissões superiores às suas.")
     result = await session.execute(text("""UPDATE tenant_memberships
         SET access_role_id=:role_id, updated_at=now()
         WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL AND role <> 'OWNER'
