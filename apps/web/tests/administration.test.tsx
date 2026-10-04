@@ -143,8 +143,8 @@ describe("tenant administration", () => {
     expect(screen.getByText("Salvar permissões")).toBeInTheDocument();
     expect(screen.getByText("Dados e papel")).toBeInTheDocument();
     expect(screen.getByText("Bloqueio e remoção")).toBeInTheDocument();
-    expect(screen.getByText("Bloquear acesso")).toBeInTheDocument();
-    expect(screen.getByText("Remover acesso")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bloquear acesso" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remover acesso" })).toBeInTheDocument();
     expect(screen.queryByDisplayValue("owner@example.com")).not.toBeInTheDocument();
   });
 
