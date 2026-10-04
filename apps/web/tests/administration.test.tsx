@@ -137,7 +137,7 @@ describe("tenant administration", () => {
     expect(screen.queryByText("Sua equipe ainda não possui outros usuários")).not.toBeInTheDocument();
     expect(screen.getByText("Gerenciador de acessos do proprietário")).toBeInTheDocument();
     expect(screen.getByText("Acesso integral protegido")).toBeInTheDocument();
-    expect(screen.getAllByText("Visualizar agenda").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Visualizar").length).toBeGreaterThan(0);
     expect(screen.getByText("Proprietário do ambiente")).toBeInTheDocument();
     expect(screen.getAllByText("Remover acesso").length).toBeGreaterThan(0);
     expect(screen.getByText("E-mail de acesso")).toBeInTheDocument();
