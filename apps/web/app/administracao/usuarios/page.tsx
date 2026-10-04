@@ -23,12 +23,18 @@ export default async function UsersAdminPage({searchParams}:{searchParams:Promis
  const manageableMemberships=memberships.filter(item=>item.role!=="OWNER");
  return <main className="admin-page admin-users-page">
   <header className="admin-page-head"><div><span>ADMINISTRAÇÃO / USUÁRIOS</span><h1>Usuários e acessos</h1><p>Cadastre a equipe, defina o papel e controle exatamente o que cada usuário pode acessar.</p></div>
-   <nav className="admin-section-nav"><Link href="/administracao">Configurações</Link><Link className="active" href="/administracao/usuarios">Usuários</Link></nav></header>
+   <nav className="admin-section-nav" aria-label="Navegação da administração"><Link href="/administracao">← Configurações</Link></nav></header>
   {invited?<div className="platform-success"><strong>Convite enviado</strong><span>O acesso ficará pendente até a pessoa aceitar o vínculo.</span></div>:null}
   <section className="tenant-user-summary"><div><strong>{memberships.length}</strong><span>Usuários</span></div><div><strong>{memberships.filter(x=>x.status==="ACTIVE").length}</strong><span>Ativos</span></div><div><strong>{memberships.filter(x=>x.status==="INACTIVE").length}</strong><span>Bloqueados</span></div></section>
   <section className="tenant-user-workspace">
    <section className="tenant-user-directory"><div className="tenant-section-title"><div><span>GESTÃO DE ACESSOS</span><h2>Gerenciador de acessos</h2></div><small>Você, como proprietário, administra os papéis, telas, permissões, bloqueios e remoções dos usuários da equipe.</small></div>
-    <div className="tenant-access-manager-intro"><div><strong>Gerenciamento liberado para o proprietário</strong><p>O gerenciador está ativo. Cadastre usuários da equipe e, em cada usuário, defina papel, telas e permissões; também bloqueie, reative ou remova o acesso quando necessário.</p></div><div className="tenant-access-manager-capabilities"><span>Papéis</span><span>Telas</span><span>Permissões</span><span>Bloqueio</span><span>Remoção</span></div></div>{manageableMemberships.length===0?<div className="tenant-access-empty"><div><strong>Ainda não há usuários da equipe</strong><p>O gerenciador já está disponível para você. Adicione o primeiro usuário para configurar o acesso individual.</p></div><a href="#adicionar-usuario">Adicionar usuário</a></div>:null}
+    <div className="tenant-access-manager-intro"><div><strong>Você administra os acessos da equipe</strong><p>O proprietário mantém acesso integral protegido e define o acesso de cada pessoa da equipe.</p></div></div>
+    <div className="tenant-access-guide" aria-label="Como funciona o controle de acesso">
+     <div><strong>1. Papel</strong><p>Função inicial do usuário: Administrador, Recepção ou Profissional. O papel aplica uma base de permissões.</p></div>
+     <div><strong>2. Telas e ações</strong><p>Depois do convite, abra “Gerenciar acesso” para escolher exatamente quais áreas pode visualizar e quais ações pode executar.</p></div>
+     <div><strong>3. Bloquear acesso</strong><p>Suspende temporariamente a entrada deste usuário no ambiente. O cadastro e o histórico permanecem.</p></div>
+     <div><strong>4. Remover acesso</strong><p>Encerra o vínculo deste usuário com este ambiente. Não exclui a conta de autenticação da pessoa.</p></div>
+    </div>{manageableMemberships.length===0?<div className="tenant-access-empty"><div><strong>Ainda não há usuários da equipe</strong><p>O gerenciador já está disponível para você. Adicione o primeiro usuário para configurar o acesso individual.</p></div><a href="#adicionar-usuario">Adicionar usuário</a></div>:null}
     <div className="tenant-user-list">{memberships.map(item=>{const owner=item.role==="OWNER",granted=new Set(effective.get(item.id)??[]),name=item.display_name||(owner?"Proprietário principal":"Usuário sem nome");
      return <article key={item.id} className="tenant-user-card tenant-user-card-professional">
       <div className="tenant-user-row">
@@ -45,12 +51,12 @@ export default async function UsersAdminPage({searchParams}:{searchParams:Promis
           <div className="tenant-user-readonly"><span>E-mail de acesso</span><strong>{item.email||"Não disponível"}</strong><small>O e-mail de autenticação não é alterado pelo contratante.</small></div>
           <label>Papel<select name="role" defaultValue={item.role}><option value="ADMIN">Administrador</option><option value="RECEPTION">Recepção</option><option value="PROFESSIONAL">Profissional</option></select></label>
           <button type="submit">Salvar dados e papel</button></form></section>
-        <section className="tenant-access-panel tenant-access-panel-wide"><div className="tenant-panel-head"><span>02</span><div><strong>Telas e permissões</strong><small>Marque somente o que este usuário poderá visualizar ou executar.</small></div></div>
+        <section className="tenant-access-panel tenant-access-panel-wide"><div className="tenant-panel-head"><span>02</span><div><strong>Telas e ações permitidas</strong><small>Defina o que este usuário pode ver e o que pode fazer em cada área.</small></div></div>
          <form className="tenant-permission-editor tenant-permission-matrix" action={updateUserPermissionsAction}><input type="hidden" name="membership_id" value={item.id}/>
           {permissionGroups.map(group=><fieldset key={group.title}><legend>{group.title}</legend>{group.items.map(entry=><label className="permission-check" key={entry.permission}><input type="checkbox" name={entry.permission} defaultChecked={granted.has(entry.permission)}/><span>{entry.label}</span></label>)}</fieldset>)}
           <button type="submit">Salvar permissões</button></form></section>
-        <section className="tenant-access-panel tenant-danger-panel"><div className="tenant-panel-head"><span>03</span><div><strong>Controle de acesso</strong><small>Bloqueie temporariamente ou remova o vínculo deste usuário.</small></div></div>
-         <div className="tenant-user-access-actions"><form action={updateUserStatusAction}><input type="hidden" name="membership_id" value={item.id}/><input type="hidden" name="status" value={item.status==="ACTIVE"?"INACTIVE":"ACTIVE"}/><button type="submit">{item.status==="ACTIVE"?"Bloquear usuário":"Ativar usuário"}</button></form>
+        <section className="tenant-access-panel tenant-danger-panel"><div className="tenant-panel-head"><span>03</span><div><strong>Bloqueio e remoção</strong><small>Bloquear suspende o acesso; remover encerra o vínculo com este ambiente.</small></div></div>
+         <div className="tenant-user-access-actions"><form action={updateUserStatusAction}><input type="hidden" name="membership_id" value={item.id}/><input type="hidden" name="status" value={item.status==="ACTIVE"?"INACTIVE":"ACTIVE"}/><button type="submit">{item.status==="ACTIVE"?"Bloquear acesso":"Reativar acesso"}</button></form>
           <form action={removeUserAction}><input type="hidden" name="membership_id" value={item.id}/><button className="danger" type="submit">Remover acesso</button></form></div></section>
        </div></details>}
      </article>})}</div>
