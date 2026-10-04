@@ -124,7 +124,8 @@ describe("tenant administration", () => {
     expect(screen.getByRole("link", { name: "Papéis e permissões" })).toHaveAttribute("href", "/administracao/usuarios/papeis");
     expect(screen.getByText("Gerenciador de acessos do proprietário")).toBeInTheDocument();
     expect(screen.getByText("Sua equipe ainda não possui outros usuários")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Adicionar usuário" })).toHaveAttribute("href", "#adicionar-usuario");
+    expect(screen.queryByRole("link", { name: "Adicionar usuário" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Convidar pessoa" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Enviar convite de acesso" })).toBeInTheDocument();
   });
 
