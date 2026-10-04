@@ -5,7 +5,9 @@ import { pricingRuleDefinitionFromForm } from "../app/administracao/pricing-form
 
 import TenantAdministrationPage from "../app/administracao/page";
 import UsersAdminPage from "../app/administracao/usuarios/page";
+import RolesPage from "../app/administracao/usuarios/papeis/page";
 import {
+  getAccessRolePermissionCatalog,
   getAccessRoles,
   getPricingRules,
   getProfessionalOnboardingRequests,
@@ -23,6 +25,7 @@ import {
 vi.mock("../lib/auth/authorization", () => ({ requireTenantPermission: vi.fn().mockResolvedValue({ permissions: ["USER_VIEW","USER_CREATE","USER_EDIT","USER_BLOCK","USER_DELETE","ROLE_MANAGE","USER_ADMIN"] }) }));
 
 vi.mock("../lib/bcos-api", () => ({
+  getAccessRolePermissionCatalog: vi.fn(),
   getAccessRoles: vi.fn(),
   getPricingRules: vi.fn(),
   getProfessionalOnboardingRequests: vi.fn(),
@@ -58,6 +61,7 @@ describe("tenant administration", () => {
       ? [{ day_of_week: 0, opens_at: "08:00:00", closes_at: "18:00:00", is_closed: false }]
       : [{ day_of_week: 0, opens_at: "09:00:00", closes_at: "17:00:00", is_closed: false }]);
     vi.mocked(getAccessRoles).mockResolvedValue([{id:"role-reception",tenant_id:"tenant-1",name:"Atendimento",description:"Recepção comercial",active:true,permissions:["AGENDA_VIEW"],assigned_users:1}]);
+    vi.mocked(getAccessRolePermissionCatalog).mockResolvedValue([{code:"AGENDA_VIEW",module:"Agenda",action:"Visualizar"},{code:"AGENDA_CREATE",module:"Agenda",action:"Criar"},{code:"FINANCE_VIEW",module:"Financeiro",action:"Visualizar"}]);
     vi.mocked(getTenantMemberships).mockResolvedValue([]);
     vi.mocked(getTenantMembershipPermissions).mockResolvedValue([]);
   });
@@ -123,6 +127,17 @@ describe("tenant administration", () => {
     expect(screen.getByRole("link", { name: "Adicionar usuário" })).toHaveAttribute("href", "#adicionar-usuario");
     expect(screen.getByRole("button", { name: "Enviar convite de acesso" })).toBeInTheDocument();
   });
+  it("renders roles as a horizontal access matrix instead of a narrow side form", async () => {
+    render(await RolesPage());
+    expect(screen.getByRole("heading", { level: 1, name: "Papéis e permissões" })).toBeInTheDocument();
+    expect(screen.getByText("Seu negócio define os papéis da equipe")).toBeInTheDocument();
+    expect(document.querySelector(".role-permission-matrix")).toBeInTheDocument();
+    expect(document.querySelector(".tenant-invite-card-sticky")).not.toBeInTheDocument();
+    expect(screen.getAllByLabelText("Agenda: Visualizar")).toHaveLength(2);
+    expect(screen.getAllByLabelText("Agenda: Criar")).toHaveLength(2);
+    expect(screen.getByRole("link", { name: "+ Novo papel" })).toHaveAttribute("href", "#novo-papel");
+  });
+
   it("shows trusted user identity, role, permissions and protects the owner", async () => {
     vi.mocked(getTenantMemberships).mockResolvedValue([
       { id: "owner-1", tenant_id: "tenant-1", external_user_id: "auth-owner", role: "OWNER", status: "ACTIVE", display_name: "Pessoa Proprietária", email: "owner@example.com" },
