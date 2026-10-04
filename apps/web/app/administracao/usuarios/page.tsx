@@ -1,8 +1,8 @@
 import { requireTenantPermission } from "../../../lib/auth/authorization";
 import Link from "next/link";
 
-import { getTenantMembershipPermissions, getTenantMemberships, type TenantPermission } from "../../../lib/bcos-api";
-import { inviteUserAction, removeUserAction, updateUserAction, updateUserPermissionsAction, updateUserStatusAction } from "./actions";
+import { getAccessRoles, getTenantMembershipPermissions, getTenantMemberships, type TenantPermission } from "../../../lib/bcos-api";
+import { assignUserRoleAction, inviteUserAction, removeUserAction, updateUserAction, updateUserPermissionsAction, updateUserStatusAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -17,13 +17,13 @@ const permissionGroups:Array<{title:string;items:Array<{permission:TenantPermiss
 
 export default async function UsersAdminPage({searchParams}:{searchParams:Promise<{invited?:string}>}){
  await requireTenantPermission("USER_ADMIN");
- const [{invited},memberships]=await Promise.all([searchParams,getTenantMemberships()]);
+ const [{invited},memberships,accessRoles]=await Promise.all([searchParams,getTenantMemberships(),getAccessRoles()]);
  const entries=await Promise.all(memberships.map(async item=>[item.id,await getTenantMembershipPermissions(item.id)] as const));
  const effective=new Map(entries);
  const manageableMemberships=memberships.filter(item=>item.role!=="OWNER");
  return <main className="admin-page admin-users-page">
   <header className="admin-page-head"><div><span>ADMINISTRAÇÃO / USUÁRIOS</span><h1>Usuários e acessos</h1><p>Cadastre a equipe, defina o papel e controle exatamente o que cada usuário pode acessar.</p></div>
-   <nav className="admin-section-nav" aria-label="Navegação da administração"><Link href="/administracao">← Configurações</Link></nav></header>
+   <nav className="admin-section-nav" aria-label="Navegação da administração"><Link href="/administracao">← Configurações</Link><Link href="/administracao/usuarios/papeis">Papéis e permissões</Link></nav></header>
   {invited?<div className="platform-success"><strong>Convite enviado</strong><span>O acesso ficará pendente até a pessoa aceitar o vínculo.</span></div>:null}
   <section className="tenant-user-summary"><div><strong>{memberships.length}</strong><span>Usuários</span></div><div><strong>{memberships.filter(x=>x.status==="ACTIVE").length}</strong><span>Ativos</span></div><div><strong>{memberships.filter(x=>x.status==="INACTIVE").length}</strong><span>Bloqueados</span></div></section>
   <section className="tenant-user-workspace">
@@ -43,8 +43,8 @@ export default async function UsersAdminPage({searchParams}:{searchParams:Promis
          <form className="tenant-user-edit-form tenant-user-edit-stacked" action={updateUserAction}><input type="hidden" name="membership_id" value={item.id}/>
           <label>Nome<input name="display_name" defaultValue={item.display_name??""} required/></label>
           <div className="tenant-user-readonly"><span>E-mail de acesso</span><strong>{item.email||"Não disponível"}</strong><small>O e-mail de autenticação não é alterado pelo contratante.</small></div>
-          <label>Papel<select name="role" defaultValue={item.role}><option value="ADMIN">Administrador</option><option value="RECEPTION">Recepção</option><option value="PROFESSIONAL">Profissional</option></select></label>
-          <button type="submit">Salvar dados e papel</button></form></section>
+          <input type="hidden" name="role" value={item.role}/><button type="submit">Salvar nome</button></form>
+          <form action={assignUserRoleAction} className="tenant-user-edit-form tenant-user-edit-stacked"><input type="hidden" name="membership_id" value={item.id}/><label>Papel cadastrado<select name="access_role_id" defaultValue={item.access_role_id??""} required><option value="" disabled>Selecione um papel</option>{accessRoles.filter(role=>role.active).map(role=><option key={role.id} value={role.id}>{role.name}</option>)}</select></label><button type="submit" disabled={accessRoles.length===0}>Atribuir papel</button><small>{accessRoles.length===0?<>Nenhum papel cadastrado. <Link href="/administracao/usuarios/papeis">Cadastrar papel e permissões</Link>.</>:<>O papel define a matriz-base de permissões. <Link href="/administracao/usuarios/papeis">Gerenciar papéis</Link>.</>}</small></form></section>
         <section className="tenant-access-panel tenant-access-panel-wide"><div className="tenant-panel-head"><span>02</span><div><strong>Telas e ações permitidas</strong><small>Defina o que este usuário pode ver e o que pode fazer em cada área.</small></div></div>
          <form className="tenant-permission-editor tenant-permission-matrix" action={updateUserPermissionsAction}><input type="hidden" name="membership_id" value={item.id}/>
           {permissionGroups.map(group=><fieldset key={group.title}><legend>{group.title}</legend>{group.items.map(entry=><label className="permission-check" key={entry.permission}><input type="checkbox" name={entry.permission} defaultChecked={granted.has(entry.permission)}/><span>{entry.label}</span></label>)}</fieldset>)}
@@ -55,7 +55,7 @@ export default async function UsersAdminPage({searchParams}:{searchParams:Promis
        </div></details>}
      </article>})}</div>
    </section>
-   <aside id="adicionar-usuario" className="tenant-invite-card tenant-invite-card-sticky"><span>NOVO ACESSO</span><h2>Convidar pessoa</h2><p>Informe os dados e o papel inicial. Após o aceite, você poderá ajustar telas e ações individualmente.</p>
+   <aside id="adicionar-usuario" className="tenant-invite-card tenant-invite-card-sticky"><span>NOVO ACESSO</span><h2>Convidar pessoa</h2><p><Link href="/administracao/usuarios/papeis">Cadastrar e gerenciar papéis →</Link></p><p>Informe os dados e o papel inicial. Após o aceite, você poderá ajustar telas e ações individualmente.</p>
     <form action={inviteUserAction}><label>Nome<input name="display_name" required placeholder="Nome completo"/></label><label>E-mail<input name="email" type="email" required placeholder="usuario@empresa.com"/></label><label>Papel inicial <small>Perfil-base do sistema; as permissões individuais são ajustadas após o aceite.</small><select name="role" defaultValue="RECEPTION"><option value="ADMIN">Administrador</option><option value="RECEPTION">Recepção</option><option value="PROFESSIONAL">Profissional</option></select></label><button type="submit">Enviar convite de acesso</button></form>
     <div className="tenant-password-policy"><strong>Senha protegida</strong><p>A senha pertence à conta de autenticação do próprio usuário e nunca é exibida nesta administração.</p></div>
    </aside>
