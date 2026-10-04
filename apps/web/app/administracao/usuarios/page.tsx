@@ -27,14 +27,13 @@ export default async function UsersAdminPage({searchParams}:{searchParams:Promis
   {invited?<div className="platform-success"><strong>Convite enviado</strong><span>O acesso ficará pendente até a pessoa aceitar o vínculo.</span></div>:null}
   <section className="tenant-user-summary"><div><strong>{memberships.length}</strong><span>Usuários</span></div><div><strong>{memberships.filter(x=>x.status==="ACTIVE").length}</strong><span>Ativos</span></div><div><strong>{memberships.filter(x=>x.status==="INACTIVE").length}</strong><span>Bloqueados</span></div></section>
   <section className="tenant-user-workspace">
-   <section className="tenant-user-directory"><div className="tenant-section-title"><div><span>GESTÃO DE ACESSOS</span><h2>Gerenciador de acessos</h2></div><small>Você, como proprietário, administra os papéis, telas, permissões, bloqueios e remoções dos usuários da equipe.</small></div>
-    <div className="tenant-access-manager-intro"><div><strong>Você administra os acessos da equipe</strong><p>O proprietário mantém acesso integral protegido e define o acesso de cada pessoa da equipe.</p></div></div>
-    <div className="tenant-access-guide" aria-label="Como funciona o controle de acesso">
-     <div><strong>1. Papel</strong><p>Função inicial do usuário: Administrador, Recepção ou Profissional. O papel aplica uma base de permissões.</p></div>
-     <div><strong>2. Telas e ações</strong><p>Depois do convite, abra “Gerenciar acesso” para escolher exatamente quais áreas pode visualizar e quais ações pode executar.</p></div>
-     <div><strong>3. Bloquear acesso</strong><p>Suspende temporariamente a entrada deste usuário no ambiente. O cadastro e o histórico permanecem.</p></div>
-     <div><strong>4. Remover acesso</strong><p>Encerra o vínculo deste usuário com este ambiente. Não exclui a conta de autenticação da pessoa.</p></div>
-    </div>{manageableMemberships.length===0?<div className="tenant-access-empty"><div><strong>Ainda não há usuários da equipe</strong><p>O gerenciador já está disponível para você. Adicione o primeiro usuário para configurar o acesso individual.</p></div><a href="#adicionar-usuario">Adicionar usuário</a></div>:null}
+   <section className="tenant-user-directory"><div className="tenant-section-title"><div><span>GESTÃO DE ACESSOS</span><h2>Equipe e acessos</h2><p>Gerencie as pessoas que podem entrar neste ambiente.</p></div></div>
+    <details className="tenant-access-help"><summary>Como funcionam papéis, permissões e bloqueios?</summary><div className="tenant-access-guide" aria-label="Como funciona o controle de acesso">
+     <div><strong>Papel</strong><p>Define a função-base: Administrador, Recepção ou Profissional.</p></div>
+     <div><strong>Telas e ações</strong><p>Em “Gerenciar acesso”, escolha o que a pessoa pode visualizar e executar em cada área.</p></div>
+     <div><strong>Bloquear acesso</strong><p>Suspende temporariamente a entrada no ambiente, preservando cadastro e histórico.</p></div>
+     <div><strong>Remover acesso</strong><p>Encerra o vínculo com este ambiente sem excluir a conta de autenticação da pessoa.</p></div>
+    </div></details>{manageableMemberships.length===0?<div className="tenant-access-empty"><div><strong>Sua equipe ainda não possui outros usuários</strong><p>Adicione uma pessoa para definir papel, telas e ações permitidas.</p></div><a href="#adicionar-usuario">Adicionar usuário</a></div>:null}
     <div className="tenant-user-list">{memberships.map(item=>{const owner=item.role==="OWNER",granted=new Set(effective.get(item.id)??[]),name=item.display_name||(owner?"Proprietário principal":"Usuário sem nome");
      return <article key={item.id} className="tenant-user-card tenant-user-card-professional">
       <div className="tenant-user-row">
@@ -61,8 +60,8 @@ export default async function UsersAdminPage({searchParams}:{searchParams:Promis
        </div></details>}
      </article>})}</div>
    </section>
-   <aside id="adicionar-usuario" className="tenant-invite-card tenant-invite-card-sticky"><span>NOVO USUÁRIO</span><h2>Adicionar à equipe</h2><p>Informe os dados e o papel inicial. Depois você poderá personalizar as permissões.</p>
-    <form action={inviteUserAction}><label>Nome<input name="display_name" required placeholder="Nome completo"/></label><label>E-mail<input name="email" type="email" required placeholder="usuario@empresa.com"/></label><label>Papel<select name="role" defaultValue="RECEPTION"><option value="ADMIN">Administrador</option><option value="RECEPTION">Recepção</option><option value="PROFESSIONAL">Profissional</option></select></label><button type="submit">Enviar convite</button></form>
+   <aside id="adicionar-usuario" className="tenant-invite-card tenant-invite-card-sticky"><span>NOVO ACESSO</span><h2>Convidar pessoa</h2><p>Informe os dados e o papel inicial. Após o aceite, você poderá ajustar telas e ações individualmente.</p>
+    <form action={inviteUserAction}><label>Nome<input name="display_name" required placeholder="Nome completo"/></label><label>E-mail<input name="email" type="email" required placeholder="usuario@empresa.com"/></label><label>Papel<select name="role" defaultValue="RECEPTION"><option value="ADMIN">Administrador</option><option value="RECEPTION">Recepção</option><option value="PROFESSIONAL">Profissional</option></select></label><button type="submit">Enviar convite de acesso</button></form>
     <div className="tenant-password-policy"><strong>Senha protegida</strong><p>A senha pertence à conta de autenticação do próprio usuário e nunca é exibida nesta administração.</p></div>
    </aside>
   </section>
