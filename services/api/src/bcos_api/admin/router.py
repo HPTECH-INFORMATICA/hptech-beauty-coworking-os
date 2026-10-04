@@ -113,14 +113,22 @@ async def get_membership_permissions_endpoint(
     membership_id: UUID, session: SessionDependency, context: TenantContextDependency
 ) -> dict[str, object]:
     require_permission(context, Permission.USER_ADMIN)
-    membership_result = await session.execute(text("""SELECT role::text AS role FROM tenant_memberships
+    membership_result = await session.execute(text("""SELECT role::text AS role, access_role_id FROM tenant_memberships
         WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL"""),
         {"membership_id": membership_id, "tenant_id": context.tenant_id})
     row = membership_result.mappings().one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="Membership not found.")
     role = MembershipRole(row["role"])
-    effective = set(ROLE_PERMISSIONS[role])
+    if role is MembershipRole.OWNER:
+        effective = set(ROLE_PERMISSIONS[role])
+    elif row["access_role_id"] is not None:
+        role_permissions = await session.execute(text("""SELECT permission FROM tenant_access_role_permissions
+            WHERE tenant_id=:tenant_id AND role_id=:role_id AND granted=TRUE"""),
+            {"tenant_id": context.tenant_id, "role_id": row["access_role_id"]})
+        effective = {Permission(item["permission"]) for item in role_permissions.mappings().all()}
+    else:
+        effective = set(ROLE_PERMISSIONS[role])
     overrides = await get_membership_permission_overrides(session, tenant_id=context.tenant_id, membership_id=membership_id)
     for name, granted in overrides.items():
         permission = Permission(name)
@@ -134,7 +142,7 @@ async def update_membership_permissions_endpoint(
     session: SessionDependency, context: TenantContextDependency
 ) -> dict[str, object]:
     require_permission(context, Permission.USER_ADMIN)
-    membership_result = await session.execute(text("""SELECT role::text AS role FROM tenant_memberships
+    membership_result = await session.execute(text("""SELECT role::text AS role, access_role_id FROM tenant_memberships
         WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL"""),
         {"membership_id": membership_id, "tenant_id": context.tenant_id})
     row = membership_result.mappings().one_or_none()
@@ -142,10 +150,17 @@ async def update_membership_permissions_endpoint(
         raise HTTPException(status_code=404, detail="Membership not found or protected.")
     role = MembershipRole(row["role"])
     requested = set(payload.permissions)
-    # Aggregate legacy permissions are derived internally, never customer-editable.
+    # Aggregate legacy permissions are internal. Customer-defined role permissions
+    # are the baseline; per-user differences are stored only as overrides.
     editable = {p for p in Permission if p not in {Permission.TENANT_ADMIN, Permission.OPERATIONS}}
     requested &= editable
-    defaults = set(ROLE_PERMISSIONS[role]) & editable
+    if row["access_role_id"] is not None:
+        role_permissions = await session.execute(text("""SELECT permission FROM tenant_access_role_permissions
+            WHERE tenant_id=:tenant_id AND role_id=:role_id AND granted=TRUE"""),
+            {"tenant_id": context.tenant_id, "role_id": row["access_role_id"]})
+        defaults = {Permission(item["permission"]) for item in role_permissions.mappings().all()} & editable
+    else:
+        defaults = set(ROLE_PERMISSIONS[role]) & editable
     overrides = {p.value: (p in requested) for p in editable if (p in requested) != (p in defaults)}
     if not await replace_membership_permission_overrides(
         session, tenant_id=context.tenant_id, membership_id=membership_id, values=overrides
