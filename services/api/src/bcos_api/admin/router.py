@@ -71,6 +71,7 @@ async def invite_membership_endpoint(payload: MembershipInvitationCreate, sessio
         send_team_access_invitation(to_email=email, display_name=name, tenant_name=tenant_name, role_label=role_label)
     except RuntimeError as exc:
         await session.rollback()
+        print(f"TEAM_INVITATION_EMAIL_FAILED: {exc}", flush=True)
         raise HTTPException(status_code=503, detail="TEAM_INVITATION_EMAIL_FAILED") from exc
     await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id, action="TENANT_USER_INVITED", entity_type="tenant_user_invitation", entity_id=row["id"], metadata={"display_name":name,"email":email,"access_role_id":str(payload.access_role_id),"access_role_name":access_role_row["name"],"delivery":"EMAIL"})
     await session.commit()
