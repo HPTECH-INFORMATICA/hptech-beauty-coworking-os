@@ -53,7 +53,22 @@ async def resolve_tenant_context(
     # Import here to avoid a module cycle: RBAC depends on TenantContext.
     from bcos_api.tenancy.rbac import ROLE_PERMISSIONS, Permission
 
-    effective = set(ROLE_PERMISSIONS[membership.role])
+    # OWNER is the immutable authority. Every other user may receive a
+    # customer-defined role. Legacy role permissions are used only for records
+    # that have not yet been migrated/assigned by the tenant.
+    if membership.role is MembershipRole.OWNER:
+        effective = set(ROLE_PERMISSIONS[MembershipRole.OWNER])
+    elif membership.access_role_id is not None:
+        role_permissions = await session.execute(
+            text("""SELECT permission
+                    FROM tenant_access_role_permissions
+                    WHERE tenant_id=:tenant_id AND role_id=:role_id AND granted=TRUE"""),
+            {"tenant_id": membership.tenant_id, "role_id": membership.access_role_id},
+        )
+        effective = {Permission(row["permission"]) for row in role_permissions.mappings().all()}
+    else:
+        effective = set(ROLE_PERMISSIONS[membership.role])
+
     overrides = await session.execute(
         text("""SELECT permission, granted
                 FROM tenant_membership_permission_overrides
