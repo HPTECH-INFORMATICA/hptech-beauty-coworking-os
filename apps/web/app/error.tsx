@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
@@ -13,7 +14,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
         <p>Seu acesso continua protegido. Tente carregar a tela novamente; se o problema persistir, retorne à visão geral.</p>
         <div>
           <button type="button" onClick={() => reset()}>Tentar novamente</button>
-          <a href="/">Ir para visão geral</a>
+          <Link href="/">Ir para visão geral</Link>
         </div>
         {error.digest ? <small>Referência: {error.digest}</small> : null}
       </section>
