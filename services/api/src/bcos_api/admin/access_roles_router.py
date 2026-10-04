@@ -162,5 +162,5 @@ async def delete_role(role_id: UUID, session: SessionDependency, context: Tenant
     if result.first() is None:
         raise HTTPException(status_code=404, detail="Papel não encontrado.")
     await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id,
-        action="TENANT_ACCESS_ROLE_REMOVED", entity_type="tenant_access_role", entity_id=role_id)
+        action="TENANT_ACCESS_ROLE_REMOVED", entity_type="tenant_access_role", entity_id=role_id, metadata={})
     await session.commit()
