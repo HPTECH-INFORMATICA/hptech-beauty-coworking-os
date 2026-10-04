@@ -52,12 +52,18 @@ async def list_memberships_endpoint(session: SessionDependency, context: TenantC
 async def invite_membership_endpoint(payload: MembershipInvitationCreate, session: SessionDependency, context: TenantContextDependency) -> TeamInvitationResponse:
     require_permission(context, Permission.USER_ADMIN)
     validate_invited_role(actor_role=context.role, invited_role=payload.role)
+    access_role = await session.execute(text("""SELECT id,name FROM tenant_access_roles
+        WHERE id=:role_id AND tenant_id=:tenant_id AND active=TRUE AND deleted_at IS NULL"""),
+        {"role_id": payload.access_role_id, "tenant_id": context.tenant_id})
+    access_role_row = access_role.mappings().one_or_none()
+    if access_role_row is None:
+        raise HTTPException(status_code=422, detail="Selecione um papel cadastrado e ativo.")
     email=payload.email.strip().lower()
     name=payload.display_name.strip()
     if not name or "@" not in email:
         raise HTTPException(status_code=422, detail="Nome e e-mail válidos são obrigatórios.")
     await session.execute(text("""UPDATE tenant_user_invitations SET status='REVOKED', updated_at=now() WHERE tenant_id=:tenant_id AND lower(email)=:email AND status='PENDING' AND deleted_at IS NULL"""), {"tenant_id":context.tenant_id,"email":email})
-    result=await session.execute(text("""INSERT INTO tenant_user_invitations (tenant_id,display_name,email,role,invited_by_external_user_id) VALUES (:tenant_id,:display_name,:email,CAST(:role AS membership_role),:actor) RETURNING id,tenant_id,display_name,email,role::text AS role,status,expires_at"""), {"tenant_id":context.tenant_id,"display_name":name,"email":email,"role":payload.role.value,"actor":context.external_user_id})
+    result=await session.execute(text("""INSERT INTO tenant_user_invitations (tenant_id,display_name,email,role,access_role_id,invited_by_external_user_id) VALUES (:tenant_id,:display_name,:email,CAST(:role AS membership_role),:access_role_id,:actor) RETURNING id,tenant_id,display_name,email,role::text AS role,status,expires_at"""), {"tenant_id":context.tenant_id,"display_name":name,"email":email,"role":payload.role.value,"access_role_id":payload.access_role_id,"actor":context.external_user_id})
     row=dict(result.mappings().one())
     tenant_result=await session.execute(text("SELECT name FROM tenants WHERE id=:tenant_id"), {"tenant_id":context.tenant_id})
     tenant_name=str(tenant_result.scalar_one())
@@ -67,7 +73,7 @@ async def invite_membership_endpoint(payload: MembershipInvitationCreate, sessio
     except RuntimeError as exc:
         await session.rollback()
         raise HTTPException(status_code=503, detail="TEAM_INVITATION_EMAIL_FAILED") from exc
-    await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id, action="TENANT_USER_INVITED", entity_type="tenant_user_invitation", entity_id=row["id"], metadata={"display_name":name,"email":email,"role":payload.role.value,"delivery":"EMAIL"})
+    await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id, action="TENANT_USER_INVITED", entity_type="tenant_user_invitation", entity_id=row["id"], metadata={"display_name":name,"email":email,"access_role_id":str(payload.access_role_id),"access_role_name":access_role_row["name"],"delivery":"EMAIL"})
     await session.commit()
     row["expires_at"]=row["expires_at"].isoformat()
     return TeamInvitationResponse.model_validate(row)
