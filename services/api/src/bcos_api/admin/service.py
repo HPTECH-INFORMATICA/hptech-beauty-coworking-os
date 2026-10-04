@@ -23,7 +23,7 @@ from bcos_api.tenancy.rbac import Permission, require_permission
 
 
 async def list_tenant_memberships(session: AsyncSession, *, context: TenantContext) -> list[TenantMembership]:
-    require_permission(context, Permission.USER_ADMIN)
+    require_permission(context, Permission.USER_VIEW)
     return await list_memberships(session, tenant_id=context.tenant_id)
 
 
@@ -38,7 +38,7 @@ async def invite_tenant_membership(session: AsyncSession, *, context: TenantCont
 
 
 async def update_tenant_membership_status(session: AsyncSession, *, context: TenantContext, membership_id: UUID, status: MembershipStatus) -> TenantMembership | None:
-    require_permission(context, Permission.USER_ADMIN)
+    require_permission(context, Permission.USER_BLOCK)
     validate_membership_status(status)
     membership = await set_membership_status(session, tenant_id=context.tenant_id, membership_id=membership_id, status=status)
     if membership is not None:
@@ -47,7 +47,7 @@ async def update_tenant_membership_status(session: AsyncSession, *, context: Ten
 
 
 async def update_tenant_membership_details(session: AsyncSession, *, context: TenantContext, membership_id: UUID, display_name: str, role: MembershipRole) -> TenantMembership | None:
-    require_permission(context, Permission.USER_ADMIN)
+    require_permission(context, Permission.USER_EDIT)
     validate_invited_role(actor_role=context.role, invited_role=role)
     if not display_name.strip():
         raise InvalidMembershipAdministration("User name must not be blank.")
@@ -57,7 +57,7 @@ async def update_tenant_membership_details(session: AsyncSession, *, context: Te
     return membership
 
 async def remove_tenant_membership(session: AsyncSession, *, context: TenantContext, membership_id: UUID) -> TenantMembership | None:
-    require_permission(context, Permission.USER_ADMIN)
+    require_permission(context, Permission.USER_DELETE)
     membership = await remove_membership(session, tenant_id=context.tenant_id, membership_id=membership_id)
     if membership is not None:
         await create_audit_log(session, tenant_id=context.tenant_id, actor_external_user_id=context.external_user_id, action="TENANT_MEMBERSHIP_REMOVED", entity_type="tenant_membership", entity_id=membership.id, metadata={"external_user_id": membership.external_user_id, "role": membership.role.value})

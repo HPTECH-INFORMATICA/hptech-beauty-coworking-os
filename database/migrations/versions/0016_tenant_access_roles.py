@@ -13,6 +13,17 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     op.execute("""
+        ALTER TABLE tenant_membership_permission_overrides
+          DROP CONSTRAINT IF EXISTS ck_member_permission_name;
+        ALTER TABLE tenant_membership_permission_overrides
+          ADD CONSTRAINT ck_member_permission_name CHECK (permission IN (
+            'DASHBOARD_VIEW','AGENDA_VIEW','AGENDA_CREATE','AGENDA_EDIT','AGENDA_DELETE','AGENDA_MANAGE',
+            'AVAILABILITY_VIEW','CHECKIN_VIEW','CHECKIN_MANAGE',
+            'FINANCE_VIEW','FINANCE_CREATE','FINANCE_EDIT','FINANCE_DELETE','FINANCE_MANAGE',
+            'ADMIN_VIEW','ADMIN_CONFIG','USER_VIEW','USER_CREATE','USER_EDIT','USER_BLOCK','USER_DELETE',
+            'ROLE_MANAGE','USER_ADMIN','PROFESSIONAL_OWN'
+          ));
+
         CREATE TABLE tenant_access_roles (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           tenant_id UUID NOT NULL,
@@ -67,4 +78,18 @@ def downgrade() -> None:
         ALTER TABLE tenant_memberships DROP COLUMN IF EXISTS access_role_id;
         DROP TABLE IF EXISTS tenant_access_role_permissions;
         DROP TABLE IF EXISTS tenant_access_roles;
+        DELETE FROM tenant_membership_permission_overrides
+          WHERE permission NOT IN (
+            'DASHBOARD_VIEW','AGENDA_VIEW','AGENDA_MANAGE','AVAILABILITY_VIEW',
+            'CHECKIN_MANAGE','FINANCE_VIEW','FINANCE_MANAGE','ADMIN_CONFIG',
+            'USER_ADMIN','PROFESSIONAL_OWN'
+          );
+        ALTER TABLE tenant_membership_permission_overrides
+          DROP CONSTRAINT IF EXISTS ck_member_permission_name;
+        ALTER TABLE tenant_membership_permission_overrides
+          ADD CONSTRAINT ck_member_permission_name CHECK (permission IN (
+            'DASHBOARD_VIEW','AGENDA_VIEW','AGENDA_MANAGE','AVAILABILITY_VIEW',
+            'CHECKIN_MANAGE','FINANCE_VIEW','FINANCE_MANAGE','ADMIN_CONFIG',
+            'USER_ADMIN','PROFESSIONAL_OWN'
+          ));
     """)

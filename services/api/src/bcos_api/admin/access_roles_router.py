@@ -18,6 +18,7 @@ from bcos_api.audit.repository import create_audit_log
 from bcos_api.db.session import get_async_session
 from bcos_api.tenancy.context import TenantContext
 from bcos_api.tenancy.dependencies import get_tenant_context
+from bcos_api.tenancy.membership import MembershipRole
 from bcos_api.tenancy.rbac import Permission, require_permission
 
 router = APIRouter(prefix="/api/v1/admin/access-roles", tags=["Tenant Access Roles"])
@@ -81,11 +82,23 @@ class AccessRoleResponse(BaseModel):
     assigned_users: int
 
 
-def _permissions(values: list[str]) -> list[str]:
+def _permissions(values: list[str], *, context: TenantContext) -> list[str]:
     requested = {value.strip() for value in values}
     invalid = requested - EDITABLE_PERMISSIONS
     if invalid:
         raise HTTPException(status_code=422, detail=f"Permissões inválidas: {', '.join(sorted(invalid))}")
+    if context.role is not MembershipRole.OWNER:
+        actor_permissions = {
+            permission.value
+            for permission in (context.permissions or frozenset())
+            if isinstance(permission, Permission)
+        }
+        forbidden = requested - actor_permissions
+        if forbidden:
+            raise HTTPException(
+                status_code=403,
+                detail="Não é permitido conceder permissões que o próprio usuário não possui.",
+            )
     return sorted(requested)
 
 
@@ -123,7 +136,7 @@ async def create_role(payload: AccessRoleCreate, session: SessionDependency, con
     name = payload.name.strip()
     if not name:
         raise HTTPException(status_code=422, detail="Nome do papel é obrigatório.")
-    permissions = _permissions(payload.permissions)
+    permissions = _permissions(payload.permissions, context=context)
     try:
         result = await session.execute(text("""INSERT INTO tenant_access_roles (tenant_id,name,description)
             VALUES (:tenant_id,:name,:description)

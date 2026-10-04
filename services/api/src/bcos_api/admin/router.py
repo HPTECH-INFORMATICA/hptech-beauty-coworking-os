@@ -50,8 +50,7 @@ async def list_memberships_endpoint(session: SessionDependency, context: TenantC
 
 @router.post("/invitations", response_model=TeamInvitationResponse, status_code=status.HTTP_201_CREATED)
 async def invite_membership_endpoint(payload: MembershipInvitationCreate, session: SessionDependency, context: TenantContextDependency) -> TeamInvitationResponse:
-    require_permission(context, Permission.USER_ADMIN)
-    validate_invited_role(actor_role=context.role, invited_role=payload.role)
+    require_permission(context, Permission.USER_CREATE)
     access_role = await session.execute(text("""SELECT id,name FROM tenant_access_roles
         WHERE id=:role_id AND tenant_id=:tenant_id AND active=TRUE AND deleted_at IS NULL"""),
         {"role_id": payload.access_role_id, "tenant_id": context.tenant_id})
@@ -118,7 +117,7 @@ async def remove_membership_endpoint(membership_id: UUID, session: SessionDepend
 async def get_membership_permissions_endpoint(
     membership_id: UUID, session: SessionDependency, context: TenantContextDependency
 ) -> dict[str, object]:
-    require_permission(context, Permission.USER_ADMIN)
+    require_permission(context, Permission.USER_VIEW)
     membership_result = await session.execute(text("""SELECT role::text AS role, access_role_id FROM tenant_memberships
         WHERE id=:membership_id AND tenant_id=:tenant_id AND deleted_at IS NULL"""),
         {"membership_id": membership_id, "tenant_id": context.tenant_id})

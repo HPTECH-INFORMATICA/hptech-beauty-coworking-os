@@ -40,12 +40,21 @@ class AccessResolution(BaseModel):
     tenants: list[TenantAccessOption]
 
 
-def _tenant_destination(role: MembershipRole) -> Literal["/administracao", "/", "/profissional"]:
-    if role in {MembershipRole.OWNER, MembershipRole.ADMIN}:
+def _tenant_destination(
+    role: MembershipRole,
+    permissions: set[Permission],
+) -> Literal["/administracao", "/", "/profissional"]:
+    if role is MembershipRole.OWNER or permissions.intersection(
+        {Permission.ADMIN_VIEW, Permission.ADMIN_CONFIG, Permission.USER_VIEW, Permission.USER_ADMIN}
+    ):
         return "/administracao"
-    if role is MembershipRole.RECEPTION:
-        return "/"
-    return "/profissional"
+    if Permission.PROFESSIONAL_OWN in permissions and not permissions.intersection(
+        {Permission.DASHBOARD_VIEW, Permission.AGENDA_VIEW, Permission.AGENDA_MANAGE,
+         Permission.AVAILABILITY_VIEW, Permission.CHECKIN_MANAGE, Permission.FINANCE_VIEW,
+         Permission.FINANCE_MANAGE}
+    ):
+        return "/profissional"
+    return "/"
 
 
 @router.get("", response_model=AccessResolution)
@@ -59,7 +68,7 @@ async def resolve_access(
     )
     result = await session.execute(
         text(
-            """SELECT m.id AS membership_id, m.tenant_id, t.name AS tenant_name, m.role::text AS role
+            """SELECT m.id AS membership_id, m.tenant_id, t.name AS tenant_name, m.role::text AS role, m.access_role_id
             FROM tenant_memberships AS m
             JOIN tenants AS t ON t.id = m.tenant_id
             WHERE m.external_user_id = :external_user_id
@@ -73,7 +82,22 @@ async def resolve_access(
     tenants: list[TenantAccessOption] = []
     for row in result.mappings().all():
         role = MembershipRole(row["role"])
-        effective = set(ROLE_PERMISSIONS[role])
+        if role is MembershipRole.OWNER:
+            effective = set(ROLE_PERMISSIONS[MembershipRole.OWNER])
+        elif row["access_role_id"] is not None:
+            role_permission_result = await session.execute(
+                text("""SELECT permission
+                        FROM tenant_access_role_permissions
+                        WHERE tenant_id=:tenant_id AND role_id=:role_id AND granted=TRUE"""),
+                {"tenant_id": row["tenant_id"], "role_id": row["access_role_id"]},
+            )
+            effective = {
+                Permission(item["permission"])
+                for item in role_permission_result.mappings().all()
+            }
+        else:
+            # Compatibility only for memberships not yet assigned a cadastral role.
+            effective = set(ROLE_PERMISSIONS[role])
         override_result = await session.execute(
             text("""SELECT permission, granted FROM tenant_membership_permission_overrides
                     WHERE tenant_id=:tenant_id AND membership_id=:membership_id"""),
@@ -86,7 +110,7 @@ async def resolve_access(
             effective = set(ROLE_PERMISSIONS[MembershipRole.OWNER])
         tenants.append(TenantAccessOption(
             tenant_id=row["tenant_id"], tenant_name=row["tenant_name"], role=role,
-            destination=_tenant_destination(role),
+            destination=_tenant_destination(role, effective),
             permissions=sorted(effective, key=lambda item: item.value),
         ))
     platform_destination: Literal["/platform"] | None = (
