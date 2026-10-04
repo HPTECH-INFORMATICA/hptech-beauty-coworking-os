@@ -6,6 +6,7 @@ import { pricingRuleDefinitionFromForm } from "../app/administracao/pricing-form
 import TenantAdministrationPage from "../app/administracao/page";
 import UsersAdminPage from "../app/administracao/usuarios/page";
 import {
+  getAccessRoles,
   getPricingRules,
   getProfessionalOnboardingRequests,
   getTenantOnboardingDocuments,
@@ -22,6 +23,7 @@ import {
 vi.mock("../lib/auth/authorization", () => ({ requireTenantPermission: vi.fn().mockResolvedValue({}) }));
 
 vi.mock("../lib/bcos-api", () => ({
+  getAccessRoles: vi.fn(),
   getPricingRules: vi.fn(),
   getProfessionalOnboardingRequests: vi.fn(),
   getTenantOnboardingDocuments: vi.fn(),
@@ -48,12 +50,14 @@ describe("tenant administration", () => {
     vi.mocked(getResourceCategories).mockResolvedValue([{ id: "category-1", name: "Sala de estética", active: true }]);
     vi.mocked(getResources).mockResolvedValue([{ id: "resource-1", unit_id: "unit-1", category_id: "category-1", name: "Sala 01", operational_status: "AVAILABLE", buffer_before_minutes: 0, buffer_after_minutes: 0, active: true }]);
     vi.mocked(getProfessionals).mockResolvedValue([{ id: "professional-1", external_user_id: null, name: "Cristiana", email: "cris@example.com", phone: null, profession: "Enfermeira Esteta", council_type: "COREN", council_number: "PR 451.408", status: "ACTIVE" }]);
+    vi.mocked(getAccessRoles).mockResolvedValue([]);
     vi.mocked(getPricingRules).mockResolvedValue([]);
     vi.mocked(getProfessionalOnboardingRequests).mockResolvedValue([]);
     vi.mocked(getTenantOnboardingDocuments).mockResolvedValue([]);
     mockedGetReceptionHours.mockImplementation(async (unitId) => unitId === "unit-1"
       ? [{ day_of_week: 0, opens_at: "08:00:00", closes_at: "18:00:00", is_closed: false }]
       : [{ day_of_week: 0, opens_at: "09:00:00", closes_at: "17:00:00", is_closed: false }]);
+    vi.mocked(getAccessRoles).mockResolvedValue([{id:"role-reception",tenant_id:"tenant-1",name:"Atendimento",description:"Recepção comercial",active:true,permissions:["AGENDA_VIEW"],assigned_users:1}]);
     vi.mocked(getTenantMemberships).mockResolvedValue([]);
     vi.mocked(getTenantMembershipPermissions).mockResolvedValue([]);
   });
@@ -113,6 +117,7 @@ describe("tenant administration", () => {
     expect(screen.getByRole("link", { name: "← Configurações" })).toHaveAttribute("href", "/administracao");
     expect(document.querySelector(".tenant-admin-shell")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Equipe e acessos" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Papéis e permissões" })).toHaveAttribute("href", "/administracao/usuarios/papeis");
     expect(screen.getByText("Gerenciador de acessos do proprietário")).toBeInTheDocument();
     expect(screen.getByText("Sua equipe ainda não possui outros usuários")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Adicionar usuário" })).toHaveAttribute("href", "#adicionar-usuario");
@@ -122,7 +127,7 @@ describe("tenant administration", () => {
   it("shows trusted user identity, role, permissions and protects the owner", async () => {
     vi.mocked(getTenantMemberships).mockResolvedValue([
       { id: "owner-1", tenant_id: "tenant-1", external_user_id: "auth-owner", role: "OWNER", status: "ACTIVE", display_name: "Pessoa Proprietária", email: "owner@example.com" },
-      { id: "reception-1", tenant_id: "tenant-1", external_user_id: "auth-reception", role: "RECEPTION", status: "ACTIVE", display_name: "Pessoa Recepção", email: "recepcao@example.com" },
+      { id: "reception-1", tenant_id: "tenant-1", external_user_id: "auth-reception", role: "RECEPTION", status: "ACTIVE", display_name: "Pessoa Recepção", email: "recepcao@example.com", access_role_id: "role-reception" },
     ]);
     vi.mocked(getTenantMembershipPermissions).mockImplementation(async (id) => id === "owner-1" ? ["DASHBOARD_VIEW","AGENDA_VIEW","AGENDA_MANAGE","AVAILABILITY_VIEW","CHECKIN_MANAGE","FINANCE_VIEW","FINANCE_MANAGE","ADMIN_CONFIG","USER_ADMIN"] : ["DASHBOARD_VIEW","AGENDA_VIEW","AGENDA_MANAGE","AVAILABILITY_VIEW","CHECKIN_MANAGE"]);
     render(await UsersAdminPage({ searchParams: Promise.resolve({}) }));
@@ -139,6 +144,8 @@ describe("tenant administration", () => {
     expect(screen.getByText("Telas e ações permitidas")).toBeInTheDocument();
     expect(screen.getByText("Salvar permissões")).toBeInTheDocument();
     expect(screen.getByText("Dados e papel")).toBeInTheDocument();
+    expect(screen.getByText("Papel cadastrado")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Atendimento")).toBeInTheDocument();
     expect(screen.getByText("Bloqueio e remoção")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bloquear acesso" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remover acesso" })).toBeInTheDocument();
