@@ -9,7 +9,7 @@ function Matrix({catalog,selected}:{catalog:Awaited<ReturnType<typeof getAccessR
  return <div className="tenant-role-matrix">{modules.map(module=><fieldset key={module}><legend>{module}</legend><div className="tenant-role-permission-grid">{catalog.filter(x=>x.module===module).map(item=><label className="permission-check" key={item.code}><input type="checkbox" name={"permission:"+item.code} defaultChecked={selected.has(item.code)}/><span>{item.action}</span></label>)}</div></fieldset>)}</div>;
 }
 export default async function RolesPage(){
- await requireTenantPermission("USER_ADMIN");
+ await requireTenantPermission("ROLE_MANAGE");
  const [roles,catalog]=await Promise.all([getAccessRoles(),getAccessRolePermissionCatalog()]);
  return <main className="admin-page admin-users-page">
   <header className="admin-page-head"><div><span>ADMINISTRAÇÃO / USUÁRIOS / PAPÉIS</span><h1>Papéis e permissões</h1><p>O contratante cria os papéis da própria operação e decide, por módulo e ação, o que cada papel pode executar.</p></div><nav className="admin-section-nav"><Link href="/administracao/usuarios">← Usuários e acessos</Link></nav></header>
