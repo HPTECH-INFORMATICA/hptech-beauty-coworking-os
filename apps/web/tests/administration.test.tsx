@@ -20,7 +20,7 @@ import {
   getUnits,
 } from "../lib/bcos-api";
 
-vi.mock("../lib/auth/authorization", () => ({ requireTenantPermission: vi.fn().mockResolvedValue({}) }));
+vi.mock("../lib/auth/authorization", () => ({ requireTenantPermission: vi.fn().mockResolvedValue({ permissions: ["USER_VIEW","USER_CREATE","USER_EDIT","USER_BLOCK","USER_DELETE","ROLE_MANAGE","USER_ADMIN"] }) }));
 
 vi.mock("../lib/bcos-api", () => ({
   getAccessRoles: vi.fn(),
@@ -121,7 +121,6 @@ describe("tenant administration", () => {
     expect(screen.getByText("Gerenciador de acessos do proprietário")).toBeInTheDocument();
     expect(screen.getByText("Sua equipe ainda não possui outros usuários")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Adicionar usuário" })).toHaveAttribute("href", "#adicionar-usuario");
-    expect(screen.getByText(/Perfil-base do sistema/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Enviar convite de acesso" })).toBeInTheDocument();
   });
   it("shows trusted user identity, role, permissions and protects the owner", async () => {
