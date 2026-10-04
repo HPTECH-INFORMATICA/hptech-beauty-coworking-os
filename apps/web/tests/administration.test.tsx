@@ -138,6 +138,13 @@ describe("tenant administration", () => {
     expect(screen.getByRole("heading", { name: "Convidar pessoa" })).toBeInTheDocument();
   });
 
+  it("keeps operational failures inside the users screen instead of crashing the route", async () => {
+    render(await UsersAdminPage({ searchParams: Promise.resolve({ error: "Não foi possível enviar o convite por e-mail." }) }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Operação não concluída");
+    expect(screen.getByRole("alert")).toHaveTextContent("Não foi possível enviar o convite por e-mail.");
+    expect(screen.getByRole("heading", { name: "Convidar pessoa" })).toBeInTheDocument();
+  });
+
   it("renders roles as a self-explanatory capability configurator", async () => {
     render(await RolesPage());
     expect(screen.getByRole("heading", { level: 1, name: "Papéis e permissões" })).toBeInTheDocument();

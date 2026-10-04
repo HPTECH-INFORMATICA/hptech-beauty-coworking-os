@@ -2000,3 +2000,8 @@ svg {
 .role-capability-option>span{display:grid;gap:3px}.role-capability-option b{font-size:10px}.role-capability-option small{color:var(--text-soft);font-size:9px;line-height:1.35;font-weight:500}
 @media(max-width:900px){.role-capability-groups{grid-template-columns:1fr}}
 @media(max-width:560px){.role-capability-options{grid-template-columns:1fr}}
+
+
+.platform-error{display:grid;gap:4px;margin:0 0 16px;padding:12px 14px;border:1px solid #d8a0a0;border-radius:12px;background:#fff7f7;color:#611}.platform-error strong{font-size:12px}.platform-error span{font-size:10px;line-height:1.45}
+
+.product-error-page{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--background)}.product-error-page section{width:min(560px,100%);display:grid;gap:12px;padding:28px;border:1px solid var(--line);border-radius:18px;background:var(--surface)}.product-error-page section>span{font-size:10px;font-weight:900;letter-spacing:.16em}.product-error-page h1{margin:0;font-size:26px}.product-error-page p{margin:0;color:var(--text-soft);line-height:1.55}.product-error-page section>div{display:flex;gap:10px;flex-wrap:wrap}.product-error-page button,.product-error-page a{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border:1px solid var(--line);border-radius:9px;background:var(--text);color:var(--surface);font:inherit;font-weight:800;text-decoration:none;cursor:pointer}.product-error-page a{background:var(--surface);color:var(--text)}.product-error-page small{color:var(--text-soft)}

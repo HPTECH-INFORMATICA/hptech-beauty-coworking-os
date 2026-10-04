@@ -13,9 +13,9 @@ const groups:Array<{title:string;items:Array<{permission:TenantPermission;label:
  {title:"Outros",items:[{permission:"DASHBOARD_VIEW",label:"Visualizar visão geral"},{permission:"PROFESSIONAL_OWN",label:"Acessar o próprio portal profissional"}]},
 ];
 
-export default async function UsersAdminPage({searchParams}:{searchParams:Promise<{invited?:string}>}){
+export default async function UsersAdminPage({searchParams}:{searchParams:Promise<{invited?:string;updated?:string;error?:string}>}){
  const actor=await requireTenantPermission("USER_VIEW");
- const [{invited},memberships,accessRoles]=await Promise.all([searchParams,getTenantMemberships(),getAccessRoles()]);
+ const [{invited,updated,error},memberships,accessRoles]=await Promise.all([searchParams,getTenantMemberships(),getAccessRoles()]);
  const entries=await Promise.all(memberships.map(async item=>[item.id,await getTenantMembershipPermissions(item.id)] as const));
  const effective=new Map(entries);
  const activeRoles=accessRoles.filter(role=>role.active);
@@ -23,7 +23,9 @@ export default async function UsersAdminPage({searchParams}:{searchParams:Promis
  const canManageRoles=actor.permissions.includes("ROLE_MANAGE");
  return <main className="admin-page admin-users-page">
   <header className="admin-page-head"><div><span>ADMINISTRAÇÃO / USUÁRIOS</span><h1>Usuários e acessos</h1><p>Cadastre a equipe, atribua os papéis criados pelo seu negócio e controle exceções individuais.</p></div><nav className="admin-section-nav" aria-label="Navegação da administração"><Link href="/administracao">← Configurações</Link>{canManageRoles?<Link href="/administracao/usuarios/papeis">Papéis e permissões</Link>:null}</nav></header>
+  {error?<div className="platform-error" role="alert"><strong>Operação não concluída</strong><span>{error}</span></div>:null}
   {invited?<div className="platform-success"><strong>Convite enviado</strong><span>O acesso ficará pendente até a pessoa aceitar o vínculo.</span></div>:null}
+  {updated?<div className="platform-success"><strong>Alteração salva</strong><span>O controle de acesso foi atualizado.</span></div>:null}
   <section className="tenant-user-summary"><div><strong>{memberships.length}</strong><span>Usuários</span></div><div><strong>{memberships.filter(x=>x.status==="ACTIVE").length}</strong><span>Ativos</span></div><div><strong>{memberships.filter(x=>x.status==="INACTIVE").length}</strong><span>Bloqueados</span></div></section>
   <section className="tenant-user-workspace"><section className="tenant-user-directory">
    <div className="tenant-section-title"><div><span>GESTÃO DE ACESSOS</span><h2>Equipe e acessos</h2><p>O proprietário administra usuários, papéis, permissões, bloqueios e remoções.</p></div></div>
