@@ -1934,3 +1934,9 @@ svg {
 .tenant-invite-card-sticky{position:sticky;top:18px}.tenant-invite-card-sticky h2{margin-bottom:5px}
 @media(max-width:1100px){.tenant-user-workspace{grid-template-columns:1fr}.tenant-invite-card-sticky{position:static}.tenant-user-row{grid-template-columns:42px 1fr auto}.tenant-user-row-actions{grid-column:2/-1;text-align:left}.tenant-access-console{grid-template-columns:1fr}.tenant-access-panel-wide{grid-row:auto}}
 @media(max-width:700px){.tenant-section-title{display:block}.tenant-section-title small{display:block;margin-top:6px;text-align:left}.tenant-user-row{grid-template-columns:38px 1fr}.tenant-user-meta,.tenant-user-row-actions{grid-column:2}.tenant-permission-matrix{grid-template-columns:1fr}.tenant-danger-panel .tenant-user-access-actions{grid-template-columns:1fr}}
+
+.tenant-access-empty{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:14px;padding:18px;border:1px dashed #c7cdd6;border-radius:12px;background:#fff}
+.tenant-access-empty strong{display:block;font-size:12px}.tenant-access-empty p{max-width:620px;margin:5px 0 0;font-size:10px;line-height:1.55;color:var(--text-faint)}
+.tenant-access-empty a{flex:none;padding:9px 12px;border-radius:8px;background:#111827;color:#fff;text-decoration:none;font-size:10px;font-weight:800}
+#adicionar-usuario{scroll-margin-top:18px}
+@media(max-width:700px){.tenant-access-empty{align-items:flex-start;flex-direction:column}}
