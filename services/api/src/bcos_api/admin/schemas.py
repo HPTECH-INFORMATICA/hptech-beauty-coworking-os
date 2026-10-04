@@ -35,6 +35,7 @@ class MembershipResponse(BaseModel):
     status: MembershipStatus
     display_name: str | None = None
     email: str | None = None
+    access_role_id: UUID | None = None
     permissions: list[Permission] = Field(default_factory=list)
 
 
