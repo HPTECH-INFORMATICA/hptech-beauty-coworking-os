@@ -112,6 +112,9 @@ describe("tenant administration", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Usuários e acessos" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Configurações" })).toHaveAttribute("href", "/administracao");
     expect(document.querySelector(".tenant-admin-shell")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Gerenciador de acessos" })).toBeInTheDocument();
+    expect(screen.getByText("Nenhum usuário da equipe para gerenciar")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Adicionar primeiro usuário" })).toHaveAttribute("href", "#adicionar-usuario");
   });
   it("shows trusted user identity, role, permissions and protects the owner", async () => {
     vi.mocked(getTenantMemberships).mockResolvedValue([
@@ -123,6 +126,7 @@ describe("tenant administration", () => {
     expect(screen.getByText("Pessoa Proprietária")).toBeInTheDocument();
     expect(screen.getByText("owner@example.com")).toBeInTheDocument();
     expect(screen.getByText("Pessoa Recepção")).toBeInTheDocument();
+    expect(screen.queryByText("Nenhum usuário da equipe para gerenciar")).not.toBeInTheDocument();
     expect(screen.getByText("Acesso integral protegido")).toBeInTheDocument();
     expect(screen.getAllByText("Visualizar agenda").length).toBeGreaterThan(0);
     expect(screen.getByText("Proprietário do ambiente")).toBeInTheDocument();
