@@ -28,7 +28,7 @@ export type InvoiceDetail = Invoice & { items: InvoiceItem[]; confirmed_amount: 
 export type Payment = { id: string; invoice_id: string; idempotency_key: string; method: string; status: string; currency: string; amount: string; reference: string | null; metadata: Record<string, unknown>; paid_at: string | null; created_at: string; updated_at: string };
 export type ContractingTenant = { id: string; name: string; slug: string; status: "PENDING_ACTIVATION" | "ACTIVE" | "SUSPENDED" | "INACTIVE"; legal_name: string; trade_name: string; tax_id: string | null; email: string; phone: string | null; owner_external_user_id: string | null; owner_membership_status: "INVITED" | "ACTIVE" | "INACTIVE" | null; created_at: string };
 export type ContractingTenantCreate = { name: string; slug: string; legalName: string; tradeName: string; taxId?: string; email: string; phone?: string; ownerEmail?: string };
-export type TenantMembership = { id: string; tenant_id: string; external_user_id: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; status: "INVITED" | "ACTIVE" | "INACTIVE"; display_name: string | null; email: string | null };
+export type TenantMembership = { id: string; tenant_id: string; external_user_id: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; status: "INVITED" | "ACTIVE" | "INACTIVE"; display_name: string | null; email: string | null; access_role_id?: string | null };\nexport type AccessRole = { id:string; tenant_id:string; name:string; description:string|null; active:boolean; permissions:string[]; assigned_users:number };\nexport type PermissionCatalogItem = { code:string; module:string; action:string };
 export type TenantMembershipInvite = { displayName: string; email: string; role: "ADMIN" | "RECEPTION" | "PROFESSIONAL" };
 export type TenantPermission = "TENANT_ADMIN"|"OPERATIONS"|"PROFESSIONAL_OWN"|"DASHBOARD_VIEW"|"AGENDA_VIEW"|"AGENDA_MANAGE"|"AVAILABILITY_VIEW"|"CHECKIN_MANAGE"|"FINANCE_VIEW"|"FINANCE_MANAGE"|"ADMIN_CONFIG"|"USER_ADMIN";
 export type AccessTenant = { tenant_id: string; tenant_name: string; role: "OWNER" | "ADMIN" | "RECEPTION" | "PROFESSIONAL"; destination: "/administracao" | "/" | "/profissional"; permissions: TenantPermission[] };
@@ -294,6 +294,23 @@ export async function updateContractingTenantStatus(
   );
 }
 
+
+export async function getAccessRoles(): Promise<AccessRole[]> {
+  return apiGet<AccessRole[]>("/api/v1/admin/access-roles");
+}
+export async function getAccessRolePermissionCatalog(): Promise<PermissionCatalogItem[]> {
+  const result=await apiGet<{permissions:PermissionCatalogItem[]}>("/api/v1/admin/access-roles/catalog");
+  return result.permissions;
+}
+export async function createAccessRole(input:{name:string;description?:string;permissions:string[]}): Promise<AccessRole> {
+  return apiPost<AccessRole>("/api/v1/admin/access-roles", input);
+}
+export async function updateAccessRole(roleId:string,input:{name:string;description?:string;permissions:string[];active:boolean}): Promise<AccessRole> {
+  return apiPut<AccessRole>(`/api/v1/admin/access-roles/${encodeURIComponent(roleId)}`, input);
+}
+export async function deleteAccessRole(roleId:string): Promise<void> {
+  return apiRequest<void>(`/api/v1/admin/access-roles/${encodeURIComponent(roleId)}`, {method:"DELETE"});
+}
 
 export async function getTenantMemberships(): Promise<TenantMembership[]> {
   return apiGet<TenantMembership[]>("/api/v1/admin/memberships");
