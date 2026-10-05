@@ -61,7 +61,12 @@ Required runtime environment:
 
 ```text
 DATABASE_URL=<BCOS PostgreSQL URL>
+RESEND_API_KEY=<BCOS transactional email provider key>
+EMAIL_FROM=<verified BCOS transactional sender>
+FRONTEND_PUBLIC_URL=<deployed BCOS Web origin>
 ```
+
+`RESEND_API_KEY`, `EMAIL_FROM` and `FRONTEND_PUBLIC_URL` are required by the API transactional notification boundary used by tenant team invitations and professional access invitations. They belong to the API runtime contract; configuring transactional email only in another HPTECH PLATFORM surface does not make them available to the BCOS API process.
 
 Homologation-only verifier pair, when intentionally used:
 
