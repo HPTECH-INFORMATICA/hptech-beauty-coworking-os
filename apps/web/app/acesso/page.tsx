@@ -12,24 +12,37 @@ export default async function AccessPage({ searchParams }: { searchParams?: Prom
   const { data: session } = await auth.getSession();
   if (!session?.user) redirect("/auth/sign-in");
 
-  let access;
-  let invitations;
-  let professionalInvitations;
-  let teamInvitations;
+  const results = await Promise.allSettled([
+    getAccessResolution(),
+    getPendingInvitations(),
+    getPendingProfessionalInvitations(),
+    getPendingTeamInvitations(),
+  ]);
 
-  try {
-    [access, invitations, professionalInvitations, teamInvitations] = await Promise.all([
-      getAccessResolution(),
-      getPendingInvitations(),
-      getPendingProfessionalInvitations(),
-      getPendingTeamInvitations(),
-    ]);
-  } catch (error) {
-    console.error(
-      "BCOS access resolution failed after authenticated Neon session:",
-      error instanceof Error ? error.message : "unknown error",
-    );
+  const [accessResult, invitationsResult, professionalResult, teamResult] = results;
+  for (const [operation, result] of [
+    ["access", accessResult],
+    ["membership invitations", invitationsResult],
+    ["professional invitations", professionalResult],
+    ["team invitations", teamResult],
+  ] as const) {
+    if (result.status === "rejected") {
+      console.error(
+        `BCOS ${operation} lookup failed after authenticated Neon session:`,
+        result.reason instanceof Error ? result.reason.message : "unknown error",
+      );
+    }
+  }
 
+  const access = accessResult.status === "fulfilled"
+    ? accessResult.value
+    : { platform_destination: null, tenants: [] };
+  const invitations = invitationsResult.status === "fulfilled" ? invitationsResult.value : [];
+  const professionalInvitations = professionalResult.status === "fulfilled" ? professionalResult.value : [];
+  const teamInvitations = teamResult.status === "fulfilled" ? teamResult.value : [];
+
+  const allLookupsFailed = results.every((result) => result.status === "rejected");
+  if (allLookupsFailed) {
     return (
       <main className="auth-shell">
         <section className="auth-brand">
@@ -40,8 +53,8 @@ export default async function AccessPage({ searchParams }: { searchParams?: Prom
         <section className="auth-card">
           <h2>Acesso temporariamente indisponível</h2>
           <p>
-            Sua sessão está autenticada, mas não foi possível consultar suas
-            permissões no BCOS neste momento.
+            Sua sessão está autenticada, mas não foi possível consultar seus
+            acessos no BCOS neste momento.
           </p>
           <p>Tente novamente em alguns instantes.</p>
           <p><Link href="/acesso">Tentar novamente</Link></p>
