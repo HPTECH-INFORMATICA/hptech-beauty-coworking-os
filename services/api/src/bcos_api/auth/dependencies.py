@@ -25,12 +25,13 @@ bearer_scheme = HTTPBearer(
 
 
 def _neon_issuer_origin(value: str) -> str:
-    """Normalize Neon Auth configuration to the JWT issuer origin."""
+    """Normalize Neon Auth configuration without discarding an issuer path."""
 
     parsed = urlsplit(value.strip())
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         return ""
-    return f"{parsed.scheme}://{parsed.netloc}"
+    path = parsed.path.rstrip("/")
+    return f"{parsed.scheme}://{parsed.netloc}{path}"
 
 
 def _neon_jwks_candidates(configured_issuer: str, configured_jwks_url: str) -> tuple[str, ...]:
