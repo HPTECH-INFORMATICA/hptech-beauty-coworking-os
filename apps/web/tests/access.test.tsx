@@ -49,4 +49,18 @@ describe("contracting customer access state", () => {
     expect(screen.getByText("Seu portal profissional está disponível")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Cristiana · Revisar/ })).toHaveAttribute("href", "/acesso/profissionais/invite-1");
   });
+  it("keeps a valid team invitation visible when another access lookup fails", async () => {
+    mocks.getSession.mockResolvedValue({ data: { session: {}, user: { id: "team-1", email: "pedro@example.com" } } });
+    mocks.getAccessResolution.mockRejectedValue(new Error("access lookup unavailable"));
+    mocks.getPendingInvitations.mockResolvedValue([]);
+    mocks.getPendingProfessionalInvitations.mockResolvedValue([]);
+    mocks.getPendingTeamInvitations.mockResolvedValue([{ id: "team-invite-1", tenant_id: "tenant-1", tenant_name: "LA BEAUTE", display_name: "Pedro Sales", email: "pedro@example.com", role: "RECEPTION", status: "PENDING", expires_at: "2026-10-12T12:00:00Z" }]);
+
+    render(await AccessPage({ searchParams: Promise.resolve({}) }));
+
+    expect(screen.queryByText("Acesso temporariamente indisponível")).not.toBeInTheDocument();
+    expect(screen.getByText("Você foi convidado para uma equipe")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Pedro Sales · RECEPTION/ })).toHaveAttribute("href", "/acesso/equipe/team-invite-1");
+  });
+
 });
