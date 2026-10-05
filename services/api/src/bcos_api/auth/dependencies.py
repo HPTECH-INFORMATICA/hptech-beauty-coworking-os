@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from functools import lru_cache
 from typing import Annotated
 from urllib.parse import urlsplit
 
@@ -50,6 +51,16 @@ def _neon_jwks_candidates(configured_issuer: str, configured_jwks_url: str) -> t
     return tuple(candidates)
 
 
+@lru_cache(maxsize=8)
+def _cached_neon_identity_verifier(
+    issuer: str,
+    jwks_urls: tuple[str, ...],
+) -> NeonAuthIdentityVerifier:
+    """Reuse one verifier so PyJWT can reuse its JWKS cache across requests."""
+
+    return NeonAuthIdentityVerifier(issuer=issuer, jwks_urls=jwks_urls)
+
+
 def get_identity_verifier() -> IdentityVerifier:
     """Return the configured trusted identity verifier."""
 
@@ -60,7 +71,7 @@ def get_identity_verifier() -> IdentityVerifier:
         configured_jwks_url = os.getenv("BCOS_NEON_AUTH_JWKS_URL", "").strip()
         jwks_urls = _neon_jwks_candidates(configured_issuer, configured_jwks_url)
         if issuer and jwks_urls:
-            return NeonAuthIdentityVerifier(issuer=issuer, jwks_urls=jwks_urls)
+            return _cached_neon_identity_verifier(issuer, jwks_urls)
         return UnconfiguredIdentityVerifier()
 
     homologation_token = os.getenv(
