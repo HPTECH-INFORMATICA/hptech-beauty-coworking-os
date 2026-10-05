@@ -30,8 +30,7 @@ def _neon_issuer_origin(value: str) -> str:
     parsed = urlsplit(value.strip())
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         return ""
-    path = parsed.path.rstrip("/")
-    return f"{parsed.scheme}://{parsed.netloc}{path}"
+    return f"{parsed.scheme}://{parsed.netloc}"
 
 
 def _neon_jwks_candidates(configured_issuer: str, configured_jwks_url: str) -> tuple[str, ...]:
