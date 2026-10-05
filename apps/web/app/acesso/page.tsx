@@ -39,12 +39,12 @@ export default async function AccessPage({ searchParams }: { searchParams?: Prom
     }
   }
 
-  access = accessResult.status === "fulfilled"
+  const access: AccessResolution = accessResult.status === "fulfilled"
     ? accessResult.value
     : { platform_destination: null, tenants: [] };
-  invitations = invitationsResult.status === "fulfilled" ? invitationsResult.value : [];
-  professionalInvitations = professionalResult.status === "fulfilled" ? professionalResult.value : [];
-  teamInvitations = teamResult.status === "fulfilled" ? teamResult.value : [];
+  const invitations: PendingInvitation[] = invitationsResult.status === "fulfilled" ? invitationsResult.value : [];
+  const professionalInvitations: ProfessionalInvitation[] = professionalResult.status === "fulfilled" ? professionalResult.value : [];
+  const teamInvitations: TeamInvitation[] = teamResult.status === "fulfilled" ? teamResult.value : [];
 
   const allLookupsFailed = results.every((result) => result.status === "rejected");
   if (allLookupsFailed) {
