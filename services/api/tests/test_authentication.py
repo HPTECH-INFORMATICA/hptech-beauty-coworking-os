@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from bcos_api.auth.dependencies import (
     _neon_issuer_origin,
+    _cached_neon_identity_verifier,
     _neon_jwks_candidates,
     get_authenticated_identity,
     get_identity_verifier,
@@ -183,3 +184,17 @@ def test_neon_jwks_candidates_do_not_invent_path_from_origin_only() -> None:
         "https://example.neonauth.example",
         "https://example.neonauth.example/neondb/auth/.well-known/jwks.json",
     ) == ("https://example.neonauth.example/neondb/auth/.well-known/jwks.json",)
+
+
+def test_neon_identity_verifier_is_reused_for_same_runtime_configuration() -> None:
+    _cached_neon_identity_verifier.cache_clear()
+    first = _cached_neon_identity_verifier(
+        "https://example.neonauth.example",
+        ("https://example.neonauth.example/neondb/auth/.well-known/jwks.json",),
+    )
+    second = _cached_neon_identity_verifier(
+        "https://example.neonauth.example",
+        ("https://example.neonauth.example/neondb/auth/.well-known/jwks.json",),
+    )
+
+    assert first is second
