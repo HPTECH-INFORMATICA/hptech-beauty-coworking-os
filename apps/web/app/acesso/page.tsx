@@ -12,11 +12,6 @@ export default async function AccessPage({ searchParams }: { searchParams?: Prom
   const { data: session } = await auth.getSession();
   if (!session?.user) redirect("/auth/sign-in");
 
-  let access;
-  let invitations;
-  let professionalInvitations;
-  let teamInvitations;
-
   const results = await Promise.allSettled([
     getAccessResolution(),
     getPendingInvitations(),
