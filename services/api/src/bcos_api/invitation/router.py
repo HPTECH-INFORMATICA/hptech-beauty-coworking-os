@@ -84,11 +84,103 @@ async def _authenticated_email(session: AsyncSession, external_user_id: str) -> 
     return email
 
 
+async def _activate_team_invitations_for_identity(
+    session: AsyncSession,
+    *,
+    identity: AuthenticatedIdentity,
+    email: str,
+) -> bool:
+    result = await session.execute(
+        text(
+            """SELECT i.id,i.tenant_id,i.display_name,i.email,i.role::text AS role,i.access_role_id
+            FROM tenant_user_invitations i
+            JOIN tenants t ON t.id=i.tenant_id
+            WHERE lower(i.email)=:email
+              AND i.status='PENDING'
+              AND i.expires_at>now()
+              AND i.deleted_at IS NULL
+              AND t.status='ACTIVE'
+            ORDER BY i.created_at ASC
+            FOR UPDATE OF i"""
+        ),
+        {"email": email},
+    )
+    activated = False
+    for row in result.mappings().all():
+        existing = await session.execute(
+            text(
+                """SELECT id FROM tenant_memberships
+                WHERE tenant_id=:tenant_id
+                  AND external_user_id=:external_user_id
+                  AND deleted_at IS NULL
+                LIMIT 1"""
+            ),
+            {
+                "tenant_id": row["tenant_id"],
+                "external_user_id": identity.external_user_id,
+            },
+        )
+        if existing.scalar_one_or_none() is not None:
+            await session.execute(
+                text(
+                    """UPDATE tenant_user_invitations
+                    SET status='ACCEPTED',accepted_at=now(),updated_at=now()
+                    WHERE id=:id"""
+                ),
+                {"id": row["id"]},
+            )
+            activated = True
+            continue
+        inserted = await session.execute(
+            text(
+                """INSERT INTO tenant_memberships
+                (tenant_id,external_user_id,role,status,display_name,email,access_role_id)
+                VALUES (:tenant_id,:external_user_id,CAST(:role AS membership_role),'ACTIVE',
+                        :display_name,:email,:access_role_id)
+                RETURNING id"""
+            ),
+            {
+                "tenant_id": row["tenant_id"],
+                "external_user_id": identity.external_user_id,
+                "role": row["role"],
+                "display_name": row["display_name"],
+                "email": email,
+                "access_role_id": row["access_role_id"],
+            },
+        )
+        membership_id = inserted.scalar_one()
+        await session.execute(
+            text(
+                """UPDATE tenant_user_invitations
+                SET status='ACCEPTED',accepted_at=now(),updated_at=now()
+                WHERE id=:id"""
+            ),
+            {"id": row["id"]},
+        )
+        await create_audit_log(
+            session,
+            tenant_id=row["tenant_id"],
+            actor_external_user_id=identity.external_user_id,
+            action="TENANT_USER_INVITATION_AUTO_ACCEPTED",
+            entity_type="tenant_membership",
+            entity_id=membership_id,
+            metadata={
+                "invitation_id": str(row["id"]),
+                "email": email,
+                "access_role_id": str(row["access_role_id"]),
+            },
+        )
+        activated = True
+    if activated:
+        await session.commit()
+    return activated
+
+
 @router.get("/team", response_model=list[TeamInvitationResponse])
 async def list_team_invitations_endpoint(session: SessionDependency, identity: IdentityDependency) -> list[TeamInvitationResponse]:
     email=await _authenticated_email(session, identity.external_user_id)
-    result=await session.execute(text("""SELECT i.id,i.tenant_id,t.name AS tenant_name,i.display_name,i.email,i.role::text AS role,i.status,i.expires_at FROM tenant_user_invitations i JOIN tenants t ON t.id=i.tenant_id WHERE lower(i.email)=:email AND i.status='PENDING' AND i.expires_at>now() AND i.deleted_at IS NULL ORDER BY i.created_at ASC"""), {"email":email})
-    return [TeamInvitationResponse(**dict(row), expires_at=row["expires_at"].isoformat()) for row in result.mappings().all()]
+    await _activate_team_invitations_for_identity(session, identity=identity, email=email)
+    return []
 
 
 @router.post("/team/{invitation_id}/accept", response_model=MembershipResponse)
