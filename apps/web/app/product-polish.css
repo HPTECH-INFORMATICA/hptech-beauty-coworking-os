@@ -18,3 +18,31 @@
 
 /* Contracting tenant administration */
 .tenant-admin-shell{min-height:100vh;display:grid;grid-template-columns:250px minmax(0,1fr);background:var(--surface-soft)}.tenant-admin-rail{position:sticky;top:0;height:100vh;padding:28px 22px;display:flex;flex-direction:column;justify-content:space-between;background:#181b21;color:#fff}.tenant-admin-rail nav{display:grid;gap:6px;margin-top:34px}.tenant-admin-rail nav a{padding:11px 12px;border-radius:10px;color:rgba(255,255,255,.62);font-size:11px;font-weight:750;text-decoration:none}.tenant-admin-rail nav a.active,.tenant-admin-rail nav a:hover{background:rgba(255,255,255,.09);color:#fff}.tenant-user-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;margin-top:28px;align-items:start}.tenant-user-list{display:grid;gap:10px}.tenant-user-card{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 20px;border:1px solid var(--line);border-radius:14px;background:#fff}.tenant-user-card>div{display:flex;flex-direction:column;gap:4px}.tenant-user-card span,.tenant-user-card small{font-size:9px;color:var(--text-soft)}.tenant-user-card strong{font-size:12px}.tenant-user-card form{display:flex;gap:8px}.tenant-user-card select,.tenant-invite-card select,.tenant-invite-card input{height:40px;padding:0 11px;border:1px solid var(--line-strong);border-radius:9px;background:#fff}.tenant-user-card button,.tenant-invite-card button{min-height:40px;padding:0 13px;border:0;border-radius:9px;background:#15181e;color:#fff;font-size:9px;font-weight:800;cursor:pointer}.tenant-owner-lock{padding:6px 9px;border-radius:999px;background:#eef0f3;font-weight:800}.tenant-invite-card{position:sticky;top:18px;padding:24px;border:1px solid var(--line);border-radius:18px;background:#fff}.tenant-invite-card>span{font-size:9px;font-weight:850;letter-spacing:.12em;color:var(--text-faint)}.tenant-invite-card h2{margin:6px 0 0;font-size:19px}.tenant-invite-card p{margin:8px 0 18px;color:var(--text-soft);font-size:10px;line-height:1.55}.tenant-invite-card form{display:grid;gap:13px}.tenant-invite-card label{display:grid;gap:7px;color:var(--text-soft);font-size:9px;font-weight:750}.tenant-invite-card button{margin-top:3px}@media(max-width:900px){.tenant-user-layout{grid-template-columns:1fr}.tenant-invite-card{position:static}}@media(max-width:850px){.tenant-admin-shell{grid-template-columns:1fr}.tenant-admin-rail{position:relative;height:auto}}
+
+
+/* Owner access administration — clear navigation and role visibility */
+.admin-access-nav{display:flex;flex-wrap:wrap;gap:7px;align-items:center;justify-content:flex-end}
+.admin-access-nav a{display:inline-flex;align-items:center;min-height:34px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--text-soft);font-size:9px;font-weight:750}
+.admin-access-nav a:hover,.admin-access-nav a.active{border-color:var(--line-strong);background:#15181e;color:#fff}
+.access-role-overview{margin-top:20px;padding:22px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:var(--shadow-sm)}
+.access-role-overview-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}
+.access-role-overview-head>div{min-width:0}
+.access-role-overview-head>div>span{font-size:9px;font-weight:850;letter-spacing:.12em;color:var(--text-faint)}
+.access-role-overview-head h2{margin:6px 0 0;font-size:18px;letter-spacing:-.025em}
+.access-role-overview-head p{max-width:720px;margin:7px 0 0;color:var(--text-soft);font-size:10px;line-height:1.55}
+.access-role-overview-head>a{white-space:nowrap;color:var(--text-soft);font-size:10px;font-weight:800}
+.access-role-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}
+.access-role-card{padding:17px;border:1px solid var(--line);border-radius:14px;background:var(--surface-soft)}
+.access-role-card-highlight{border-color:#cfd3dc;background:#f8f9fb;box-shadow:inset 3px 0 0 #15181e}
+.access-role-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.access-role-card-head>div{min-width:0}
+.access-role-card-head span{font-size:8px;font-weight:850;letter-spacing:.12em;color:var(--text-faint)}
+.access-role-card-head h3{margin:5px 0 0;font-size:15px}
+.access-role-card-head>strong{font-size:9px;color:var(--text-soft);white-space:nowrap}
+.access-role-highlight-copy{margin:8px 0 0;color:var(--text-soft);font-size:9px;line-height:1.5}
+.access-role-permissions{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px}
+.access-role-permissions span{display:inline-flex;align-items:center;min-height:26px;padding:0 8px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--text-soft);font-size:8px;font-weight:750}
+.access-role-empty{grid-column:1/-1;padding:18px;border:1px dashed var(--line-strong);border-radius:12px}
+.access-role-empty strong{display:block;font-size:11px}
+.access-role-empty span{display:block;margin-top:4px;color:var(--text-soft);font-size:9px}
+@media(max-width:980px){.admin-access-nav{justify-content:flex-start}.access-role-grid{grid-template-columns:1fr}.access-role-overview-head{align-items:flex-start;flex-direction:column}}
