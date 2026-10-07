@@ -118,7 +118,12 @@ describe("tenant administration", () => {
   it("renders users as administration content without a legacy product shell", async () => {
     render(await UsersAdminPage({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { level: 1, name: "Usuários e acessos" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "← Configurações" })).toHaveAttribute("href", "/administracao");
+    expect(screen.getByRole("link", { name: "Empresa" })).toHaveAttribute("href", "/administracao?area=empresa");
+    expect(screen.getByRole("link", { name: "Usuários e acessos" })).toHaveAttribute("href", "/administracao/usuarios");
+    expect(screen.getByRole("link", { name: "Papéis e permissões" })).toHaveAttribute("href", "/administracao/usuarios/papeis");
+    expect(screen.getByRole("heading", { level: 2, name: "O que cada papel pode fazer" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Atendimento" })).toBeInTheDocument();
+    expect(screen.getByText(/Acesso liberado para a recepção conforme as permissões/i)).toBeInTheDocument();
     expect(document.querySelector(".tenant-admin-shell")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Equipe e acessos" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Papéis e permissões" })).toHaveAttribute("href", "/administracao/usuarios/papeis");
