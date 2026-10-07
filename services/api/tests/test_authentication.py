@@ -6,8 +6,8 @@ from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
 from bcos_api.auth.dependencies import (
-    _neon_issuer_origin,
     _cached_neon_identity_verifier,
+    _neon_issuer_origin,
     _neon_jwks_candidates,
     get_authenticated_identity,
     get_identity_verifier,
