@@ -47,7 +47,7 @@ const permissionLabels:Record<string,string>={
    <div className="access-role-overview-head"><div><span>ACESSOS LIBERADOS</span><h2>O que cada papel pode fazer</h2><p>Esta é a visão rápida que o proprietário precisa para conferir o acesso da equipe. A matriz completa continua em “Papéis e permissões”.</p></div>{canManageRoles?<Link href="/administracao/usuarios/papeis">Configurar papéis →</Link>:null}</div>
    <div className="access-role-grid">
     {activeRoles.length===0?<div className="access-role-empty"><strong>Nenhum papel ativo cadastrado.</strong><span>Cadastre um papel antes de convidar a equipe.</span></div>:activeRoles.map(role=>{
-      const isReception=/recep/i.test(role.name)||receptionRoleIds.has(role.id);
+      const isReception=/recep|atend/i.test(role.name)||receptionRoleIds.has(role.id);
       const visible=role.permissions.map(permission=>permissionLabels[permission]??permission).slice(0,8);
       return <article className={isReception?"access-role-card access-role-card-highlight":"access-role-card"} key={role.id}>
        <div className="access-role-card-head"><div><span>{isReception?"RECEPÇÃO":"PAPEL DA EQUIPE"}</span><h3>{role.name}</h3></div><strong>{role.assigned_users} usuário(s)</strong></div>
