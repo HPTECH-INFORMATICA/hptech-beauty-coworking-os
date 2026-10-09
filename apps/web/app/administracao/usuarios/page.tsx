@@ -19,14 +19,44 @@ export default async function UsersAdminPage({searchParams}:{searchParams:Promis
  const entries=await Promise.all(memberships.map(async item=>[item.id,await getTenantMembershipPermissions(item.id)] as const));
  const effective=new Map(entries);
  const activeRoles=accessRoles.filter(role=>role.active);
+ const receptionRoleIds=new Set(memberships.filter(item=>item.role==="RECEPTION" && item.access_role_id).map(item=>item.access_role_id as string));
+const permissionLabels:Record<string,string>={
+ DASHBOARD_VIEW:"Visão geral",AGENDA_VIEW:"Agenda: visualizar",AGENDA_CREATE:"Agenda: criar",AGENDA_EDIT:"Agenda: editar",AGENDA_DELETE:"Agenda: excluir",AGENDA_MANAGE:"Agenda: gerenciar",
+ AVAILABILITY_VIEW:"Disponibilidade: visualizar",CHECKIN_VIEW:"Check-in: visualizar",CHECKIN_MANAGE:"Check-in e uso: gerenciar",
+ FINANCE_VIEW:"Financeiro: visualizar",FINANCE_CREATE:"Financeiro: criar",FINANCE_EDIT:"Financeiro: editar",FINANCE_DELETE:"Financeiro: excluir",FINANCE_MANAGE:"Financeiro: gerenciar",
+ ADMIN_VIEW:"Administração: visualizar",ADMIN_CONFIG:"Administração: configurar",USER_VIEW:"Usuários: visualizar",USER_CREATE:"Usuários: convidar",USER_EDIT:"Usuários: editar",USER_BLOCK:"Usuários: bloquear",USER_DELETE:"Usuários: remover",ROLE_MANAGE:"Papéis: gerenciar",USER_ADMIN:"Acessos: gerenciar",PROFESSIONAL_OWN:"Portal profissional próprio"
+};
  const canCreate=actor.permissions.includes("USER_CREATE");
  const canManageRoles=actor.permissions.includes("ROLE_MANAGE");
  return <main className="admin-page admin-users-page">
-  <header className="admin-page-head"><div><span>ADMINISTRAÇÃO / USUÁRIOS</span><h1>Usuários e acessos</h1><p>Cadastre a equipe, atribua os papéis criados pelo seu negócio e controle exceções individuais.</p></div><nav className="admin-section-nav" aria-label="Navegação da administração"><Link href="/administracao">← Configurações</Link>{canManageRoles?<Link href="/administracao/usuarios/papeis">Papéis e permissões</Link>:null}</nav></header>
+  <header className="admin-page-head"><div><span>ADMINISTRAÇÃO / USUÁRIOS</span><h1>Usuários e acessos</h1><p>Cadastre a equipe, atribua os papéis criados pelo seu negócio e controle exceções individuais.</p></div><nav className="admin-section-nav admin-access-nav" aria-label="Navegação da administração">
+<Link href="/administracao?area=empresa">Empresa</Link>
+<Link href="/administracao?area=unidades">Unidades</Link>
+<Link href="/administracao?area=espacos">Espaços</Link>
+<Link href="/administracao?area=funcionamento">Funcionamento</Link>
+<Link href="/administracao?area=precos">Preços</Link>
+<Link href="/administracao?area=profissionais">Profissionais</Link>
+<Link className="active" href="/administracao/usuarios">Usuários e acessos</Link>
+{canManageRoles?<Link href="/administracao/usuarios/papeis">Papéis e permissões</Link>:null}
+</nav></header>
   {error?<div className="platform-error" role="alert"><strong>Operação não concluída</strong><span>{error}</span></div>:null}
   {invited?<div className="platform-success"><strong>Convite enviado</strong><span>O acesso ficará pendente até a pessoa aceitar o vínculo.</span></div>:null}
   {updated?<div className="platform-success"><strong>Alteração salva</strong><span>O controle de acesso foi atualizado.</span></div>:null}
   <section className="tenant-user-summary"><div><strong>{memberships.length}</strong><span>Usuários</span></div><div><strong>{memberships.filter(x=>x.status==="ACTIVE").length}</strong><span>Ativos</span></div><div><strong>{memberships.filter(x=>x.status==="INACTIVE").length}</strong><span>Bloqueados</span></div></section>
+  <section className="access-role-overview" aria-label="Acessos liberados por papel">
+   <div className="access-role-overview-head"><div><span>ACESSOS LIBERADOS</span><h2>O que cada papel pode fazer</h2><p>Esta é a visão rápida que o proprietário precisa para conferir o acesso da equipe. A matriz completa continua em “Papéis e permissões”.</p></div>{canManageRoles?<Link href="/administracao/usuarios/papeis">Configurar papéis →</Link>:null}</div>
+   <div className="access-role-grid">
+    {activeRoles.length===0?<div className="access-role-empty"><strong>Nenhum papel ativo cadastrado.</strong><span>Cadastre um papel antes de convidar a equipe.</span></div>:activeRoles.map(role=>{
+      const isReception=/recep|atend/i.test(role.name)||receptionRoleIds.has(role.id);
+      const visible=role.permissions.map(permission=>permissionLabels[permission]??permission).slice(0,8);
+      return <article className={isReception?"access-role-card access-role-card-highlight":"access-role-card"} key={role.id}>
+       <div className="access-role-card-head"><div><span>{isReception?"RECEPÇÃO":"PAPEL DA EQUIPE"}</span><h3>{role.name}</h3></div><strong>{role.assigned_users} usuário(s)</strong></div>
+       {isReception?<p className="access-role-highlight-copy">Acesso liberado para a recepção conforme as permissões definidas pelo proprietário.</p>:null}
+       <div className="access-role-permissions">{visible.map(item=><span key={item}>{item}</span>)}{role.permissions.length>visible.length?<span>+{role.permissions.length-visible.length} permissões</span>:null}</div>
+      </article>;
+    })}
+   </div>
+  </section>
   <section className="tenant-user-workspace"><section className="tenant-user-directory">
    <div className="tenant-section-title"><div><span>GESTÃO DE ACESSOS</span><h2>Equipe e acessos</h2><p>O proprietário administra usuários, papéis, permissões, bloqueios e remoções.</p></div></div>
    <div className="tenant-access-manager-status"><strong>Gerenciador de acessos do proprietário</strong><p>Os papéis são cadastrais e pertencem ao contratante. O papel define a base de acesso; exceções individuais podem ser ajustadas em cada usuário. O proprietário permanece protegido.</p></div>

@@ -1,10 +1,19 @@
-"use client";
-
 import { AuthView } from "@neondatabase/auth-ui";
-import { useParams } from "next/navigation";
+import { authViewPaths } from "@neondatabase/auth-ui/server";
 
-export default function AuthPage() {
-  const params = useParams<{ path: string }>();
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return Object.values(authViewPaths).map((path) => ({ path }));
+}
+
+export default async function AuthPage({
+  params,
+}: {
+  params: Promise<{ path: string }>;
+}) {
+  const { path } = await params;
+
   return (
     <main className="auth-shell">
       <section className="auth-brand">
@@ -13,7 +22,7 @@ export default function AuthPage() {
         <p>Acesso seguro para administração, recepção e profissionais.</p>
       </section>
       <section className="auth-card">
-        <AuthView path={params.path} redirectTo="/acesso" />
+        <AuthView path={path} />
       </section>
     </main>
   );
